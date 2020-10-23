@@ -13,6 +13,11 @@ class Bot : public Agent {
 public:
     virtual void OnGameStart() final {
         std::cout << "Hello, World!" << std::endl;
+
+        attack.setAgents(&defence, &resource, &scout);
+        defence.setAgents(&attack, &resource, &scout);
+        resource.setAgents(&defence, &attack, &scout);
+        scout.setAgents(&defence, &attack, &resource);
     }
 
     virtual void OnStep() final {
