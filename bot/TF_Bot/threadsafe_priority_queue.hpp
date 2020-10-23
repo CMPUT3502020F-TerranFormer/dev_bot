@@ -2,6 +2,9 @@
 // Created by Carter Sabadash on 2020-10-23
 //
 
+#ifndef THREADSAFE_PRIORITY_QUEUE
+#define THREADSAFE_PRIORITY_QUEUE
+
 #include <queue>
 #include <mutex>
 #include <cassert>
@@ -18,6 +21,7 @@ class threadsafe_priority_queue : private QBase<T>
 	std::mutex mutex;
 public:
 	using Base = QBase<T>;
+
 
 	bool empty()
 	{
@@ -51,3 +55,5 @@ public:
 		Base::pop();
 	}
 };
+
+#endif
