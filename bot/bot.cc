@@ -1,6 +1,12 @@
 #include <sc2api/sc2_api.h>
 #include <iostream>
 
+#include "TF_Bot/ATTACK_BOT.hpp"
+#include "TF_Bot/DEFENCE_BOT.hpp"
+#include "TF_Bot/RESOURCE_BOT.hpp"
+#include "TF_Bot/SCOUT_BOT.hpp"
+#include "TF_Bot/Task.hpp"
+
 using namespace sc2;
 
 class Bot : public Agent {
@@ -10,8 +16,9 @@ public:
     }
 
     virtual void OnStep() final {
-        TryBuildSupplyDepot();
-        TryBuildBarracks();
+        // get game info
+        const GameInfo &game_info = Observation()->GetGameInfo();
+        attack.step(game_info);
     }
 
     virtual void OnUnitIdle(const Unit *unit) final {
@@ -104,7 +111,11 @@ public:
         return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
     }
 
-
+private:
+    ATTACK_BOT attack;
+    DEFENCE_BOT defence;
+    RESOURCE_BOT resource;
+    SCOUT_BOT scout;
 };
 
 int main(int argc, char *argv[]) {

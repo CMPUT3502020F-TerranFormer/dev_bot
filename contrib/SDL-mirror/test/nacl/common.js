@@ -90,7 +90,7 @@ var common = (function() {
     console.log('runTests()');
     common.tester = new Tester();
 
-    // All NaCl SDK examples are OK if the example exits cleanly; (i.e. the
+    // All NaCl SDK bot are OK if the example exits cleanly; (i.e. the
     // NaCl module returns 0 or calls exit(0)).
     //
     // Without this exception, the browser_tester thinks that the module

@@ -157,7 +157,7 @@ build_csharp() {
 build_golang() {
   # Go build needs `protoc`.
   internal_build_cpp
-  # Add protoc to the path so that the examples build finds it.
+  # Add protoc to the path so that the bot build finds it.
   export PATH="`pwd`/src:$PATH"
 
   export GOPATH="$HOME/gocode"

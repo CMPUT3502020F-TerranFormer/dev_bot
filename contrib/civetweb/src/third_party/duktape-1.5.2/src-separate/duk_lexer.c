@@ -160,7 +160,7 @@
  *
  *  Future work:
  *
- *    * Reject other invalid Unicode sequences (see Wikipedia entry for examples)
+ *    * Reject other invalid Unicode sequences (see Wikipedia entry for bot)
  *      in strict UTF-8 mode.
  *
  *    * Size optimize.  An attempt to use a 16-byte lookup table for the first

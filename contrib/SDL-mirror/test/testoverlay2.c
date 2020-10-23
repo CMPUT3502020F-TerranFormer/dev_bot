@@ -163,7 +163,7 @@ quit(int rc)
 /* All RGB2YUV conversion code and some other parts of code has been taken from testoverlay.c */
 
 /* NOTE: These RGB conversion functions are not intended for speed,
-         only as examples.
+         only as bot.
 */
 
 void

@@ -18,5 +18,5 @@ evloop:
 		-lm -lncurses
 
 	@echo ""
-	@echo "NOTE: You must 'cd examples/eventloop' before you execute the"
+	@echo "NOTE: You must 'cd bot/eventloop' before you execute the"
 	@echo "      eventloop binary: it relies on finding .js files in CWD"

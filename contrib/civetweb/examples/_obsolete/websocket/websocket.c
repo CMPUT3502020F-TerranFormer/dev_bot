@@ -1,6 +1,6 @@
 /* This example uses deprecated interfaces: global websocket callbacks.
    They have been superseeded by URI specific callbacks.
-   See examples/embedded_c for an up to date example.
+   See bot/embedded_c for an up to date example.
    */
 
 #include <stdio.h>
@@ -21,7 +21,7 @@ main(void)
 	const char *server_options[] = {
 	    /* document_root: The path to the test function websock.htm */
 	    "document_root",
-	    "../../examples/websocket",
+	    "../../bot/websocket",
 
 	    /* port: use http standard to match websocket url in websock.htm:
 	       ws://127.0.0.1/MyWebSock  */

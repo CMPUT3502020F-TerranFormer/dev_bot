@@ -137,7 +137,7 @@ if (NOT APPLE)
 endif ()
 
 if (BUILD_API_EXAMPLES)
-    add_subdirectory("examples")
+    add_subdirectory("bot")
 endif ()
 
 if (BUILD_API_TESTS)

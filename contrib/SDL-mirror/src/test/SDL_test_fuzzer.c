@@ -177,7 +177,7 @@ SDLTest_RandomIntegerInRange(Sint32 pMin, Sint32 pMax)
 
 /* !
  * Generates a unsigned boundary value between the given boundaries.
- * Boundary values are inclusive. See the examples below.
+ * Boundary values are inclusive. See the bot below.
  * If boundary2 < boundary1, the values are swapped.
  * If boundary1 == boundary2, value of boundary1 will be returned
  *
@@ -307,7 +307,7 @@ SDLTest_RandomUint64BoundaryValue(Uint64 boundary1, Uint64 boundary2, SDL_bool v
 
 /* !
  * Generates a signed boundary value between the given boundaries.
- * Boundary values are inclusive. See the examples below.
+ * Boundary values are inclusive. See the bot below.
  * If boundary2 < boundary1, the values are swapped.
  * If boundary1 == boundary2, value of boundary1 will be returned
  *

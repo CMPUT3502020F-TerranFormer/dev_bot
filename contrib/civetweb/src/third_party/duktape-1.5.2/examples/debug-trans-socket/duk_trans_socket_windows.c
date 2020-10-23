@@ -12,8 +12,8 @@
  *          /DDUK_OPT_DEBUGGER_SUPPORT /DDUK_OPT_INTERRUPT_COUNTER
  *          /DDUK_CMDLINE_DEBUGGER_SUPPORT
  *          /Iexamples\debug-trans-socket /Isrc
- *          examples\cmdline\duk_cmdline.c
- *          examples\debug-trans-socket\duk_trans_socket_windows.c
+ *          bot\cmdline\duk_cmdline.c
+ *          bot\debug-trans-socket\duk_trans_socket_windows.c
  *          src\duktape.c
  *
  *  With MinGW:
@@ -22,8 +22,8 @@
  *          -DDUK_OPT_DEBUGGER_SUPPORT -DDUK_OPT_INTERRUPT_COUNTER \
  *          -DDUK_CMDLINE_DEBUGGER_SUPPORT \
  *          -Iexamples/debug-trans-socket -Isrc \
- *          examples/cmdline/duk_cmdline.c \
- *          examples/debug-trans-socket/duk_trans_socket_windows.c \
+ *          bot/cmdline/duk_cmdline.c \
+ *          bot/debug-trans-socket/duk_trans_socket_windows.c \
  *          src/duktape.c -lm -lws2_32
  */
 

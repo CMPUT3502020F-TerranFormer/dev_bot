@@ -107,7 +107,7 @@ class DescriptorDatabase(object):
     """Finds the file descriptor proto containing the specified symbol.
 
     The symbol should be a fully qualified name including the file descriptor's
-    package and any containing messages. Some examples:
+    package and any containing messages. Some bot:
 
     'some.package.name.Message'
     'some.package.name.Message.NestedEnum'

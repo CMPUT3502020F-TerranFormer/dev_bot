@@ -382,7 +382,7 @@ class Descriptor(_NestedDescriptorBase):
 # for example:
 #   * If you specify a repeated field, you should not be allowed
 #     to specify a default value.
-#   * [Other examples here as needed].
+#   * [Other bot here as needed].
 #
 # TODO(robinson): for this and other *Descriptor classes, we
 # might also want to lock things down aggressively (e.g.,

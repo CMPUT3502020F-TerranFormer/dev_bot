@@ -2,7 +2,7 @@
 //  ReleaseProject.xcconfig
 //
 //  These are Release Configuration project settings for the gtest framework
-//  and examples. It is set in the "Based On:" dropdown in the "Project" info
+//  and bot. It is set in the "Based On:" dropdown in the "Project" info
 //  dialog.
 //  This file is based on the Xcode Configuration files in:
 //  https://github.com/google/google-toolbox-for-mac

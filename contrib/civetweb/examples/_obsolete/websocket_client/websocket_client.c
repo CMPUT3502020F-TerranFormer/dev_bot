@@ -5,9 +5,9 @@
 * License http://opensource.org/licenses/mit-license.php MIT License
 */
 
-/* This example is superseeded by other examples, and no longer 
+/* This example is superseeded by other bot, and no longer
  * actively maintained.
- * See examples/embedded_c for an up to date example.
+ * See bot/embedded_c for an up to date example.
  */
 
 // Simple example program on how to use websocket client embedded C interface.

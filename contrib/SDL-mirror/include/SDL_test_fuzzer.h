@@ -147,12 +147,12 @@ double SDLTest_RandomDouble(void);
 
 /**
  * Returns a random boundary value for Uint8 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomUint8BoundaryValue(10, 20, SDL_TRUE) returns 10, 11, 19 or 20
  * RandomUint8BoundaryValue(1, 20, SDL_FALSE) returns 0 or 21
  * RandomUint8BoundaryValue(0, 99, SDL_FALSE) returns 100
@@ -168,12 +168,12 @@ Uint8 SDLTest_RandomUint8BoundaryValue(Uint8 boundary1, Uint8 boundary2, SDL_boo
 
 /**
  * Returns a random boundary value for Uint16 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomUint16BoundaryValue(10, 20, SDL_TRUE) returns 10, 11, 19 or 20
  * RandomUint16BoundaryValue(1, 20, SDL_FALSE) returns 0 or 21
  * RandomUint16BoundaryValue(0, 99, SDL_FALSE) returns 100
@@ -189,12 +189,12 @@ Uint16 SDLTest_RandomUint16BoundaryValue(Uint16 boundary1, Uint16 boundary2, SDL
 
 /**
  * Returns a random boundary value for Uint32 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomUint32BoundaryValue(10, 20, SDL_TRUE) returns 10, 11, 19 or 20
  * RandomUint32BoundaryValue(1, 20, SDL_FALSE) returns 0 or 21
  * RandomUint32BoundaryValue(0, 99, SDL_FALSE) returns 100
@@ -210,12 +210,12 @@ Uint32 SDLTest_RandomUint32BoundaryValue(Uint32 boundary1, Uint32 boundary2, SDL
 
 /**
  * Returns a random boundary value for Uint64 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomUint64BoundaryValue(10, 20, SDL_TRUE) returns 10, 11, 19 or 20
  * RandomUint64BoundaryValue(1, 20, SDL_FALSE) returns 0 or 21
  * RandomUint64BoundaryValue(0, 99, SDL_FALSE) returns 100
@@ -231,12 +231,12 @@ Uint64 SDLTest_RandomUint64BoundaryValue(Uint64 boundary1, Uint64 boundary2, SDL
 
 /**
  * Returns a random boundary value for Sint8 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomSint8BoundaryValue(-10, 20, SDL_TRUE) returns -11, -10, 19 or 20
  * RandomSint8BoundaryValue(-100, -10, SDL_FALSE) returns -101 or -9
  * RandomSint8BoundaryValue(SINT8_MIN, 99, SDL_FALSE) returns 100
@@ -253,12 +253,12 @@ Sint8 SDLTest_RandomSint8BoundaryValue(Sint8 boundary1, Sint8 boundary2, SDL_boo
 
 /**
  * Returns a random boundary value for Sint16 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomSint16BoundaryValue(-10, 20, SDL_TRUE) returns -11, -10, 19 or 20
  * RandomSint16BoundaryValue(-100, -10, SDL_FALSE) returns -101 or -9
  * RandomSint16BoundaryValue(SINT16_MIN, 99, SDL_FALSE) returns 100
@@ -274,12 +274,12 @@ Sint16 SDLTest_RandomSint16BoundaryValue(Sint16 boundary1, Sint16 boundary2, SDL
 
 /**
  * Returns a random boundary value for Sint32 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomSint32BoundaryValue(-10, 20, SDL_TRUE) returns -11, -10, 19 or 20
  * RandomSint32BoundaryValue(-100, -10, SDL_FALSE) returns -101 or -9
  * RandomSint32BoundaryValue(SINT32_MIN, 99, SDL_FALSE) returns 100
@@ -295,12 +295,12 @@ Sint32 SDLTest_RandomSint32BoundaryValue(Sint32 boundary1, Sint32 boundary2, SDL
 
 /**
  * Returns a random boundary value for Sint64 within the given boundaries.
- * Boundaries are inclusive, see the usage examples below. If validDomain
+ * Boundaries are inclusive, see the usage bot below. If validDomain
  * is true, the function will only return valid boundaries, otherwise non-valid
  * boundaries are also possible.
  * If boundary1 > boundary2, the values are swapped
  *
- * Usage examples:
+ * Usage bot:
  * RandomSint64BoundaryValue(-10, 20, SDL_TRUE) returns -11, -10, 19 or 20
  * RandomSint64BoundaryValue(-100, -10, SDL_FALSE) returns -101 or -9
  * RandomSint64BoundaryValue(SINT64_MIN, 99, SDL_FALSE) returns 100

@@ -698,7 +698,7 @@ mg_get_ports(const struct mg_context *ctx, size_t size, int *ports, int *ssl);
  * This function allows an application to manipulate .htpasswd files on the
  * fly by adding, deleting and changing user records. This is one of the
  * several ways of implementing authentication on the server side. For another,
- * cookie-based way please refer to the examples/chat in the source tree.
+ * cookie-based way please refer to the bot/chat in the source tree.
  *
  * Parameter:
  *   passwords_file_name: Path and name of a file storing multiple passwords

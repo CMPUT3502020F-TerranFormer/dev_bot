@@ -3207,7 +3207,7 @@ DUK_LOCAL duk_bool_t duk__handle_put_array_length(duk_hthread *thr, duk_hobject 
  *  Unlike Ecmascript primitive which returns nothing, returns 1 to indicate
  *  success and 0 to indicate failure (assuming throw is not set).
  *
- *  This is an extremely tricky function.  Some examples:
+ *  This is an extremely tricky function.  Some bot:
  *
  *    * Currently a decref may trigger a GC, which may compact an object's
  *      property allocation.  Consequently, any entry indices (e_idx) will

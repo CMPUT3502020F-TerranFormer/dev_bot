@@ -3,7 +3,7 @@
  *
  *  Provides a "received dvalue" callback for a fully parsed dvalue (user
  *  code frees dvalue) and a "cooperate" callback for e.g. UI integration.
- *  There are a few other callbacks.  See test.c for usage examples.
+ *  There are a few other callbacks.  See test.c for usage bot.
  *
  *  This transport implementation is not multithreaded which means that:
  *

@@ -1,6 +1,6 @@
 /* This example uses deprecated interfaces: global websocket callbacks.
    They have been superseeded by URI specific callbacks.
-   See examples/embedded_c for an up to date example.
+   See bot/embedded_c for an up to date example.
    */
 
 #include <assert.h>

@@ -9,7 +9,7 @@ if(protobuf_VERBOSE)
 endif()
 include(ExternalProject)
 
-# Internal utility function: Create a custom target representing a build of examples with custom options.
+# Internal utility function: Create a custom target representing a build of bot with custom options.
 function(add_examples_build NAME)
 
   ExternalProject_Add(${NAME}
@@ -27,7 +27,7 @@ function(add_examples_build NAME)
   set_property(TARGET ${NAME} PROPERTY EXCLUDE_FROM_ALL TRUE)
 endfunction()
 
-# Add examples as an external project.
+# Add bot as an external project.
 # sub_directory cannot be used because the find_package(protobuf) call would cause failures with redefined targets.
 add_examples_build(examples "-Dprotobuf_DIR:PATH=${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_CMAKEDIR}")
 add_dependencies(examples libprotobuf protoc)

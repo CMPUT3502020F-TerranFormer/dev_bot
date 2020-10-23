@@ -1,5 +1,5 @@
 /*
- *  'ajduk' specific functionality, examples for low memory techniques
+ *  'ajduk' specific functionality, bot for low memory techniques
  */
 
 #ifdef DUK_CMDLINE_AJSHEAP

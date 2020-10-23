@@ -422,7 +422,7 @@ class Action {
 // Then the user creates the polymorphic action using
 // MakePolymorphicAction(object) where object has type FooAction.  See
 // the definition of Return(void) and SetArgumentPointee<N>(value) for
-// complete examples.
+// complete bot.
 template <typename Impl>
 class PolymorphicAction {
  public:

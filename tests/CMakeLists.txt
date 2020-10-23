@@ -1,5 +1,5 @@
 include_directories("../include")
-include_directories("../examples/common")
+include_directories("../bot/common")
 include_directories("${PROJECT_BINARY_DIR}/generated")
 
 file(GLOB test_SRC

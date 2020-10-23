@@ -28,27 +28,29 @@ public:
     /**
      * Virtual Destructor
      */
-    virtual ~TF_Agent();
+    virtual ~TF_Agent() {
+
+    }
 
     /**
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
-    virtual void step(sc2::GameInfo gi);
+    virtual void step(const sc2::GameInfo &gi) = 0;
 
     /**
      * Cross agent communication
      * Add a task to the task_queue
      * @param t Task
      */
-    virtual void addTask(Task t);
+    virtual void addTask(Task t) = 0;
 
     /**
      * Cross agent communication
      * Assign a TF_unit to the agent
      * @param u TF_unit
      */
-    virtual void addUnit(TF_unit u);
+    virtual void addUnit(TF_unit u) = 0;
 
 private:
     std::vector<TF_unit> units;

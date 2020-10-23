@@ -3188,7 +3188,7 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** parameters.  See "[query parameters with special meaning to SQLite]" for
 ** additional information.
 **
-** [[URI filename examples]] <h3>URI filename examples</h3>
+** [[URI filename bot]] <h3>URI filename bot</h3>
 **
 ** <table border="1" align=center cellpadding=5>
 ** <tr><th> URI filenames <th> Results

@@ -4,7 +4,7 @@ include_directories("common")
 # Setup MSVC parallelized builds
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
-# Included for all examples
+# Included for all bot
 include_directories(SYSTEM "${PROJECT_BINARY_DIR}/generated")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/contrib/SDL-mirror/include")
 
@@ -35,7 +35,7 @@ endfunction ()
 example_project(bot_simple "bot_simple.cc")
 example_project(echo_actions "echo_actions.cc")
 example_project(replay "replay.cc")
-example_project(tutorial "tutorial.cc")
+example_project(tutorial "bot.cc")
 example_project(bot_micro "bot_micro.cc")
 example_project(bot_mp "bot_mp.cc")
 example_project(intermediate_bot "intermediate_bot.cc")

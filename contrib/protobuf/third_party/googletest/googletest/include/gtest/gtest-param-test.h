@@ -144,7 +144,7 @@ INSTANTIATE_TEST_SUITE_P(AnotherInstantiationName, FooTest, ValuesIn(pets));
 // reflection API before RUN_ALL_TESTS() is executed.
 //
 // You can see samples/sample7_unittest.cc and samples/sample8_unittest.cc
-// for more examples.
+// for more bot.
 //
 // In the future, we plan to publish the API for defining new parameter
 // generators. But for now this interface remains part of the internal
