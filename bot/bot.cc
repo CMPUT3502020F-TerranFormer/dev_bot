@@ -18,7 +18,10 @@ public:
     virtual void OnStep() final {
         // get game info
         const GameInfo &game_info = Observation()->GetGameInfo();
+        defence.step(game_info);
         attack.step(game_info);
+        resource.step(game_info);
+        scout.step(game_info);
     }
 
     virtual void OnUnitIdle(const Unit *unit) final {
