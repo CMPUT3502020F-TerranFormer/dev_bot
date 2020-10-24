@@ -11,27 +11,22 @@
  * Possible action that can be taken
  * More can be added
  */
-enum {BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER};
+enum AgentActions {BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER};
 
 /**
  * for who_it_belong
  */
-enum {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
+enum TargetAgent {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
 
 /**
  * Task Class
  *
  */
 struct Task {
-    /**
-     * enum {BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE};
-     */
-    unsigned short action;
 
-    /**
-     * enum {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
-     */
-    unsigned short who_it_belong;
+    enum AgentActions action;
+
+    enum TargetAgent target;
 
     /**
      * from 0 - 10
@@ -47,6 +42,15 @@ struct Task {
     sc2::Point2D position;
 
     int count;
+
+    /**
+    * Compares the priority of tasks;
+    * implemented for priority queue
+     */
+    bool operator<(const Task& r) const
+    {
+        return priority < r.priority;
+    }
 };
 
 
