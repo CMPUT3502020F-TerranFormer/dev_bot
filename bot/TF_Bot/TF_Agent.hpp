@@ -8,16 +8,40 @@
 #include <sc2api/sc2_api.h>
 
 #include <vector>
-#include <queue>
+#include "threadsafe_priority_queue.h"
+#include "TS_Queue.hpp"
 
 #include "Task.hpp"
 
 /**
  * Data class for a unit belonging to a agent
  */
-class TF_unit {
+struct TF_unit {
+    TF_unit(sc2::UNIT_TYPEID type, sc2::Tag tag)
+        : type(type), tag(tag)
+    {}
     sc2::UNIT_TYPEID type;
     sc2::Tag tag;
+};
+
+/**
+ * Data classes for unit commands, we do not use queued_commands
+ */
+
+struct BasicCommand // data for a command to itself
+{
+    const sc2::Unit* unit;
+    sc2::AbilityID ability;
+};
+
+struct MoveCommand : public BasicCommand // data for a command to move
+{
+    const sc2::Point2D& point;
+};
+
+struct AttackCommand : public BasicCommand // data for a command to attack
+{
+    const sc2::Unit* target;
 };
 
 /**
@@ -52,11 +76,61 @@ public:
      */
     virtual void addUnit(TF_unit u) = 0;
 
+    /**
+     * Called when a building is completed
+     * @param u The constructed unit
+     */
+    virtual void buildingConstructionComplete(const sc2::Unit* u) = 0;
 
+    /**
+     * Update the units associated with the agent
+     * When OnUnitDestroyed() is called by the Agent,
+     * this function is called, and if the unit deleted
+     * is contained by units, then remove it
+     * @param u pointer to unit destroyed
+     */
+    void unitDestroyed(const sc2::Unit *u)
+    {
+        // get UnitTag, then compare with TF_unit.tag
+        for (auto it = units.cbegin(); it != units.cend(); ++it)
+        {
+            if (it->tag == u->tag)
+            {
+                it = units.erase(it);
+                return;
+            }
+        }
+    }
 
-private:
+    /**
+     * Communication with the bot
+     * Create a TF_unit for the agent
+     * @param u A pointer to the unit created
+     */
+    virtual void unitCreated(const sc2::Unit* u) = 0;
+
+    /**
+     * Called from the bot when an enemy unit enters vision from FOW
+     * @param u The unit entering vision
+     */
+    virtual void unitEnterVision(const sc2::Unit* u) = 0;
+
+    /**
+     * Called from the bot when a unit is idle
+     * @param u The unit idleing
+     */
+    virtual void unitIdle(const sc2::Unit* u) = 0;
+
+    /**
+     * Called from the bot when an upgrade is completed
+     * @param uid The UpgradeID of the upgrade
+     */
+    virtual void upgradeCompleted(sc2::UpgradeID uid) = 0;
+
+protected:
     std::vector<TF_unit> units;
-    std::priority_queue<Task> task_queue;
+    threadsafe_priority_queue<Task> task_queue;
+    TSqueue<BasicCommand> *action_queue;
 };
 
 #endif //CPP_SC2_TF_AGENT_HPP
