@@ -2,8 +2,8 @@
 // Created by Carter Sabadash on 2020-10-23
 //
 
-#ifndef THREADSAFE_PRIORITY_QUEUE_HPP
-#define THREADSAFE_PRIORITY_QUEUE_HPP
+#ifndef THREADSAFE_PRIORITY_QUEUE
+#define THREADSAFE_PRIORITY_QUEUE
 
 #include <queue>
 #include <mutex>
