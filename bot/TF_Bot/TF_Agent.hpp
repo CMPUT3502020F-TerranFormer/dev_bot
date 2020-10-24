@@ -54,7 +54,7 @@ public:
 
 
 
-protected:
+private:
     std::vector<TF_unit> units;
     std::priority_queue<Task> task_queue;
 };
