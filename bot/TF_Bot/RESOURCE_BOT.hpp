@@ -18,6 +18,13 @@ public:
     }
 
     /**
+     * Intializes units with the initial scv's and command center
+     */
+    void gameStart(const sc2::GameInfo& gi) {
+
+    }
+
+    /**
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
