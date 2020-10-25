@@ -30,17 +30,26 @@ struct TF_unit {
 
 struct BasicCommand // data for a command to itself
 {
+    BasicCommand(const sc2::Unit* u, sc2::AbilityID aid)
+        : unit(u), ability(aid)
+    {}
     const sc2::Unit* unit;
     sc2::AbilityID ability;
 };
 
 struct MoveCommand : public BasicCommand // data for a command to move
 {
+    MoveCommand(const sc2::Unit* u, sc2::AbilityID aid, const sc2::Point2D& p)
+        : BasicCommand(u, aid), point(p)
+    {}
     const sc2::Point2D& point;
 };
 
 struct AttackCommand : public BasicCommand // data for a command to attack
 {
+    AttackCommand(const sc2::Unit* u, sc2::AbilityID aid, const sc2::Unit* target)
+        : BasicCommand(u, aid), target(target)
+    {}
     const sc2::Unit* target;
 };
 
@@ -49,12 +58,13 @@ struct AttackCommand : public BasicCommand // data for a command to attack
  */
 class TF_Agent {
 public:
+    TF_Agent(TSqueue<BasicCommand>* a_queue) 
+        : action_queue(a_queue)
+    {}
     /**
      * Virtual Destructor
      */
-    virtual ~TF_Agent() {
-
-    }
+    virtual ~TF_Agent() {}
 
     /**
      * Do actions base on game info provided
@@ -89,18 +99,7 @@ public:
      * is contained by units, then remove it
      * @param u pointer to unit destroyed
      */
-    void unitDestroyed(const sc2::Unit *u)
-    {
-        // get UnitTag, then compare with TF_unit.tag
-        for (auto it = units.cbegin(); it != units.cend(); ++it)
-        {
-            if (it->tag == u->tag)
-            {
-                it = units.erase(it);
-                return;
-            }
-        }
-    }
+    virtual void unitDestroyed(const sc2::Unit* u) = 0;
 
     /**
      * Communication with the bot

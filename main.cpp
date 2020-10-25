@@ -4,8 +4,8 @@
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
 
-#include "TF_Bot.h"
-#include "LadderInterface.h"
+#include "TF_Bot.hpp"
+#include "LadderInterface.hpp"
 
 
 int main(int argc, char *argv[]) {

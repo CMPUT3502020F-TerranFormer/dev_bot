@@ -44,8 +44,8 @@ struct Task {
     int count;
 
     /**
-    * Compares the priority of tasks;
-    * implemented for priority queue
+     * Compares the priority of tasks;
+     * implemented for priority queue
      */
     bool operator<(const Task& r) const
     {
