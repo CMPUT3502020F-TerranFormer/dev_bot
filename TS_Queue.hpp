@@ -31,7 +31,7 @@ public:
 	const T& dequeue()
 	{
 		std::lock_guard<std::mutex> lock(mutex);
-		while (Base::empty()) {}
+		assert(!Base::empty())
 		T& front = Base::front();
 		Base::pop();
 		return front;
