@@ -17,7 +17,7 @@ public:
     /**
      * Intializes units with the initial scv's and command center
      */
-    void gameStart(const sc2::GameInfo& gi);
+    void gameStart(const sc2::Units units);
 
     /**
      * Do actions base on game info provided

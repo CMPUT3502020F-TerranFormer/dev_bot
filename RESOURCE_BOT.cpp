@@ -16,7 +16,7 @@ RESOURCE_BOT::~RESOURCE_BOT() {
 }
 
 
-void RESOURCE_BOT::gameStart(const sc2::GameInfo& gi) {
+void RESOURCE_BOT::gameStart(const sc2::Units units) {
     // get the initial scv's, command center -> add to units
 
     // ideally we want 66 scv's, 22 for each active command center
@@ -29,7 +29,6 @@ void RESOURCE_BOT::gameStart(const sc2::GameInfo& gi) {
     // scv's, mineral, vespene, and when resources run out (or almost)
     // build a new command center (or fly?) until there are no spaces 
     // for bases left on map
-
 }
 
 void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
@@ -96,6 +95,9 @@ void RESOURCE_BOT::unitIdle(const sc2::Unit* u) {
     // then we need to determine a policy (Mules, supply drops)
         // only scan on request
 
+    if (u->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        action_queue->push(BasicCommand(SELF, u, sc2::ABILITY_ID::TRAIN_SCV));
+    }
 }
 
 void RESOURCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
