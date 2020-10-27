@@ -5,46 +5,49 @@
 #ifndef PCHAT_TSQUEUE_HPP
 #define PCHAT_TSQUEUE_HPP
 
-#include <vector>
 #include <mutex>
+#include <queue>
+#include <cassert>
 
-template<class T>
-class TSqueue {
+template <typename T>
+using TSQBase = std::queue<T>;
+
+/**
+ * Implements the basic methods for a threadsafe queue
+ */
+template <typename T>
+class TSqueue : private TSQBase<T>
+{
+	std::mutex mutex;
 public:
-    TSqueue() = default;
+	using Base = TSQBase<T>;
 
-    ~TSqueue() = default;
+	bool empty()
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		return Base::empty();
+	}
 
-    void enqueue(T t) {
-        EQlock.lock();
-        queue.push_back(std::move(t));
-        EQlock.unlock();
-    }
+	const T& dequeue()
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		while (Base::empty()) {}
+		T& front = Base::front();
+		Base::pop();
+		return front;
+	}
 
-    T dequeue() {
-        DQlock.lock();
-        while (isEmpty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        }
+	void push(T& x)
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		Base::push(x);
+	}
 
-        T temp = queue.at(0);
-        queue.erase(queue.begin());
-        DQlock.unlock();
-        return temp;
-    }
-
-    bool isEmpty() {
-        return queue.empty();
-    }
-
-    int size() {
-        return queue.size();
-    }
-
-private:
-    std::vector<T> queue;
-    std::mutex EQlock;
-    std::mutex DQlock;
+	void push(const T& x)
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		Base::push(x);
+	}
 };
 
 

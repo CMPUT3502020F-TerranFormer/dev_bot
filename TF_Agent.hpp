@@ -25,31 +25,25 @@ struct TF_unit {
 };
 
 /**
- * Data classes for unit commands, we do not use queued_commands
+ * Generic data class for unit commands
+ * SELF -> UnitCommand(unit, aid)
+ * MOVE -> UnitCommand(unit, aid, point)
+ * TARGET -> UnitCommand(unit, aid, target)
  */
+
+enum CommandType {SELF, POINT, TARGET};
 
 struct BasicCommand // data for a command to itself
 {
-    BasicCommand(const sc2::Unit* u, sc2::AbilityID aid)
-        : unit(u), ability(aid)
+    BasicCommand(CommandType type, const sc2::Unit* u, sc2::AbilityID aid,
+        const sc2::Point2D& point = sc2::Point2D(0, 0), const sc2::Unit* target = nullptr)
+        : t(type), unit(u), aid(aid), point(point), target(target)
     {}
+
+    CommandType t;
     const sc2::Unit* unit;
-    sc2::AbilityID ability;
-};
-
-struct MoveCommand : public BasicCommand // data for a command to move
-{
-    MoveCommand(const sc2::Unit* u, sc2::AbilityID aid, const sc2::Point2D& p)
-        : BasicCommand(u, aid), point(p)
-    {}
+    sc2::AbilityID aid;
     const sc2::Point2D& point;
-};
-
-struct AttackCommand : public BasicCommand // data for a command to attack
-{
-    AttackCommand(const sc2::Unit* u, sc2::AbilityID aid, const sc2::Unit* target)
-        : BasicCommand(u, aid), target(target)
-    {}
     const sc2::Unit* target;
 };
 

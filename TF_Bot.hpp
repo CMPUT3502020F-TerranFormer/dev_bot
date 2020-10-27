@@ -49,4 +49,5 @@ private:
     DEFENCE_BOT* defence;
     RESOURCE_BOT* resource;
     SCOUT_BOT* scout;
+    TSqueue<BasicCommand>* a_queue; // where actions from the bots go
 };

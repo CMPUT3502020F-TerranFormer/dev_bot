@@ -4,7 +4,7 @@
 #include "TF_Bot.hpp"
 
 TF_Bot::TF_Bot() {
-    TSqueue<BasicCommand>* a_queue = new TSqueue<BasicCommand>;
+    a_queue = new TSqueue<BasicCommand>;
     attack = new ATTACK_BOT(a_queue);
     defence = new DEFENCE_BOT(a_queue);
     scout = new SCOUT_BOT(a_queue);
@@ -24,7 +24,7 @@ void TF_Bot::OnGameStart() {
     resource->setAgents(defence, attack, scout);
     scout->setAgents(defence, attack, resource);
 
-    resource->gameStart(Observation()->GetGameInfo());
+    resource->gameStart(Observation()->GetUnits());
 }
 
 void TF_Bot::OnGameEnd() {
@@ -38,6 +38,18 @@ void TF_Bot::OnStep() {
     attack->step(game_info);
     resource->step(game_info);
     scout->step(game_info);
+
+
+    while (!a_queue->empty()) {
+        BasicCommand command = a_queue->dequeue();
+        switch (command.t) {
+        case CommandType::SELF: Actions()->UnitCommand(command.unit, command.aid);
+            break;
+        case CommandType::POINT: Actions()->UnitCommand(command.unit, command.aid, command.point);
+            break;
+        case CommandType::TARGET: Actions()->UnitCommand(command.unit, command.aid, command.target);
+        }
+    }
 }
 
 void TF_Bot::OnUnitDestroyed(const Unit* unit) {

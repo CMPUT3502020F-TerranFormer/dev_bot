@@ -29,10 +29,10 @@ public:
 		return Base::empty();
 	}
 
-	const T& top() const
+	const T& top()
 	{
 		std::lock_guard<std::mutex> lock(mutex);
-		assert(!empty());
+		while (empty()) {}
 		return Base::top();
 	}
 
@@ -51,8 +51,7 @@ public:
 	void pop()
 	{
 		std::lock_guard<std::mutex> lock(mutex);
-		assert(!empty());
-		Base::pop();
+		if (!empty()) { Base::pop(); }
 	}
 };
 
