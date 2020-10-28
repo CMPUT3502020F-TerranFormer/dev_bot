@@ -16,7 +16,7 @@ RESOURCE_BOT::~RESOURCE_BOT() {
 }
 
 
-void RESOURCE_BOT::gameStart(const sc2::Units units) {
+void RESOURCE_BOT::gameStart(const sc2::Units alliedUnits) {
     // get the initial scv's, command center -> add to units
 
     // ideally we want 66 scv's, 22 for each active command center
@@ -26,9 +26,13 @@ void RESOURCE_BOT::gameStart(const sc2::Units units) {
     // 3 bases -> 3 bases maximally mining resources at any given time
     // the other will just sit?
     // so perhaps keep track of 3 "Bases" which track the command center,
-    // scv's, mineral, vespene, and when resources run out (or almost)
-    // build a new command center (or fly?) until there are no spaces 
+    // scv's, mineral, vespene, and when resources run out (or almost) lift off or
+    // build a new command center (if converting to fortress) until there are no spaces 
     // for bases left on map
+
+    for (auto& p : alliedUnits) {
+        units.push_back(TF_unit(p->unit_type.ToType(), p->tag));
+    }
 }
 
 void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
@@ -69,7 +73,9 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
     }
 
     // if unit was an scv make a new one
-    // if it was a command center (with available resources) make a new one
+    // if it was a command center (with available resources) make a new one (this shouldn't happen)
+    // this may not actually happen because at this point defense will likely be ordering units, and 
+    // by this point should have moved the command center
 }
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
@@ -79,6 +85,22 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
 
     // if scv, add to "Base"
     // if command center, add to "Base" which will choose what to do
+    for (auto it = training.cbegin(); it != training.cend(); ++it) {
+        if (it->second == u->unit_type) {
+            TF_unit unit(u->unit_type, u->tag);
+            switch (it->first) {
+            case SCOUT_AGENT: scout->addUnit(unit);
+                break;
+            case DEFENCE_AGENT: defence->addUnit(unit);
+                break;
+            case ATTACK_AGENT: attack->addUnit(unit);
+                break;
+            case RESOURCE_AGENT: addUnit(unit);
+                break;
+            }
+            return;
+        }
+    }
 
 }
 
@@ -101,8 +123,7 @@ void RESOURCE_BOT::unitIdle(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
-    // perhaps to notify other agents?
-    // also so we know when to upgrade command centers
+    // as resources, we are specifically paying attention to ___ so ___
 
 }
 

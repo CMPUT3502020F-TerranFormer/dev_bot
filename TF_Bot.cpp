@@ -28,7 +28,10 @@ void TF_Bot::OnGameStart() {
 }
 
 void TF_Bot::OnGameEnd() {
-
+    delete attack;
+    delete defence;
+    delete scout;
+    delete resource;
 }
 
 void TF_Bot::OnStep() {
@@ -54,24 +57,36 @@ void TF_Bot::OnStep() {
 
 void TF_Bot::OnUnitDestroyed(const Unit* unit) {
     resource->unitDestroyed(unit);
+    defence->unitDestroyed(unit);
+    attack->unitDestroyed(unit);
+    scout->unitDestroyed(unit);
 }
 
 void TF_Bot::OnUnitCreated(const Unit* unit) {
-    resource->unitCreated(unit);
+    resource->unitCreated(unit); // resource will call addUnit() to the appropriate agent
 }
 
 void TF_Bot::OnUnitIdle(const Unit* unit) {
     resource->unitIdle(unit);
+    attack->unitIdle(unit);
+    defence->unitIdle(unit);
+    scout->unitIdle(unit);
 }
 
 void TF_Bot::OnUpgradeCompleted(UpgradeID uid) {
-
+    resource->upgradeCompleted(uid);
+    attack->upgradeCompleted(uid);
+    defence->upgradeCompleted(uid);
+    scout->upgradeCompleted(uid);
 }
 
 void TF_Bot::OnBuildingConstructionComplete(const Unit* unit) {
-
+    resource->buildingConstructionComplete(unit);
+    attack->buildingConstructionComplete(unit);
+    defence->buildingConstructionComplete(unit);
+    scout->buildingConstructionComplete(unit);
 }
 
 void TF_Bot::OnUnitEnterVision(const Unit* unit) {
-
+    defence->unitEnterVision(unit); // defence will command other agents
 }

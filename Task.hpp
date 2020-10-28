@@ -34,6 +34,8 @@ struct Task {
      * attack agent have max of 8
      * resource agent have max of 6
      * scout agent have max of 6
+     * ** actions that do not comsume resources should have a priority of 11
+     * ** that way they are guaranteed to be seen
      */
     unsigned short priority;
 

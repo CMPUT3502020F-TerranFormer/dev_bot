@@ -17,7 +17,7 @@ public:
     /**
      * Intializes units with the initial scv's and command center
      */
-    void gameStart(const sc2::Units units);
+    void gameStart(const sc2::Units alliedUnits);
 
     /**
      * Do actions base on game info provided
@@ -78,9 +78,12 @@ public:
     void setAgents(const TF_Agent* defenceb, const TF_Agent* attackb, const TF_Agent* scoutb);
 
 private:
-    const TF_Agent *defence;
-    const TF_Agent *attack;
-    const TF_Agent *scout;
+    TF_Agent *defence;
+    TF_Agent *attack;
+    TF_Agent *scout;
+    std::vector<std::pair<TargetAgent, sc2::UNIT_TYPEID>> training;
+    int scv_count = 0;
+
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

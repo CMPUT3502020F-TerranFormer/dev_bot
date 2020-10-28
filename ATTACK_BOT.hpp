@@ -75,9 +75,9 @@ public:
     void setAgents(const TF_Agent* defenceb, const TF_Agent* resourceb, const TF_Agent* scoutb);
 
 private:
-    const TF_Agent *defence;
-    const TF_Agent *resource;
-    const TF_Agent *scout;
+    TF_Agent *defence;
+    TF_Agent *resource;
+    TF_Agent *scout;
 };
 
 #endif //CPP_SC2_ATTACK_BOT_HPP
