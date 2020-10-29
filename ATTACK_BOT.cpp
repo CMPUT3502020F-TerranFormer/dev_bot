@@ -59,7 +59,7 @@ void ATTACK_BOT::upgradeCompleted(sc2::UpgradeID uid) {
 
 }
 
-void ATTACK_BOT::setAgents(const TF_Agent* defenceb, const TF_Agent* resourceb, const TF_Agent* scoutb) {
+void ATTACK_BOT::setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* scoutb) {
     this->defence = defenceb;
     this->resource = resourceb;
     this->scout = scoutb;

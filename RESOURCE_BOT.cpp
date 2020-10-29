@@ -19,16 +19,7 @@ RESOURCE_BOT::~RESOURCE_BOT() {
 void RESOURCE_BOT::gameStart(const sc2::Units alliedUnits) {
     // get the initial scv's, command center -> add to units
 
-    // ideally we want 66 scv's, 22 for each active command center
-    // 3 for each vespene, 3 for each mineral field
-    // maybe a few extra for building, etc -> 70?
-
-    // 3 bases -> 3 bases maximally mining resources at any given time
-    // the other will just sit?
-    // so perhaps keep track of 3 "Bases" which track the command center,
-    // scv's, mineral, vespene, and when resources run out (or almost) lift off or
-    // build a new command center (if converting to fortress) until there are no spaces 
-    // for bases left on map
+    // organize into bases?
 
     for (auto& p : alliedUnits) {
         units.push_back(TF_unit(p->unit_type.ToType(), p->tag));
@@ -37,9 +28,22 @@ void RESOURCE_BOT::gameStart(const sc2::Units alliedUnits) {
 
 void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
     // actions to perform during a game step
-    // build supply depots, after the first 4 supply cost unit, try to keep 6 supply ahead
-    // remember that command centers also produce supple (?), so if building one, we can wait a bit
+    // build supply depots, try to keep 2/4/6 supply ahead (1/2/3+ command centers)
+    // change on completion of command center (they also produce supply)
+
     // complete as many tasks as possible with the given resources
+
+
+    // ideally we want 66 scv's, 22 for each active command center
+    // 3 for each vespene, 3 for each mineral field
+    // maybe a few extra for building, etc -> 70?
+
+    // 3 bases -> 3 bases maximally mining resources at any given time
+    // the other will just sit? (planetary fortress? defend buildings?)
+    // so perhaps keep track of 3 "Bases" which track the command center,
+    // scv's, mineral, vespene, and when resources run out (or almost) lift off or
+    // build a new command center (if converting to fortress) until there are no spaces 
+    // for bases left on map
 
     // check status of "Bases"
 
@@ -53,11 +57,13 @@ void RESOURCE_BOT::addTask(Task t) {
 
 void RESOURCE_BOT::addUnit(TF_unit u) {
     // add a unit to units
-
+    // need to figure out how to organize up to 3 mining bases and their scv's
+    units.push_back(u);
 }
 
 void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
     // notify agents when construction is complete (upon command center, possibly move scv's to it)
+    // ???
 
 }
 
@@ -67,21 +73,21 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
     {
         if (it->tag == u->tag)
         {
-            it = units.erase(it);
-            return;
+            units.erase(it);
+            break;
         }
     }
 
     // if unit was an scv make a new one
-    // if it was a command center (with available resources) make a new one (this shouldn't happen)
+    // if it was a command center (with available resources) make a new one (this shouldn't happen) ???
     // this may not actually happen because at this point defense will likely be ordering units, and 
-    // by this point should have moved the command center
+    // by this point should have moved the command center, at least push into queue
+    
 }
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
     // this is called when a unit is created --> add to appropriate agent
-    // (if different agents can ask for the same unit -> keep track)
-    // otherwise go by unit id
+    // keep track of the units agents have asked for
 
     // if scv, add to "Base"
     // if command center, add to "Base" which will choose what to do
@@ -98,6 +104,7 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
             case RESOURCE_AGENT: addUnit(unit);
                 break;
             }
+            training.erase(it);
             return;
         }
     }
@@ -117,8 +124,10 @@ void RESOURCE_BOT::unitIdle(const sc2::Unit* u) {
     // then we need to determine a policy (Mules, supply drops)
         // only scan on request
 
-    if (u->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-        action_queue->push(BasicCommand(SELF, u, sc2::ABILITY_ID::TRAIN_SCV));
+    switch (u->unit_type.ToType()) {
+    case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND: 
+        addTask(Task(TRAIN, RESOURCE_AGENT, 4, u, sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE));
+        break;
     }
 }
 
@@ -127,7 +136,7 @@ void RESOURCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
 
 }
 
-void RESOURCE_BOT::setAgents(const TF_Agent* defenceb, const TF_Agent* attackb, const TF_Agent* scoutb) {
+void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* scoutb) {
     this->defence = defenceb;
     this->attack = attackb;
     this->scout = scoutb;

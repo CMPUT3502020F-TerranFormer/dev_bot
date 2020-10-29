@@ -71,7 +71,7 @@ public:
      */
     void upgradeCompleted(sc2::UpgradeID uid) final;
 
-    void setAgents(const TF_Agent* defenceb, const TF_Agent* attackb, const TF_Agent* resourceb);
+    void setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* resourceb);
 
 private:
     TF_Agent *defence;
