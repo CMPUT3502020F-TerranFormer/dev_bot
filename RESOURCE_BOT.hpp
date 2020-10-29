@@ -9,7 +9,7 @@
  * REPAIR specifies the target unit
  * UPGRADE specifies the unit to be upgraded, AID specifies the upgrade
  * MOVE specifies the unit to be move, position to (should only be used by Defence to escort, or prevent them from being killed)
- * TRANSFER specifies the unit to be transfered
+ * TRANSFER specifies the unit to be transfered, or unit_type
  * 
  * This agent usually operates with priority 4-6, ensure that commands interfere minally
  */

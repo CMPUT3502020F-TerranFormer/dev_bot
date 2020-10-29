@@ -30,6 +30,8 @@ void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
     // actions to perform during a game step
     // build supply depots, try to keep 2/4/6 supply ahead (1/2/3+ command centers)
     // change on completion of command center (they also produce supply)
+    // for now build command centers at 16/36 scv's -> move to BaseManager
+    static int scv_count = 6; // initial amount of scv's
 
     // complete as many tasks as possible with the given resources
 
@@ -47,6 +49,25 @@ void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
 
     // check status of "Bases"
 
+    while (!task_queue.empty()) {
+        Task t = task_queue.top();
+        switch (t.action) {
+        case BUILD:
+            break;
+        case TRAIN:
+            break;
+        case REPAIR:
+            break;
+        case UPGRADE:
+            break;
+        case MOVE:
+            break;
+        case TRANSFER:
+            if (t.target == NULL) {}
+            else {}
+            break;
+        }
+    }
 
 }
 
@@ -126,7 +147,7 @@ void RESOURCE_BOT::unitIdle(const sc2::Unit* u) {
 
     switch (u->unit_type.ToType()) {
     case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND: 
-        addTask(Task(TRAIN, RESOURCE_AGENT, 4, u, sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE));
+        addTask(Task(TRAIN, RESOURCE_AGENT, 4, u->tag, sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE));
         break;
     }
 }
