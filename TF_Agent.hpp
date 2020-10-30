@@ -35,16 +35,16 @@ enum CommandType {SELF, POINT, TARGET};
 
 struct BasicCommand // data for a command to itself
 {
-    BasicCommand(CommandType type, const sc2::Unit* u, sc2::AbilityID aid,
-        const sc2::Point2D& point = sc2::Point2D(0, 0), const sc2::Unit* target = nullptr)
+    BasicCommand(CommandType type, const sc2::Tag u, sc2::AbilityID aid,
+        const sc2::Point2D& point = sc2::Point2D(0, 0), const sc2::Tag target = Tag())
         : t(type), unit(u), aid(aid), point(point), target(target)
     {}
 
     CommandType t;
-    const sc2::Unit* unit;
+    const sc2::Tag unit;
     sc2::AbilityID aid;
     const sc2::Point2D& point;
-    const sc2::Unit* target;
+    const sc2::Tag target;
 };
 
 /**

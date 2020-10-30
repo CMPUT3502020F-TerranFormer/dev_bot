@@ -45,12 +45,13 @@ void TF_Bot::OnStep() {
 
     while (!a_queue->empty()) {
         BasicCommand command = a_queue->dequeue();
+        const Unit* unit = Observation()->GetUnit(command.unit);
         switch (command.t) {
-        case CommandType::SELF: Actions()->UnitCommand(command.unit, command.aid);
+        case CommandType::SELF: Actions()->UnitCommand(unit, command.aid);
             break;
-        case CommandType::POINT: Actions()->UnitCommand(command.unit, command.aid, command.point);
+        case CommandType::POINT: Actions()->UnitCommand(unit, command.aid, command.point);
             break;
-        case CommandType::TARGET: Actions()->UnitCommand(command.unit, command.aid, command.target);
+        case CommandType::TARGET: Actions()->UnitCommand(unit, command.aid, Observation()->GetUnit(command.target));
         }
     }
 }
