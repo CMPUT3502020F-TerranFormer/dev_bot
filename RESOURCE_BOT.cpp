@@ -6,6 +6,7 @@
 RESOURCE_BOT::RESOURCE_BOT(TSqueue<BasicCommand>* a_queue)
     : TF_Agent(a_queue)
 {
+    baseManager = new BaseManager(&task_queue);
     defence = nullptr;
     attack = nullptr;
     scout = nullptr;
@@ -53,6 +54,8 @@ void RESOURCE_BOT::step(const sc2::GameInfo& gi) {
         Task t = task_queue.top();
         switch (t.action) {
         case BUILD:
+            //const sc2::Unit* u = baseManager->getFreeSCV();
+            //action_queue->push(BasicCommand())
             break;
         case TRAIN:
             break;

@@ -90,3 +90,20 @@ void TF_Bot::OnBuildingConstructionComplete(const Unit* unit) {
 void TF_Bot::OnUnitEnterVision(const Unit* unit) {
     defence->unitEnterVision(unit); // defence will command other agents
 }
+
+
+Units TF_Bot::GetUnits() const {
+    return Observation()->GetUnits();
+}
+
+Units TF_Bot::GetUnits(Unit::Alliance alliance, Filter filter = {}) const {
+    return Observation()->GetUnits(alliance, filter);
+}
+
+Units TF_Bot::GetUnits(Filter filter) const {
+    return Observation()->GetUnits(filter);
+}
+
+const Unit* TF_Bot::GetUnit(Tag tag) const {
+    return Observation()->GetUnit(tag);
+}

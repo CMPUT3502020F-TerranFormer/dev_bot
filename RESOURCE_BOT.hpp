@@ -4,7 +4,7 @@
 
 /*
  * The resource agent accepts tasks of type BUILD, TRAIN, REPAIR, UPGRADE, MOVE, TRANSFER
- * BUILD specifies the unit to be built, the position
+ * BUILD ability id for scv to build the structure, the position
  * TRAIN specifies the building to do the training, AID specifies the unit to make, count = 1, to train many, issue multiple tasks
  * REPAIR specifies the target unit
  * UPGRADE specifies the unit to be upgraded, AID specifies the upgrade
@@ -19,6 +19,7 @@
 
 #include "TF_Agent.hpp"
 #include "Task.hpp"
+#include "BaseManager.hpp"
 
 class RESOURCE_BOT final : public TF_Agent {
 public:
@@ -94,7 +95,7 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     std::vector<std::pair<SourceAgent, sc2::UNIT_TYPEID>> training;
-    int supply_float = 2; // 2/4/6 with 1/2/3+ command centers
+    BaseManager *baseManager;
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

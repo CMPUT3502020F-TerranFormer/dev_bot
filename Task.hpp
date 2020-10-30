@@ -44,7 +44,7 @@ struct Task {
      */
     unsigned short priority;
 
-    sc2::Tag target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter, use 0 for NULL
+    sc2::Tag target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use NULL)
     sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;
