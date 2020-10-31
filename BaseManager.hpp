@@ -10,6 +10,7 @@
 #include "threadsafe_priority_queue.h"
 #include <vector>
 #include "TF_unit.hpp"
+#include <iostream>
 
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
@@ -20,18 +21,29 @@
 using namespace sc2;
 
 struct Base {
+	Base() {
+		depleted = false;
+		transferring = false;
+	}
+
 	bool depleted; // true when resources are all depleted -> start transferring process
 	bool transferring; // in the process transferring from one location to another
 	TF_unit command;
+	// for now, just keep a vector of scv's
+	// and a vector of mineral/vespene units
+	std::vector<TF_unit> scvs;
+	std::vector<TF_unit> resources;
+
+	// ideally, later we want to maximize scv's/resource
 
 	bool buildNewCommand() { 
 		// true if more than half the resources units have been destroyed, and command is a planetary fortress
-
+		return false;
 	}
 
 	bool startTransfer() {
 		// start transfer process (move units if planetary; else move units + command) to new location
-
+		return false;
 	}
 
 };
@@ -41,13 +53,22 @@ public:
 	BaseManager(threadsafe_priority_queue<Task>* task_queue)
 		: task_queue(task_queue)
 	{
+		// template
 		scv_count = 0;
-
+		active_bases.push_back(Base());
 	}
 
 	void addUnit(const Unit* u) {
-		// template
-		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { ++scv_count;  }
+		// template, for now, there is one base
+		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_COMMANDCENTER) { 
+			active_bases.data()[0].command = TF_unit(UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag);
+			std::cout << "Add: " << "Command" << std::endl;
+		}
+		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) {
+			++scv_count;
+			active_bases.data()[0].scvs.push_back(TF_unit(UNIT_TYPEID::TERRAN_SCV, u->tag));
+			std::cout << "Add: " << "SCV" << std::endl;
+		}
 	}
 
 	void deleteUnit(const Unit* u) {
@@ -55,9 +76,10 @@ public:
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 	}
 
-	const Unit* getSCV(Point2D point = Point2D(0, 0)) {
+	const TF_unit getSCV(Point2D point = Point2D(0, 0)) {
 		// get's a free scv, or determines the best scv to use
-		return nullptr;
+		//template
+		return active_bases.data()[0].scvs.back();
 	}
 
 	void findResources(const Units units) {
@@ -75,7 +97,9 @@ public:
 			}
 			break;
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER:
+			std::cout << "IDLE: " << "Command";
 			if (scv_count <= 70) {
+				std::cout << "\t building scv" << std::endl;
 				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
 			}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND:

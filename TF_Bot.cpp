@@ -29,7 +29,9 @@ void TF_Bot::OnUnitDestroyed(const Unit* unit) {
 }
 
 void TF_Bot::OnUnitCreated(const Unit* unit) {
-
+    // template
+    baseManager->addUnit(unit);
+    resource_units.push_back(TF_unit(unit->unit_type, unit->tag));
 }
 
 void TF_Bot::OnUnitIdle(const Unit* unit) {

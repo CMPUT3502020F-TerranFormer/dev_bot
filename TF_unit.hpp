@@ -10,6 +10,7 @@
 using namespace sc2;
 
 struct TF_unit {
+    TF_unit() {}
     TF_unit(UNIT_TYPEID type, Tag tag)
         : type(type), tag(tag)
     {}
