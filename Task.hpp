@@ -28,16 +28,19 @@ struct Task {
         : action(action), source(source), priority(priority), ability_id(aid), position(point)
     {}
 
-    // TRAIN; can specify a specific unit to do the training (aid tells what unit), utype must be specified either way
+    /** TRAIN; can specify a specific unit to do the training (aid tells what unit), utype must be specified either way
+     * @param Action : TRAIN
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param aid: The AbilityID that will produce the required unit (eg. Train SCV)
+     * @param utype: The type of unit being produced (eg. scv)
+     * @param source_unit: The type of unit producing the unit (eg. Command Center)
+     * @param target:   The exact unit that will be used to produce the desired unit (not required)
+     *                  It is preferred to specify a target so that an action isn't interrupted when randomly choosing a unit
+     */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::ABILITY_ID aid, sc2::UNIT_TYPEID utype,
-        const sc2::Unit* target = nullptr)
-        : action(action), source(source), priority(priority), ability_id(aid), unit_typeid(utype), target(target)
-    {}
-
-    Task(enum AgentActions action, enum SourceAgent source, int priority, const sc2::Unit* target,
-        sc2::UNIT_TYPEID unit_typeid, sc2::ABILITY_ID aid, sc2::Point2D pos = sc2::Point2D(0, 0), int count = 1)
-        : action(action), source(source), priority(priority), target(target), unit_typeid(unit_typeid),
-        ability_id(aid), position(pos), count(count)
+        sc2::UNIT_TYPEID source_unit, const sc2::Unit* target = nullptr)
+        : action(action), source(source), priority(priority), ability_id(aid), unit_typeid(utype), source_unit(source_unit), target(target)
     {}
 
     enum AgentActions action;
@@ -59,6 +62,7 @@ struct Task {
     sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;
+    sc2::UNIT_TYPEID source_unit;
 
     int count;
 

@@ -1,9 +1,7 @@
 #include "TF_Bot.hpp"
 
 void TF_Bot::resourceGameStart(){
-    for (auto& p : Observation()->GetUnits()) {
-        baseManager->addUnit(p);
-    }
+    // units are added via UnitCreated at GameStart()
 }
 
 void TF_Bot::resourceStep() {
@@ -20,17 +18,47 @@ void TF_Bot::resourceStep() {
         buildSupplyDepot();
     }
 
+    // we don't want to remove tasks from queue if there are not enough resources to perform them
+    uint32_t available_minerals = Observation()->GetMinerals();
+    uint32_t available_vespene = Observation()->GetVespene();
 
-	while (!resource_queue.empty()) {
+    bool task_success = true; // we also want to stop when we don't have resources to complete any other tasks
+	while (!resource_queue.empty() && task_success) {
 		Task t = resource_queue.top();
-        const Unit* u = Observation()->GetUnit(t.target->tag);
 		switch (t.action) {
         case BUILD:
             //const sc2::Unit* u = baseManager->getFreeSCV();
             //action_queue->push(BasicCommand())
             break;
-        case TRAIN:
-            Actions()->UnitCommand(u, t.ability_id);
+        case TRAIN: {
+            /* This does not prevent multiple units from being produced at the same time */
+            // get the producing unit
+            sc2::Tag unit = getUnit(t);
+            if (unit == -1) { 
+                resource_queue.pop();
+                std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID) t.source_unit << " Source : " << t.source << std::endl;
+                break; 
+            }
+            
+            // check that we have enough resources to do ability
+            UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
+            if (ut.food_required > available_food
+                && ut.mineral_cost > available_minerals
+                && ut.vespene_cost > available_vespene)
+            {
+                task_success = false;
+                break;
+            }
+
+            Actions()->UnitCommand(Observation()->GetUnit(unit), t.ability_id, false);
+            
+            // update available resources
+            available_food -= ut.food_required;
+            available_minerals -= ut.mineral_cost;
+            available_vespene -= ut.vespene_cost;
+            resource_queue.pop();
+            break;
+        }
         case REPAIR:
             break;
         case UPGRADE:
@@ -40,15 +68,30 @@ void TF_Bot::resourceStep() {
         case TRANSFER:
             break;
         case ORBIT_SCOUT:
-            //baseManager.
+            //baseManager // orbital scan
             break;
+        default:
+            std::cerr << "RESOURCE Unrecognized Task: " << t.source << std::endl;
+            resource_queue.pop();
 		}
-        resource_queue.pop();
 	}
 }
 
 void TF_Bot::resourceIdle(const Unit* u) {
     baseManager->idleUnit(u);
+}
+
+sc2::Tag TF_Bot::getUnit(Task& t) {
+    if (t.target != nullptr) { return t.target->tag;  }
+    // otherwise use t.source_unit to get a unit of the same type, return nullptr if one does not exist
+
+    Units units = Observation()->GetUnits(Unit::Alliance::Self);
+    for (const auto& unit : units) {
+        if (unit->unit_type == t.source_unit) {
+            return unit->tag;
+        }
+    }
+    return -1; // overflow, max val; this will never occur naturally
 }
 
 void TF_Bot::buildSupplyDepot() {

@@ -94,23 +94,21 @@ public:
 			break;
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
 			if (scv_count <= 70) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u));
 			}
 			break;
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER:
-			std::cout << "IDLE: " << "Command";
 			if (scv_count <= 70) {
-				std::cout << "\t building scv" << std::endl;
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u));
 			}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
 			if (orbital_scan) {
-				task_queue->push(Task(ORBIT_SCOUT, RESOURCE_AGENT, 6, u, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, ABILITY_ID::EFFECT_SCAN));
+				//task_queue->push(Task(ORBIT_SCOUT, RESOURCE_AGENT, 6, u, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, ABILITY_ID::EFFECT_SCAN));
 				// figure out what the actual ABILITY_ID for orbital scan is
 				orbital_scan = false;
 			}
 			else if (scv_count <= 70) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
 			}
 			break;
 		}

@@ -12,6 +12,7 @@ TF_Bot::~TF_Bot() {
 }
 
 void TF_Bot::OnGameStart() {
+    // also need to get map name, enemy race -> create & store in TF_Bot variables
     resourceGameStart();
 }
 
