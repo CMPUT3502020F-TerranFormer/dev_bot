@@ -23,7 +23,7 @@ enum SourceAgent {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
  */
 struct Task {
     // see individual agent header files for instructions about what type of tasks they accept
-    Task(enum AgentActions action, enum SourceAgent source, unsigned short priority, sc2::Tag target,
+    Task(enum AgentActions action, enum SourceAgent source, unsigned short priority, sc2::Unit* target,
         sc2::UNIT_TYPEID unit_typeid, sc2::ABILITY_ID aid, sc2::Point2D pos = sc2::Point2D(), int count = 1)
         : action(action), source(source), priority(priority), target(target), unit_typeid(unit_typeid),
         ability_id(aid), position(pos), count(count)
@@ -44,7 +44,7 @@ struct Task {
      */
     unsigned short priority;
 
-    sc2::Tag target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use NULL)
+    sc2::Unit* target;              // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
     sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;

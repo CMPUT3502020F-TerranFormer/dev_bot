@@ -10,14 +10,23 @@
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
 #include <iostream>
+#include "threadsafe_priority_queue.h"
+#include <vector>
 
-#include "ATTACK_BOT.hpp"
-#include "DEFENCE_BOT.hpp"
-#include "RESOURCE_BOT.hpp"
-#include "SCOUT_BOT.hpp"
 #include "Task.hpp"
 
 using namespace sc2;
+
+/**
+ * Data class for a unit belonging to a agent
+ */
+struct TF_unit {
+    TF_unit(UNIT_TYPEID type, Tag tag)
+        : type(type), tag(tag)
+    {}
+    UNIT_TYPEID type;
+    Tag tag;
+};
 
 class TF_Bot : public Agent 
 {
@@ -45,9 +54,17 @@ public:
     virtual void OnUnitEnterVision(const Unit* unit) final;
 
 private:
-    ATTACK_BOT* attack;
-    DEFENCE_BOT* defence;
-    RESOURCE_BOT* resource;
-    SCOUT_BOT* scout;
-    TSqueue<BasicCommand>* a_queue; // where actions from the bots go
+    threadsafe_priority_queue<Task> resource_queue;
+    std::vector<TF_unit> resource_units;
+    threadsafe_priority_queue<Task> attack_queue;
+    std::vector<TF_unit> attack_units;
+    threadsafe_priority_queue<Task> scout_queue;
+    std::vector<TF_unit> scout_units;
+    threadsafe_priority_queue<Task> defence_queue;
+    std::vector<TF_unit> defence_units;
+
+    #include "resource.hpp"
+    #include "defence.hpp"
+    #include "attack.hpp"
+    #include "scout.hpp"
 };
