@@ -4,7 +4,7 @@
 #include "TF_Bot.hpp"
 
 TF_Bot::TF_Bot() {
-
+    baseManager = new BaseManager(&resource_queue);
 }
 
 TF_Bot::~TF_Bot() {
@@ -20,6 +20,7 @@ void TF_Bot::OnGameEnd() {
 }
 
 void TF_Bot::OnStep() {
+    resourceStep();
 
 }
 
@@ -32,6 +33,7 @@ void TF_Bot::OnUnitCreated(const Unit* unit) {
 }
 
 void TF_Bot::OnUnitIdle(const Unit* unit) {
+    resourceIdle(unit);
 
 }
 

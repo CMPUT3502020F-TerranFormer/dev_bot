@@ -1,32 +1,24 @@
 //
 // Created by Carter Sabadash on 2020-10-24
 //
-#pragma once
+#ifndef TF_BOT_HPP
+#define TF_BOT_HPP
 
-#include <sc2api/sc2_api.h>
 #include "sc2api/sc2_api.h"
 #include "sc2api/sc2_args.h"
 #include "sc2lib/sc2_lib.h"
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
-#include <iostream>
-#include "threadsafe_priority_queue.h"
-#include <vector>
 
+#include <iostream>
+#include <vector>
+#include "threadsafe_priority_queue.h"
+
+#include "BaseManager.hpp"
+#include "TF_unit.hpp"
 #include "Task.hpp"
 
 using namespace sc2;
-
-/**
- * Data class for a unit belonging to a agent
- */
-struct TF_unit {
-    TF_unit(UNIT_TYPEID type, Tag tag)
-        : type(type), tag(tag)
-    {}
-    UNIT_TYPEID type;
-    Tag tag;
-};
 
 class TF_Bot : public Agent 
 {
@@ -68,3 +60,5 @@ private:
     #include "attack.hpp"
     #include "scout.hpp"
 };
+
+#endif
