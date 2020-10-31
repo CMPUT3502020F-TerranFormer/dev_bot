@@ -14,8 +14,9 @@
 
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
- * Currently it's purpose is to try and have 3 Bases which are always mining resources
- * Issues to fix: When we can't build anymore command centers/move them
+ * Currently this will build 3 command centers and mine all resources -> must implement vespene & center building
+ * Issues to fix: building >3 centers; moving scv's When we can't build anymore command centers/move them
+ * Associating scv's with a specific resource
  */
 
 using namespace sc2;
