@@ -49,6 +49,18 @@ struct Task {
         : action(action), source(source), priority(priority), ability_id(aid), unit_typeid(utype), source_unit(source_unit), target(target)
     {}
 
+    /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
+     * @param Action : TRAIN
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param target : The unit that will be ordered to move
+     * @param aid: The ABILITY_ID of the type of movement
+     * @param position: The position to move to
+     */
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, sc2::Point2D position)
+        : action(action), source(source), priority(priority), ability_id(aid), position(position)
+    {}
+
     enum AgentActions action;
 
     enum SourceAgent source;
@@ -64,7 +76,7 @@ struct Task {
      */
     int priority;
 
-    sc2::Tag target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
+    sc2::Tag target;                // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
     sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;

@@ -75,20 +75,32 @@ void TF_Bot::resourceStep() {
             resource_queue.pop();
             break;
         }
-        case REPAIR:
+        case REPAIR: {
+            // determine cost of repair then implement similar to TRAIN
             break;
-        case UPGRADE:
+        }
+        case UPGRADE: {
+            // determine cost of upgrade, then implement similar to TRAIN
             break;
-        case MOVE:
+        }
+        case MOVE: {
+            Actions()->UnitCommand(Observation()->GetUnit(t.target), t.ability_id, t.position);
+            resource_queue.pop();
             break;
-        case TRANSFER:
+        }
+        case TRANSFER: {
+            // Transfer a unit to another agent, and remove from resource unit list
+            // find in our unit list
             break;
-        case ORBIT_SCOUT:
+        }
+        case ORBIT_SCOUT: {
             //baseManager // orbital scan
             break;
-        default:
+        }
+        default: {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << std::endl;
             resource_queue.pop();
+        }
 		}
 	}
 }
