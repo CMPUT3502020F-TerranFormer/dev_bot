@@ -33,7 +33,8 @@ struct Base {
 	// for now, just keep a vector of scv's
 	// and a vector of mineral/vespene units
 	std::vector<TF_unit> scvs;
-	std::vector<TF_unit> resources;
+	std::vector<TF_unit> minerals;
+	std::vector<TF_unit> vespene;
 
 	// ideally, later we want to maximize scv's/resource
 
@@ -51,8 +52,8 @@ struct Base {
 
 class BaseManager {
 public:
-	BaseManager(threadsafe_priority_queue<Task>* t_queue)
-		: task_queue(t_queue)
+	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs)
+		: task_queue(t_queue), observation(obs)
 	{
 		// template
 		scv_count = 0;
@@ -79,6 +80,7 @@ public:
 
 	const TF_unit getSCV(Point2D point = Point2D(0, 0)) {
 		// get's a free scv, or determines the best scv to use
+		// prefers scv's that are mining resources or idle
 		//template
 		return active_bases.data()[0].scvs.back();
 	}
@@ -89,6 +91,7 @@ public:
 
 	void idleUnit(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
+		// template
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV:
 			break;
@@ -128,6 +131,7 @@ public:
 
 private:
 	threadsafe_priority_queue<Task>* task_queue;
+	const ObservationInterface* observation;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
 	int scv_count; // aim for 70
