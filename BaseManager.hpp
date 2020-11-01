@@ -85,10 +85,6 @@ public:
 		return active_bases.data()[0].scvs.back();
 	}
 
-	void findResources(const Units units) {
-		// must be called after a command center is added, updates with the surrounding resources
-	}
-
 	void idleUnit(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
 		// template
@@ -135,7 +131,11 @@ private:
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
 	int scv_count; // aim for 70
-	bool orbital_scan; // when an orbital scan is requested, then it 
+	bool orbital_scan; // when an orbital scan is requested, then it
+
+	void findResources(const Units units) {
+		// must be called after a command center is added, updates with the surrounding resources
+	}
 };
 
 #endif
