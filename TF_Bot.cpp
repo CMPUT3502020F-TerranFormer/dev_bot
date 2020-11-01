@@ -13,6 +13,7 @@ TF_Bot::~TF_Bot() {
 
 void TF_Bot::OnGameStart() {
     // also need to get map name, enemy race -> create & store in TF_Bot variables
+
     resourceGameStart();
 }
 
@@ -26,7 +27,7 @@ void TF_Bot::OnStep() {
 }
 
 void TF_Bot::OnUnitDestroyed(const Unit* unit) {
-
+    baseManager->deleteUnit(unit);
 }
 
 void TF_Bot::OnUnitCreated(const Unit* unit) {

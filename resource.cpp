@@ -26,9 +26,14 @@ void TF_Bot::resourceStep() {
 	while (!resource_queue.empty() && task_success) {
 		Task t = resource_queue.top();
 		switch (t.action) {
+        case HARVEST: {
+            Actions()->UnitCommand(Observation()->GetUnit(t.self), t.ability_id, Observation()->GetUnit(t.target));
+            resource_queue.pop();
+            break;
+        }
         case BUILD: {
             /* This will prevent multiple identical building from being produced at the same time
-               Identical units will be removed from the queue */
+               unless specifically allowed. Identical units will be removed from the queue */
             // check that we have enough resources to do build unit
             UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (ut.food_required > available_food
@@ -38,7 +43,7 @@ void TF_Bot::resourceStep() {
                 task_success = false;
                 break;
             }
-            if (buildStructure(t.ability_id, t.position)) { // if building succeeded
+            if (buildStructure(t.ability_id, t.position, t.target)) { // if building succeeded
                 // update available resources
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
@@ -132,20 +137,30 @@ void TF_Bot::buildSupplyDepot() {
     buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
 
-bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point) {
-    // checks that a unit of the same type is not being built
+bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+    // checks that a unit of the same type is not being built (can change this later)
     for (const auto& unit : Observation()->GetUnits(Unit::Alliance::Self)) {
         for (const auto& order : unit->orders) {
-            if (order.ability_id == ABILITY_ID::BUILD_SUPPLYDEPOT) {
+            if (order.ability_id == ability_to_build_structure
+                && ability_to_build_structure != ABILITY_ID::BUILD_REFINERY) { // exclude Vespene refinery
                 return false;
             }
         }
     }
 
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
-    if (Query()->Placement(ability_to_build_structure, point)) {
-        Actions()->UnitCommand(scv, ability_to_build_structure, point);
-        return true;
+    if (target != -1) { 
+        const Unit* base;
+        base = Observation()->GetUnit(target);
+        if (Query()->Placement(ability_to_build_structure, point, base)) {
+            Actions()->UnitCommand(scv, ability_to_build_structure, base);
+            return true;
+        }
+    } else {
+        if (Query()->Placement(ability_to_build_structure, point)) {
+            Actions()->UnitCommand(scv, ability_to_build_structure, point);
+            return true;
+        }
     }
     return false;
 }

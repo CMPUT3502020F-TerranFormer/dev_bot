@@ -11,7 +11,7 @@
  * Possible action that can be taken
  * More can be added
  */
-enum AgentActions {BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER};
+enum AgentActions {HARVEST, BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER};
 
 /**
  * the source agent
@@ -22,6 +22,17 @@ enum SourceAgent {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
  * Task Class
  */
 struct Task {
+    /**HARVEST - RESOURCES -- for internal use of resources
+     * @param action: HARVEST
+     * @param priority: priority -> 11+
+     * @param source_unit: The scv
+     * @param aid: The ability id
+     * @param target: The mineral field/refinery
+     */
+    Task(enum AgentActions action, int priority, sc2::Tag source, sc2::ABILITY_ID aid, sc2::Tag target)
+        : action(action), priority(priority), self(source), ability_id(aid), target(target)
+    {}
+
     /** BUILD - RESOURCES; 
      * @param Action : BUILD
      * @param source : The source agent
@@ -29,9 +40,10 @@ struct Task {
      * @param utype: The UNIT_TYPEID of the unit to build
      * @param aid: The ability id for an scv to produce the structure
      * @param point: The point to place the structure; The task will be removed if it cannot be placed
+     * @param target: The unit to build a structure on (ie. building refineries); not always required
      */
-    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point)
-        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point)
+    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point, sc2::Tag target = -1)
+        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point), target(target)
     {}
 
     /** TRAIN - RESOURCES; can specify a specific unit to do the training (aid tells what unit to train), utype must be specified either way
@@ -92,6 +104,7 @@ struct Task {
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;
     sc2::UNIT_TYPEID source_unit;
+    sc2::Tag self;
 
     int count;
 
