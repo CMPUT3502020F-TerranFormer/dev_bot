@@ -26,10 +26,27 @@ void TF_Bot::resourceStep() {
 	while (!resource_queue.empty() && task_success) {
 		Task t = resource_queue.top();
 		switch (t.action) {
-        case BUILD:
-            //const sc2::Unit* u = baseManager->getFreeSCV();
-            //action_queue->push(BasicCommand())
+        case BUILD: {
+            /* This will prevent multiple identical building from being produced at the same time
+               Identical units will be removed from the queue */
+            // check that we have enough resources to do build unit
+            UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            if (ut.food_required > available_food
+                && ut.mineral_cost > available_minerals
+                && ut.vespene_cost > available_vespene)
+            {
+                task_success = false;
+                break;
+            }
+            if (buildStructure(t.ability_id, t.position)) { // if building succeeded
+                // update available resources
+                available_food -= ut.food_required;
+                available_minerals -= ut.mineral_cost;
+                available_vespene -= ut.vespene_cost;
+            }
+            resource_queue.pop();
             break;
+        }
         case TRAIN: {
             /* This does not prevent multiple units from being produced at the same time */
             // get the producing unit
@@ -99,13 +116,6 @@ void TF_Bot::buildSupplyDepot() {
     // find a space where a supply depot can be build, then buildStructure
     // for now, choose a (semi)-random point, in the future, have a policy to choose the point
 
-    for (const auto& unit : Observation()->GetUnits(Unit::Alliance::Self)) {
-        for (const auto& order : unit->orders) {
-            if (order.ability_id == ABILITY_ID::BUILD_SUPPLYDEPOT) {
-                return;
-            }
-        }
-    }
     Point2D point;
     while (!Query()->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) {
         point = Observation()->GetUnit(baseManager->getSCV().tag)->pos;
@@ -115,6 +125,15 @@ void TF_Bot::buildSupplyDepot() {
 }
 
 bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point) {
+    // checks that a unit of the same type is not being built
+    for (const auto& unit : Observation()->GetUnits(Unit::Alliance::Self)) {
+        for (const auto& order : unit->orders) {
+            if (order.ability_id == ABILITY_ID::BUILD_SUPPLYDEPOT) {
+                return false;
+            }
+        }
+    }
+
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
     if (Query()->Placement(ability_to_build_structure, point)) {
         Actions()->UnitCommand(scv, ability_to_build_structure, point);

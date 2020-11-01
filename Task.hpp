@@ -22,13 +22,19 @@ enum SourceAgent {DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT};
  * Task Class
  */
 struct Task {
-    // see individual agent header files for instructions about what type of tasks they accept
-    // BUILD
-    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::ABILITY_ID aid, sc2::Point2D point)
-        : action(action), source(source), priority(priority), ability_id(aid), position(point)
+    /** BUILD - RESOURCES; 
+     * @param Action : BUILD
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param utype: The UNIT_TYPEID of the unit to build
+     * @param aid: The ability id for an scv to produce the structure
+     * @param point: The point to place the structure; The task will be removed if it cannot be placed
+     */
+    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point)
+        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point)
     {}
 
-    /** TRAIN; can specify a specific unit to do the training (aid tells what unit), utype must be specified either way
+    /** TRAIN - RESOURCES; can specify a specific unit to do the training (aid tells what unit to train), utype must be specified either way
      * @param Action : TRAIN
      * @param source : The source agent
      * @param priority: The priority
