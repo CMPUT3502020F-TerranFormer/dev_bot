@@ -76,7 +76,17 @@ void TF_Bot::resourceStep() {
             break;
         }
         case REPAIR: {
-            // determine cost of repair then implement similar to TRAIN
+            // will repair unit anyway even if there is not enough resources
+            // resource cost = %health lost * build cost
+            const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
+            const Unit* u = Observation()->GetUnit(t.target);
+            Actions()->UnitCommand(scv, t.ability_id, u);
+
+            // update resources
+            UnitTypeData ut = Observation()->GetUnitTypeData()[u->unit_type];
+            float lost_health = 1.0f - (u->health / u->health_max);
+            available_minerals -= ut.mineral_cost * lost_health;
+            available_vespene -= ut.vespene_cost * lost_health;
             break;
         }
         case UPGRADE: {

@@ -35,7 +35,7 @@ struct Task {
     {}
 
     /** TRAIN - RESOURCES; can specify a specific unit to do the training (aid tells what unit to train), utype must be specified either way
-     * @param Action : TRAIN
+     * @param action : TRAIN
      * @param source : The source agent
      * @param priority: The priority
      * @param aid: The AbilityID that will produce the required unit (eg. Train SCV)
@@ -49,10 +49,21 @@ struct Task {
         : action(action), source(source), priority(priority), ability_id(aid), unit_typeid(utype), source_unit(source_unit), target(target)
     {}
 
-    /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
-     * @param Action : TRAIN
-     * @param source : The source agent
+    /** REPAIR - RESOURCES; specify which unit needs repairing -- it should be in a safe location
+     * @param action: REPAIR
+     * @param source: The source agent
      * @param priority: The priority
+     * @param target: The unit to repair
+     * @param aid: The ABILITY_ID of the repair type that needs to be performed
+     */
+    Task(enum AgentActions, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid)
+        : action(action), source(source), priority(priority), target(target), ability_id(aid)
+    {}
+
+    /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
+     * @param Action : MOVE
+     * @param source : The source agent
+     * @param priority: The priority (should probably be > 10)
      * @param target : The unit that will be ordered to move
      * @param aid: The ABILITY_ID of the type of movement
      * @param position: The position to move to
