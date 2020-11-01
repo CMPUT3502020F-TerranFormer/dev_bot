@@ -45,7 +45,7 @@ struct Task {
      *                  It is preferred to specify a target so that an action isn't interrupted when randomly choosing a unit
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::ABILITY_ID aid, sc2::UNIT_TYPEID utype,
-        sc2::UNIT_TYPEID source_unit, const sc2::Unit* target = nullptr)
+        sc2::UNIT_TYPEID source_unit, sc2::Tag target = -1)
         : action(action), source(source), priority(priority), ability_id(aid), unit_typeid(utype), source_unit(source_unit), target(target)
     {}
 
@@ -64,7 +64,7 @@ struct Task {
      */
     int priority;
 
-    const sc2::Unit* target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
+    sc2::Tag target;        // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
     sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;

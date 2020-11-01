@@ -30,7 +30,7 @@ void TF_Bot::resourceStep() {
             /* This will prevent multiple identical building from being produced at the same time
                Identical units will be removed from the queue */
             // check that we have enough resources to do build unit
-            UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (ut.food_required > available_food
                 && ut.mineral_cost > available_minerals
                 && ut.vespene_cost > available_vespene)
@@ -50,8 +50,7 @@ void TF_Bot::resourceStep() {
         case TRAIN: {
             /* This does not prevent multiple units from being produced at the same time */
             // get the producing unit
-            sc2::Tag unit = getUnit(t);
-            if (unit == -1) { 
+            if (t.target == -1) { 
                 resource_queue.pop();
                 std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID) t.source_unit << " Source : " << t.source << std::endl;
                 break; 
@@ -67,7 +66,7 @@ void TF_Bot::resourceStep() {
                 break;
             }
 
-            Actions()->UnitCommand(Observation()->GetUnit(unit), t.ability_id, false);
+            Actions()->UnitCommand(Observation()->GetUnit(t.target), t.ability_id, false);
             
             // update available resources
             available_food -= ut.food_required;
@@ -96,19 +95,6 @@ void TF_Bot::resourceStep() {
 
 void TF_Bot::resourceIdle(const Unit* u) {
     baseManager->idleUnit(u);
-}
-
-sc2::Tag TF_Bot::getUnit(Task& t) {
-    if (t.target != nullptr) { return t.target->tag;  }
-    // otherwise use t.source_unit to get a unit of the same type, return nullptr if one does not exist
-
-    Units units = Observation()->GetUnits(Unit::Alliance::Self);
-    for (const auto& unit : units) {
-        if (unit->unit_type == t.source_unit) {
-            return unit->tag;
-        }
-    }
-    return -1; // overflow, max val; this will never occur naturally
 }
 
 void TF_Bot::buildSupplyDepot() {

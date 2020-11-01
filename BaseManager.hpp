@@ -51,8 +51,8 @@ struct Base {
 
 class BaseManager {
 public:
-	BaseManager(threadsafe_priority_queue<Task>* task_queue)
-		: task_queue(task_queue)
+	BaseManager(threadsafe_priority_queue<Task>* t_queue)
+		: task_queue(t_queue)
 	{
 		// template
 		scv_count = 0;
@@ -63,7 +63,7 @@ public:
 		// template, for now, there is one base
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_COMMANDCENTER) { 
 			active_bases.data()[0].command = TF_unit(UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag);
-			std::cout << "Add: " << "Command" << std::endl;
+			std::cout << "Add: " << "Command Center" << std::endl;
 		}
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) {
 			++scv_count;
@@ -92,27 +92,31 @@ public:
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV:
 			break;
-		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
+		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
 			if (scv_count <= 70) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
 			}
 			break;
-		case UNIT_TYPEID::TERRAN_COMMANDCENTER:
+		}
+		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= 70) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
-		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
+			break;
+		}
+		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
 			if (orbital_scan) {
 				//task_queue->push(Task(ORBIT_SCOUT, RESOURCE_AGENT, 6, u, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, ABILITY_ID::EFFECT_SCAN));
 				// figure out what the actual ABILITY_ID for orbital scan is
 				orbital_scan = false;
 			}
 			else if (scv_count <= 70) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			break;
 		}
 	}
+}
 
 	int getSupplyFloat() {
 		// try to keep 2/4/6 supply ahead (1/2/3+ command centers)
