@@ -39,10 +39,10 @@ struct Task {
      * @param priority: The priority
      * @param utype: The UNIT_TYPEID of the unit to build
      * @param aid: The ability id for an scv to produce the structure
-     * @param point: The point to place the structure; The task will be removed if it cannot be placed
+     * @param point: The point to place the structure; The task will be removed if it cannot be placed (Either this or the target is required)
      * @param target: The unit to build a structure on (ie. building refineries); not always required
      */
-    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point, sc2::Tag target = -1)
+    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point = sc2::Point2D(), sc2::Tag target = -1)
         : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point), target(target)
     {}
 
