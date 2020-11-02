@@ -2,6 +2,7 @@
 
 void TF_Bot::resourceGameStart(){
     // units are added via UnitCreated at GameStart()
+    std::cout << Observation()->GetStartLocation().x << "|" << Observation()->GetStartLocation().y << std::endl;
 }
 
 void TF_Bot::resourceStep() {

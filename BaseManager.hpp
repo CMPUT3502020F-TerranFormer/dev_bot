@@ -13,13 +13,10 @@
 
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
- * Currently this will build 3 command centers and mine all resources -> must implement vespene & center building
- * Issues to fix: building >3 centers; moving scv's When we can't build anymore command centers/move them
+ * Currently this will build 3 command centers and mine all resources -> must implement command center building
+ * Issues to fix: build another command center
  * Associating scv's with a specific resource
  */
-
-// these are for CactusValleyLE, for testing purposes; I've only included the first 4 base locations for now (x, y)
-static const std::pair<int, int> BASE_LOCATIONS[] = { std::pair<int, int>(156, 32), std::pair<int, int>(124, 28), std::pair<int, int>(136, 56), std::pair<int, int>(96, 32) };
 using namespace sc2;
 
 struct Base {
@@ -111,15 +108,11 @@ public:
 		// then choose one following a placement policy (for now, look at the map editor for coords of closes placement to resources, then go through and use the first non-used one
 		for (auto& base : active_bases) {
 			if (base.buildNewCommand() || scv_count == 20 || scv_count == 40) {
-				for (auto& point : BASE_LOCATIONS) {
-					bool used = false;
-					for (auto& command : active_bases) {
-						if (command.location == Point2D(point.first, point.second)) { used = true; }
-					}
-					if (!used) {
-						task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
-						return;
-					}
+				// build a new command center, all current bases are saturated, for now, don't worry about deleted spots
+				int base = active_bases.size() + isolated_bases.size();
+				if (base <= 4) { // just try to build a new base -- need to get a good location first...
+					
+					return;
 				}
 			}
 		}
@@ -128,17 +121,17 @@ public:
 	void assignSCV(const Unit* u) {
 		for (auto& p : active_bases) { // saturate bases with scv's
 			if (p.command.tag == -1) { return; }
-			const Unit* base = observation->GetUnit(p.command.tag);
-			if (base->assigned_harvesters < base->ideal_harvesters) {
-				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, p.minerals.back().tag));
-				return;
-			}
-			// if minerals are saturated, make sure refineries are built
-			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-				ABILITY_ID::BUILD_REFINERY, p.vespene.front().tag));
-			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-				ABILITY_ID::BUILD_REFINERY, p.vespene.back().tag));
 			try {
+				const Unit* base = observation->GetUnit(p.command.tag);
+				if (base->assigned_harvesters < base->ideal_harvesters) {
+					task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, p.minerals.back().tag));
+					return;
+				}
+				// if minerals are saturated, make sure refineries are built
+				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+					ABILITY_ID::BUILD_REFINERY, p.vespene.front().tag));
+				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+					ABILITY_ID::BUILD_REFINERY, p.vespene.back().tag));
 				Units vespene = observation->GetUnits(IsVespeneRefinery());
 				for (auto& v : vespene) {
 					if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
@@ -149,9 +142,8 @@ public:
 					}
 				}
 			}
-			catch (std::exception e) {} // no forseeable reason this would happen, but...
+			catch (std::exception e) {} // right now, only occurs when there are no bases left...
 		}
-		// build a new command center
 	}
 
 	void deleteUnit(const Unit* u) {
@@ -210,9 +202,9 @@ public:
 	}
 
 	int getSupplyFloat() {
-		// try to keep 2/4/6 supply ahead (1/2/3+ command centers)
+		// try to keep 3/4/6 supply ahead (1/2/3+ command centers)
 		int command_centers = isolated_bases.size() + active_bases.size();
-		if (command_centers == 1) { return 2; }
+		if (command_centers == 1) { return 3; }
 		else if (command_centers == 2) { return 4; }
 		else { return 6; }
 	}
@@ -233,6 +225,7 @@ private:
 			}
 		}
 	};
+
 	struct IsVespeneRefinery {
 		bool operator() (const Unit& u) {
 			switch (u.unit_type.ToType()) {
@@ -241,5 +234,29 @@ private:
 			}
 		}
 	};
+
+	struct IsCommandCenter {
+		bool operator() (const Unit& u) {
+			switch (u.unit_type.ToType()) {
+			case UNIT_TYPEID::TERRAN_COMMANDCENTER: return true;
+			case UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING: return true;
+			case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: return true;
+			case UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING: return true;
+			case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: return true;
+			default: return false;
+			}
+		}
+	};
+
+	struct IsUnit {
+		IsUnit(UNIT_TYPEID id)
+			: uid(id) {}
+		UNIT_TYPEID uid;
+		bool operator() (const Unit* u) {
+			if (u->unit_type == uid) { return true; }
+			return false;
+		}
+	};
+
 };
 #endif
