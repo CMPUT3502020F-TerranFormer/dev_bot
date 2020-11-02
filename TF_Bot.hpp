@@ -46,19 +46,11 @@ public:
     virtual void OnUnitEnterVision(const Unit* unit) final;
 
 private:
-    threadsafe_priority_queue<Task> resource_queue;
-    std::vector<TF_unit> resource_units;
-    threadsafe_priority_queue<Task> attack_queue;
-    std::vector<TF_unit> attack_units;
-    threadsafe_priority_queue<Task> scout_queue;
-    std::vector<TF_unit> scout_units;
-    threadsafe_priority_queue<Task> defence_queue;
-    std::vector<TF_unit> defence_units;
-
     #include "resource.hpp"
     #include "defence.hpp"
     #include "attack.hpp"
     #include "scout.hpp"
+    #include "utility.hpp"
 };
 
 #endif
