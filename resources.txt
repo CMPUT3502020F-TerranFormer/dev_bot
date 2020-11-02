@@ -1,0 +1,26 @@
+Information about SCII, unit's gameplay strategy, etc.
+https://starcraft.fandom.com/wiki/Lift_Off
+https://liquipedia.net/starcraft2/Lift_off
+https://starcraft.fandom.com/wiki/SCV_(StarCraft_II)
+https://starcraft.fandom.com/wiki/Mobile_utility_lunar_excavator
+https://starcraft.fandom.com/wiki/Command_center
+https://starcraft.fandom.com/wiki/Orbital_command
+
+
+
+Things we are concerned with in resources (does, but we don't care about)
+Command Centers produce scvs, Load SCV, Lift Off, (builds into planetary fortress or orbital command)
+Planetary Fortress produces scvs, Load SCV, 
+Orbital Command produces scvs, (Scanner Sweep), Calldown MULE, Calldown Supply, Lift Off
+
+So scv's:
+-> All scv's should be built at first 3 command centers / 
+-> prioritize building at immediate command center -> near planetary fortress -> near orbital command
+	(if buildling because one died, if in a group, same priority, if alone, immediate command center)
+-> Do not produce across groups (travel danger)
+-> Must request escort when moving from planetary fortress/orbital command to new map area (ie CactusValley;
+	there are a few "groups" where centers should be built) (say, distance <= ??)
+
+-> so, have a list of all units
+-> Have a list of 3 current bases (actively mining resources)
+-> the three current bases will have all the logic about which scv's go where, when to build / move location, etc)
