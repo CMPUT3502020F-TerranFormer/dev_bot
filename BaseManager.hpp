@@ -1,6 +1,5 @@
 #ifndef BASEMANAGER_HPP
 #define BASEMANAGER_HPP
-
 //
 // Created by Carter Sabadash October 29
 //
@@ -19,89 +18,48 @@
  * Associating scv's with a specific resource
  */
 
+// these are for CactusValleyLE, for testing purposes; I've only included the first 4 base locations for now (x, y)
+static const std::pair<int, int> BASE_LOCATIONS[] = { std::pair<int, int>(156, 32), std::pair<int, int>(124, 28), std::pair<int, int>(136, 56), std::pair<int, int>(96, 32) };
 using namespace sc2;
 
 struct Base {
-	Base() {
-		depleted = false;
-		transferring = false;
-	}
+	TF_unit NoUnit = TF_unit((UNIT_TYPEID) 0, (Tag) -1);
 
-	bool depleted; // true when resources are all depleted -> start transferring process
-	bool transferring; // in the process transferring from one location to another
+	Base() {}
 	TF_unit command;
 	Point2D location;
 
-	// for now, just keep a vector of scv's
-	// and a vector of mineral/vespene units
 	std::vector<TF_unit> scvs;
 	std::vector<TF_unit> minerals;
-	std::vector<TF_unit> vespene; // also need to store refineries
-
-	// ideally, later we want to maximize scv's/resource
+	std::vector<TF_unit> vespene;
 
 	void findResources(const Units units) {
 		// must be called after a command center is added, updates with the surrounding resources
 		for (auto& p : units) {
-			if ((p->unit_type == UNIT_TYPEID::NEUTRAL_MINERALFIELD
-				|| p->unit_type == UNIT_TYPEID::NEUTRAL_MINERALFIELD750)
-				&& DistanceSquared2D(location, p->pos) < 400) { // just add minerals close to command center
+			if (p->unit_type == UNIT_TYPEID::NEUTRAL_MINERALFIELD
+				&& DistanceSquared2D(location, p->pos) < 225) { // just add minerals close to command center
 				minerals.push_back(TF_unit(p->unit_type, p->tag));
 			}
 			if (p->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER
-				&& DistanceSquared2D(location, p->pos) < 400) {
+				&& DistanceSquared2D(location, p->pos) < 225) {
 				vespene.push_back(TF_unit(p->unit_type, p->tag));
 			}
 		}
 	}
 
-	bool buildNewCommand() { 
+	bool buildNewCommand() {
 		// true if more than half the resources units have been destroyed, and command is a planetary fortress
+		if (command.type == UNIT_TYPEID::TERRAN_PLANETARYFORTRESS) {
+			if ((vespene.size() + minerals.size()) < 5) { return true; }
+		}
 		return false;
 	}
 
 	bool startTransfer() {
 		// start transfer process (move units if planetary; else move units + command) to new location
+		// implement this later
 		return false;
 	}
-
-	void unitIdle(const Unit* u, const ObservationInterface* o, threadsafe_priority_queue<Task>* task_queue) {
-		// template; this is poorly done and doesn't really work because scv's auto mine minerals --> that also need to be fixed
-		// if this base has this unit -> first try to assign to vespene
-		// -> then assign to minerals
-		for (auto& scv : scvs) {
-			if (scv.tag == u->tag) {
-				const Units units = o->GetUnits(Unit::Alliance::Self);
-				for (auto& p : units) {
-					if (p->unit_type == UNIT_TYPEID::TERRAN_REFINERY) {
-						if (p->assigned_harvesters < p->ideal_harvesters) {
-							task_queue->push(Task(HARVEST, 11, scv.tag, ABILITY_ID::SMART, p->tag));
-							return;
-						}
-					}
-				}
-				// otherwise assign to nearest mineral target
-				// for simplicity:
-				const Unit* mineral = o->GetUnit(minerals.front().tag);
-				task_queue->push(Task(HARVEST, 11, scv.tag, ABILITY_ID::SMART, mineral->tag));
-			}
-		}
-	}
-
-	void deleteUnit(const Unit* u) {
-		// if this base has this unit; delete it
-		if (u->tag == command.tag) {
-			command.tag = -1;
-			return;
-		}
-		for (auto it = scvs.cbegin(); it != scvs.cend(); ++it) {
-			if (it->tag == u->tag) {
-				scvs.erase(it);
-				return;
-			}
-		}
-	}
-
 };
 
 class BaseManager {
@@ -110,87 +68,126 @@ public:
 		: task_queue(t_queue), observation(obs)
 	{
 		// template
+		active_bases.push_back(Base()); // account for if scv's are added before first command center
+		Point3D start = observation->GetStartLocation();
+		active_bases.front().location = Point2D(start.x, start.y);
+		active_bases.front().findResources(observation->GetUnits(Unit::Alliance::Neutral));
+		active_bases.front().command = Base().NoUnit;
 		scv_count = 0;
 	}
 
 	void addUnit(const Unit* u) {
-		// template, for now, there is one base
-		// we need to make sure this works when scv's are added before the command center (when there is no bases yet)
-		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-			if (!active_bases.size() == 0 && active_bases.front().location == Point2D()) {
-				active_bases.front().command = TF_unit(u->unit_type, u->tag);
-				active_bases.front().location = u->pos;
-				active_bases.front().findResources(observation->GetUnits(Unit::Alliance::Neutral));
-			} else {
+		// add scv's to bases until they are maximally saturated, then add to idleSCVs
+		switch (u->unit_type.ToType()) {
+		case UNIT_TYPEID::TERRAN_SCV: {
+			++scv_count;
+			assignSCV(u);
+			break;
+		}
+		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
+			if (active_bases.size() == 1) { // check for initial case where scv's were added before command center
+				if (active_bases.front().command.tag == -1) {
+					active_bases.front().command = TF_unit(u->unit_type, u->tag);
+				}
+				else {
+					Base base = Base();
+					base.command = TF_unit(u->unit_type, u->tag);
+					base.location = u->pos;
+					base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+				}
+			}
+			else {
 				Base base = Base();
 				base.command = TF_unit(u->unit_type, u->tag);
 				base.location = u->pos;
 				base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
-				active_bases.push_back(base);
-			}
-			std::cout << "Add: " << "COMMAND CENTER" << std::endl;
-		}
-		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) {
-			++scv_count;
-			if (active_bases.size() == 0) {
-				active_bases.push_back(Base());
-			}
-			active_bases.back().scvs.push_back(TF_unit(UNIT_TYPEID::TERRAN_SCV, u->tag));
-			std::cout << "Add: " << "SCV" << std::endl;
-
-
-			for (auto& base : active_bases) {
-				// for now, use 17/18 scv's as when to build on vespene (no idea if they are optimal #'s)
-				if (base.scvs.size() == 17) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-						ABILITY_ID::BUILD_REFINERY, observation->GetUnit(base.vespene.back().tag)->pos, base.vespene.front().tag));
-				}
-				else if (base.scvs.size() == 18) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY, 
-						ABILITY_ID::BUILD_REFINERY, observation->GetUnit(base.vespene.back().tag)->pos, base.vespene.back().tag));
-				}
-
-				// and build command centers at 20/40 scv's
-				// PROBLEM: must first determine optimal places for command centers (likely store as a constant) (this should be as close as possible to a mineral group)
-				// then choose one following a placement policy (closest for now)
 			}
 		}
-		// must also deal with MULES, etc
+			// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
+		}
+
+		// and build command centers at 20/40 scv's
+		// PROBLEM: must first determine optimal places for command centers (likely store as a constant) (this should be as close as possible to a mineral group)
+		// then choose one following a placement policy (for now, look at the map editor for coords of closes placement to resources, then go through and use the first non-used one
+		for (auto& base : active_bases) {
+			if (base.buildNewCommand() || scv_count == 20 || scv_count == 40) {
+				for (auto& point : BASE_LOCATIONS) {
+					bool used = false;
+					for (auto& command : active_bases) {
+						if (command.location == Point2D(point.first, point.second)) { used = true; }
+					}
+					if (!used) {
+						task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	void assignSCV(const Unit* u) {
+		for (auto& p : active_bases) { // saturate bases with scv's
+			if (p.command.tag == -1) { return; }
+			const Unit* base = observation->GetUnit(p.command.tag);
+			if (base->assigned_harvesters < base->ideal_harvesters) {
+				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, p.minerals.back().tag));
+				return;
+			}
+			// if minerals are saturated, make sure refineries are built
+			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+				ABILITY_ID::BUILD_REFINERY, p.vespene.front().tag));
+			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+				ABILITY_ID::BUILD_REFINERY, p.vespene.back().tag));
+			try {
+				Units vespene = observation->GetUnits(IsVespeneRefinery());
+				for (auto& v : vespene) {
+					if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
+						if (v->assigned_harvesters < v->ideal_harvesters) {
+							task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, v->tag));
+							return;
+						}
+					}
+				}
+			}
+			catch (std::exception e) {} // no forseeable reason this would happen, but...
+		}
+		// build a new command center
 	}
 
 	void deleteUnit(const Unit* u) {
 		// template
 		// if it's a COMMAND CENTER -> build a new one?
 		// also have to reassign all scv's (if not building a enw one)
+		// for now just decrease scv_count and delete from bases
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
-		for (auto& base : active_bases) { base.deleteUnit(u); }
 	}
 
-	const TF_unit getSCV(Point2D point = Point2D(0, 0)) {
-		// get's a free scv, or determines the best scv to use
-		// prefers scv's that are mining resources or idle
-		// template
-		// should check the closest base; right now only checks first
+	TF_unit getSCV(Point2D point = Point2D(0, 0)) {
+		// get's an scv that is idle or mining
+		// should check the closest scv, for now just gets idle scv
 		// should have better selection than just this
-		for (auto& scv : active_bases.front().scvs) {
-			const Unit* unit = observation->GetUnit(scv.tag);
-			if (unit == nullptr) {
-				continue;
-			} // this is important -> I don't know why, but sometimes no unit is returned
-			for (auto &order : unit->orders) {
-				if (order.ability_id == ABILITY_ID::HARVEST_GATHER) { return TF_unit(unit->unit_type, unit->tag); }
+		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
+		for (auto& p : scvs) {
+			if (p->orders.empty()) { return TF_unit(p->unit_type, p->tag); }
+		}
+		for (auto& p : scvs) {
+			for (auto& order : p->orders) {
+				if (order.ability_id == ABILITY_ID::SMART
+					|| order.ability_id == ABILITY_ID::HARVEST_GATHER) {
+					return TF_unit(p->unit_type, p->tag);
+				}
 			}
 		}
-		// safety net
-		return active_bases.front().scvs.front();
+		return TF_unit(scvs.back()->unit_type, scvs.back()->tag);
 	}
 
-	void idleUnit(const Unit* u) {
+	void unitIdle(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
-		// template
 		switch (u->unit_type.ToType()) {
-		case UNIT_TYPEID::TERRAN_SCV:
-			for (auto& base : active_bases) { base.unitIdle(u, observation, task_queue);  }
+		case UNIT_TYPEID::TERRAN_SCV: {
+			assignSCV(u);
+			break;
+		}
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
 			if (scv_count <= 70) {
 				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
@@ -204,18 +201,13 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
-			if (orbital_scan) {
-				//task_queue->push(Task(ORBIT_SCOUT, RESOURCE_AGENT, 6, u, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, ABILITY_ID::EFFECT_SCAN));
-				// figure out what the actual ABILITY_ID for orbital scan is
-				orbital_scan = false;
-			}
-			else if (scv_count <= 70) {
+			if (scv_count <= 70) {
 				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			break;
 		}
+		}
 	}
-}
 
 	int getSupplyFloat() {
 		// try to keep 2/4/6 supply ahead (1/2/3+ command centers)
@@ -230,8 +222,24 @@ private:
 	const ObservationInterface* observation;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
-	int scv_count; // aim for 70
-	bool orbital_scan; // when an orbital scan is requested, then it
-};
+	std::vector<TF_unit> idleSCVs; // leftover scv's when bases are maximally saturated; prefer to take from this
+	int scv_count; // total active scv count; aim for 70??
 
+	struct IsSCV {
+		bool operator() (const Unit& u) {
+			switch (u.unit_type.ToType()) {
+			case UNIT_TYPEID::TERRAN_SCV: return true;
+			default: return false;
+			}
+		}
+	};
+	struct IsVespeneRefinery {
+		bool operator() (const Unit& u) {
+			switch (u.unit_type.ToType()) {
+			case UNIT_TYPEID::TERRAN_REFINERY: return true;
+			default: return false;
+			}
+		}
+	};
+};
 #endif

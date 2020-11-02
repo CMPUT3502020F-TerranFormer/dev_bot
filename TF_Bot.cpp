@@ -4,7 +4,6 @@
 #include "TF_Bot.hpp"
 
 TF_Bot::TF_Bot() {
-    baseManager = new BaseManager(&resource_queue, Observation());
 }
 
 TF_Bot::~TF_Bot() {
@@ -13,7 +12,7 @@ TF_Bot::~TF_Bot() {
 
 void TF_Bot::OnGameStart() {
     // also need to get map name, enemy race -> create & store in TF_Bot variables
-
+    baseManager = new BaseManager(&resource_queue, Observation());
     resourceGameStart();
 }
 
@@ -38,7 +37,6 @@ void TF_Bot::OnUnitCreated(const Unit* unit) {
 
 void TF_Bot::OnUnitIdle(const Unit* unit) {
     resourceIdle(unit);
-
 }
 
 void TF_Bot::OnUpgradeCompleted(UpgradeID uid) {
