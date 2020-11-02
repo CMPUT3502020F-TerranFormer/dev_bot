@@ -353,3 +353,12 @@ MigrationBackup/
 .ionide/
 
 build/
+
+# for apple env
+.DS_Store
+# for CLion
+.idea/
+cmake-build-*/
+protocol/
+contrib/
+
