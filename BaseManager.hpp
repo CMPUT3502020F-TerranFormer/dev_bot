@@ -9,6 +9,7 @@
 #include "threadsafe_priority_queue.h"
 #include <vector>
 #include "TF_unit.hpp"
+#include "utility.hpp"
 #include <iostream>
 
 /**
@@ -61,8 +62,8 @@ struct Base {
 
 class BaseManager {
 public:
-	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs)
-		: task_queue(t_queue), observation(obs)
+	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs, std::vector<Tag>& units)
+		: task_queue(t_queue), observation(obs), resource_units(units)
 	{
 		// template
 		active_bases.push_back(Base()); // account for if scv's are added before first command center
@@ -152,25 +153,42 @@ public:
 		// also have to reassign all scv's (if not building a enw one)
 		// for now just decrease scv_count and delete from bases
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
+		IsCommandCenter f;
+		if (f(*u)) { // remove tag; try to build a new one at location (should be more advanced.. but for now)
+			for (auto& p : active_bases) {
+				if (p.command.tag = u->tag) {
+					p.command = p.NoUnit;
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER,
+						ABILITY_ID::BUILD_COMMANDCENTER, p.location));
+				}
+			}
+		}
 	}
 
 	TF_unit getSCV(Point2D point = Point2D(0, 0)) {
 		// get's an scv that is idle or mining
 		// should check the closest scv, for now just gets idle scv
 		// should have better selection than just this
-		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
-		for (auto& p : scvs) {
-			if (p->orders.empty()) { return TF_unit(p->unit_type, p->tag); }
+		for (auto& p : resource_units) {
+			const Unit* u = observation->GetUnit(p);
+			if (UNIT_TYPEID::TERRAN_SCV == u->unit_type 
+				&& u->orders.empty()) 
+			{ return TF_unit(u->unit_type, u->tag); }
 		}
-		for (auto& p : scvs) {
-			for (auto& order : p->orders) {
-				if (order.ability_id == ABILITY_ID::SMART
-					|| order.ability_id == ABILITY_ID::HARVEST_GATHER) {
-					return TF_unit(p->unit_type, p->tag);
+		for (auto& p : resource_units) {
+			const Unit* u = observation->GetUnit(p);
+			if (UNIT_TYPEID::TERRAN_SCV == u->unit_type) {
+				for (auto& order : u->orders) {
+					if (order.ability_id == ABILITY_ID::SMART
+						|| order.ability_id == ABILITY_ID::HARVEST_GATHER) {
+						return TF_unit(u->unit_type, u->tag);
+					}
 				}
 			}
 		}
-		return TF_unit(scvs.back()->unit_type, scvs.back()->tag);
+		// if these fail, just get a random scv
+		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
+		return TF_unit(scvs.front()->unit_type, scvs.front()->tag);
 	}
 
 	void unitIdle(const Unit* u) {
@@ -214,49 +232,7 @@ private:
 	const ObservationInterface* observation;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
-	std::vector<TF_unit> idleSCVs; // leftover scv's when bases are maximally saturated; prefer to take from this
 	int scv_count; // total active scv count; aim for 70??
-
-	struct IsSCV {
-		bool operator() (const Unit& u) {
-			switch (u.unit_type.ToType()) {
-			case UNIT_TYPEID::TERRAN_SCV: return true;
-			default: return false;
-			}
-		}
-	};
-
-	struct IsVespeneRefinery {
-		bool operator() (const Unit& u) {
-			switch (u.unit_type.ToType()) {
-			case UNIT_TYPEID::TERRAN_REFINERY: return true;
-			default: return false;
-			}
-		}
-	};
-
-	struct IsCommandCenter {
-		bool operator() (const Unit& u) {
-			switch (u.unit_type.ToType()) {
-			case UNIT_TYPEID::TERRAN_COMMANDCENTER: return true;
-			case UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING: return true;
-			case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: return true;
-			case UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING: return true;
-			case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: return true;
-			default: return false;
-			}
-		}
-	};
-
-	struct IsUnit {
-		IsUnit(UNIT_TYPEID id)
-			: uid(id) {}
-		UNIT_TYPEID uid;
-		bool operator() (const Unit* u) {
-			if (u->unit_type == uid) { return true; }
-			return false;
-		}
-	};
-
+	std::vector<Tag> resource_units;
 };
 #endif

@@ -3,6 +3,7 @@
 void TF_Bot::resourceGameStart(){
     // units are added via UnitCreated at GameStart()
     std::cout << Observation()->GetStartLocation().x << "|" << Observation()->GetStartLocation().y << std::endl;
+    std::cout << "Map: " << Observation()->GetGameInfo().map_name << std::endl;
 }
 
 void TF_Bot::resourceStep() {
@@ -136,7 +137,7 @@ void TF_Bot::buildSupplyDepot() {
         point = scv->pos;
         point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
     }
-    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
+    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point, -1);
 }
 
 bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
@@ -151,14 +152,14 @@ bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point
     }
 
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
-    if (target != -1) { 
+    if (target != -1) { // build on a target
         const Unit* base;
         base = Observation()->GetUnit(target);
         if (Query()->Placement(ability_to_build_structure, base->pos, base)) {
             Actions()->UnitCommand(scv, ability_to_build_structure, base);
             return true;
         }
-    } else {
+    } else { // build at a location
         if (Query()->Placement(ability_to_build_structure, point)) {
             Actions()->UnitCommand(scv, ability_to_build_structure, point);
             return true;
