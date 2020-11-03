@@ -2,6 +2,8 @@
 
 void TF_Bot::resourceGameStart(){
     // units are added via UnitCreated at GameStart()
+    std::cout << Observation()->GetStartLocation().x << "|" << Observation()->GetStartLocation().y << std::endl;
+    std::cout << "Map: " << Observation()->GetGameInfo().map_name << std::endl;
 }
 
 void TF_Bot::resourceStep() {
@@ -121,7 +123,7 @@ void TF_Bot::resourceStep() {
 }
 
 void TF_Bot::resourceIdle(const Unit* u) {
-    baseManager->idleUnit(u);
+    baseManager->unitIdle(u);
 }
 
 void TF_Bot::buildSupplyDepot() {
@@ -129,12 +131,13 @@ void TF_Bot::buildSupplyDepot() {
     // find a space where a supply depot can be build, then buildStructure
     // for now, choose a (semi)-random point, in the future, have a policy to choose the point
 
-    Point2D point;
+    Point2D point(0, 0);
     while (!Query()->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) {
-        point = Observation()->GetUnit(baseManager->getSCV().tag)->pos;
+        const Unit* scv = Observation()->GetUnit(baseManager->getSCV(point).tag);
+        point = scv->pos;
         point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
     }
-    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
+    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point, -1);
 }
 
 bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
@@ -149,14 +152,14 @@ bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point
     }
 
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
-    if (target != -1) { 
+    if (target != -1) { // build on a target
         const Unit* base;
         base = Observation()->GetUnit(target);
-        if (Query()->Placement(ability_to_build_structure, point, base)) {
+        if (Query()->Placement(ability_to_build_structure, base->pos, base)) {
             Actions()->UnitCommand(scv, ability_to_build_structure, base);
             return true;
         }
-    } else {
+    } else { // build at a location
         if (Query()->Placement(ability_to_build_structure, point)) {
             Actions()->UnitCommand(scv, ability_to_build_structure, point);
             return true;

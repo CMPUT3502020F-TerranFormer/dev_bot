@@ -40,11 +40,26 @@ struct Task {
      * @param utype: The UNIT_TYPEID of the unit to build
      * @param aid: The ability id for an scv to produce the structure
      * @param point: The point to place the structure; The task will be removed if it cannot be placed (Either this or the target is required)
+     */
+    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point)
+        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point)
+    {
+        target = -1; // for RESOURCE functionality
+    }
+
+    /** BUILD - RESOURCES;
+     * @param Action : BUILD
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param utype: The UNIT_TYPEID of the unit to build
+     * @param aid: The ability id for an scv to produce the structure
      * @param target: The unit to build a structure on (ie. building refineries); not always required
      */
-    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point = sc2::Point2D(), sc2::Tag target = -1)
-        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point), target(target)
-    {}
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Tag target = -1)
+        : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), target(target)
+    {
+        position = sc2::Point2D(0, 0); // for RESOURCE functionality
+    }
 
     /** TRAIN - RESOURCES; can specify a specific unit to do the training (aid tells what unit to train), utype must be specified either way
      * @param action : TRAIN
