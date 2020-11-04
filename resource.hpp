@@ -1,5 +1,8 @@
 BaseManager* baseManager;
 
+threadsafe_priority_queue<Task> resource_queue;
+std::vector<Tag> resource_units;
+
 void resourceGameStart();
 
 void resourceStep();

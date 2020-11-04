@@ -15,7 +15,7 @@ TF_Bot::~TF_Bot()
 void TF_Bot::OnGameStart()
 {
     // also need to get map name, enemy race -> create & store in TF_Bot variables
-    baseManager = new BaseManager(&resource_queue, Observation());
+    baseManager = new BaseManager(&resource_queue, Observation(), resource_units);
     resourceGameStart();
 }
 
@@ -38,7 +38,7 @@ void TF_Bot::OnUnitCreated(const Unit *unit)
 {
     // template
     baseManager->addUnit(unit);
-    resource_units.push_back(TF_unit(unit->unit_type, unit->tag));
+    resource_units.push_back(unit->tag);
 }
 
 void TF_Bot::OnUnitIdle(const Unit *unit)

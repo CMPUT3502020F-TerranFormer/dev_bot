@@ -1,3 +1,4 @@
+
 #pragma once
 
 void attackGameStart();
@@ -22,3 +23,7 @@ bool buildBarracks();
 bool buildFactory();
 
 bool buildStarport();
+
+threadsafe_priority_queue<Task> attack_queue;
+std::vector<TF_unit> attack_units;
+
