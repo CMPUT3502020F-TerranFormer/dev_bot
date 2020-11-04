@@ -14,6 +14,9 @@ int CountUnitType(const ObservationInterface* observation, UnitTypeID unit_type)
 
 bool buildStructure(ABILITY_ID ability_type_for_structure, UNIT_TYPEID unit_type = UNIT_TYPEID::TERRAN_SCV);
 
+ // Same as buildStructure, except in this case, we build much closer to the building
+bool buildAddOn(ABILITY_ID ability_type_for_structure, UNIT_TYPEID unit_type = UNIT_TYPEID::TERRAN_SCV);
+
 bool buildBarracks();
 
 bool buildFactory();

@@ -2,6 +2,7 @@
 // Created by Carter Sabadash on 2020-10-24
 //
 #include "TF_Bot.hpp"
+#include "helper_functions.hpp"
 
 TF_Bot::TF_Bot()
 {
@@ -58,17 +59,13 @@ void TF_Bot::OnBuildingConstructionComplete(const Unit *unit)
     {
     case (UNIT_TYPEID::TERRAN_BARRACKS):
     {
-        float rx = GetRandomScalar();
-        float ry = GetRandomScalar();
-
-        Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB_BARRACKS,
-                               Point2D(unit->pos.x + rx * 15.0f, unit->pos.y + ry * 15.0f));
+        buildAddOn(ABILITY_ID::BUILD_TECHLAB_BARRACKS, UNIT_TYPEID::TERRAN_BARRACKS);
         break;
     }
 
     case (UNIT_TYPEID::TERRAN_STARPORT):
     {
-        buildStructure(ABILITY_ID::BUILD_TECHLAB_STARPORT, UNIT_TYPEID::TERRAN_STARPORT);
+        buildAddOn(ABILITY_ID::BUILD_TECHLAB_STARPORT, UNIT_TYPEID::TERRAN_STARPORT);
         break;
     }
     }

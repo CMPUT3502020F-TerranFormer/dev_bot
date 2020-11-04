@@ -4,6 +4,8 @@
 
 #include "helper_functions.hpp"
 
+using namespace sc2;
+
 bool IsDamaged::operator()(const Unit *unit_) const
 {
     return unit_->health < unit_->health_max;
@@ -54,3 +56,21 @@ bool IsBuildingWithSupportForAddon::operator()(sc2::UNIT_TYPEID type_) const {
             return false;
     }
 }
+
+// ============================================================================
+// The methods below have been implemented by ourselves
+
+// UNIT_TYPEID whichAddon(ABILITY_ID build_cmd)
+// {
+//     switch (build_cmd)
+//     {
+//     case ABILITY_ID::BUILD_TECHLAB_BARRACKS:
+//     case ABILITY_ID::BUILD_TECHLAB_FACTORY:
+//     case ABILITY_ID::BUILD_TECHLAB_STARPORT:
+//         return UNIT_TYPEID::TERRAN_TECHLAB;
+    
+//     default:
+//         std::cout << "Unknow Ability or Ability doesn't build add on" << std::endl;
+//         break;
+//     }
+// }

@@ -2,7 +2,16 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "TF_Bot.hpp"
+#pragma once 
+
+#include "sc2api/sc2_api.h"
+#include "sc2api/sc2_args.h"
+#include "sc2api/sc2_unit.h"
+#include "sc2lib/sc2_lib.h"
+#include "sc2utils/sc2_manage_process.h"
+#include "sc2utils/sc2_arg_parser.h"
+
+using namespace sc2;
 
 struct IsDamaged {
     bool operator()(const Unit* unit_) const;
@@ -17,3 +26,7 @@ struct IsCombatUnit {
 struct IsBuildingWithSupportForAddon {
     bool operator()(sc2::UNIT_TYPEID type_) const;
 };
+
+UNIT_TYPEID whichAddon(ABILITY_ID build_cmd);
+
+bool isAddOnConnected();
