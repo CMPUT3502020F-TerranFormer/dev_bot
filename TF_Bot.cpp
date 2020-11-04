@@ -58,13 +58,17 @@ void TF_Bot::OnBuildingConstructionComplete(const Unit *unit)
     {
     case (UNIT_TYPEID::TERRAN_BARRACKS):
     {
-        Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB_BARRACKS);
+        float rx = GetRandomScalar();
+        float ry = GetRandomScalar();
+
+        Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB_BARRACKS,
+                               Point2D(unit->pos.x + rx * 15.0f, unit->pos.y + ry * 15.0f));
         break;
     }
 
     case (UNIT_TYPEID::TERRAN_STARPORT):
     {
-        buildStructure(ABILITY_ID::BUILD_TECHLAB_STARPORT);
+        buildStructure(ABILITY_ID::BUILD_TECHLAB_STARPORT, UNIT_TYPEID::TERRAN_STARPORT);
         break;
     }
     }
