@@ -355,3 +355,5 @@ MigrationBackup/
 build/
 
 bot/*
+CMakeFiles/*
+CMakeCache.txt
