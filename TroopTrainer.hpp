@@ -5,7 +5,6 @@
 // Created by Gary Ng on 1st Nov
 //
 
-
 #include "Task.hpp"
 #include "threadsafe_priority_queue.h"
 #include <vector>
@@ -18,15 +17,17 @@
 
 using namespace sc2;
 
-class TroopTrainer {
-    public:
-        TroopTrainer(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs)
-            :task_queue(t_queue), observation(obs)
-        {
+class TroopTrainer
+{
+public:
+    TroopTrainer(threadsafe_priority_queue<Task> *t_queue, const ObservationInterface *obs)
+        : task_queue(t_queue), observation(obs)
+    {
+    }
 
-        }
-    
-    private:
+private:
+    threadsafe_priority_queue<Task> *task_queue;
+    const ObservationInterface *observation;
 }
 
 #endif
