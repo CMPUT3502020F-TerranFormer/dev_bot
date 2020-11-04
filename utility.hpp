@@ -53,8 +53,8 @@ struct IsUnit {
 	IsUnit(UNIT_TYPEID id)
 		: uid(id) {}
 	UNIT_TYPEID uid;
-	bool operator() (const Unit* u) {
-		if (u->unit_type == uid) { return true; }
+	bool operator() (const Unit& u) {
+		if (u.unit_type == uid) { return true; }
 		return false;
 	}
 };

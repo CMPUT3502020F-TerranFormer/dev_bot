@@ -137,7 +137,7 @@ void TF_Bot::buildSupplyDepot() {
         point = scv->pos;
         point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
     }
-    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point, -1);
+    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
 
 bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
@@ -152,11 +152,12 @@ bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point
     }
 
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
-    if (target != -1) { // build on a target
-        const Unit* base;
-        base = Observation()->GetUnit(target);
-        if (Query()->Placement(ability_to_build_structure, base->pos, base)) {
-            Actions()->UnitCommand(scv, ability_to_build_structure, base);
+    if (target != -1) { // build on a target unit
+        const Unit* building = Observation()->GetUnit(target);
+        Units units = Observation()->GetUnits(IsUnit(UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        if (building == nullptr) { return false; } // when a neutral unit (vespene) might be out of vision
+        if (Query()->Placement(ability_to_build_structure, building->pos, building)) {
+            Actions()->UnitCommand(scv, ability_to_build_structure, building);
             return true;
         }
     } else { // build at a location
