@@ -53,6 +53,7 @@ void TF_Bot::OnUpgradeCompleted(UpgradeID uid)
 
 void TF_Bot::OnBuildingConstructionComplete(const Unit *unit)
 {
+    resourceBuildingComplete(unit);
     // will have to refactor but trying it here first
 
     switch (unit->unit_type.ToType())
