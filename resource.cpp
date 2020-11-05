@@ -58,9 +58,14 @@ void TF_Bot::resourceStep() {
             /* This does not prevent multiple units from being produced at the same time */
             // get the producing unit
             if (t.target == -1) { 
-                resource_queue.pop();
-                std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID) t.source_unit << " Source : " << t.source << std::endl;
-                break; 
+                // try to get a target unit of the required type, we'll just take the first
+                Units workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(t.source_unit));
+                if (workers.size() == 0) {
+                    resource_queue.pop();
+                    std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
+                    break;
+                }
+                t.target = workers.front()->tag;
             }
             
             // check that we have enough resources to do ability

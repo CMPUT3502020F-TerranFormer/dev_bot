@@ -70,6 +70,7 @@ struct Task {
      * @param source_unit: The type of unit producing the unit (eg. Command Center)
      * @param target:   The exact unit that will be used to produce the desired unit (not required)
      *                  It is preferred to specify a target so that an action isn't interrupted when randomly choosing a unit
+     *                  Or delayed because of queuing
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::ABILITY_ID aid, sc2::UNIT_TYPEID utype,
         sc2::UNIT_TYPEID source_unit, sc2::Tag target = -1)
