@@ -11,7 +11,7 @@
 class ATTACK_BOT final : public TF_Agent {
 public:
 
-    ATTACK_BOT(TSqueue<BasicCommand>* a_queue);
+    ATTACK_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
 
     ~ATTACK_BOT();
 
@@ -19,7 +19,7 @@ public:
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
-    void step(const sc2::GameInfo& gi) final;
+    void step() final;
 
     /**
      * Cross agent communication
@@ -72,12 +72,13 @@ public:
      */
     void upgradeCompleted(sc2::UpgradeID uid) final;
 
-    void setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* scoutb);
+    void setAgents(TF_Agent* defenceb, TF_Agent*resourceb, TF_Agent* scoutb);
 
 private:
-    TF_Agent *defence;
-    TF_Agent *resource;
-    TF_Agent *scout;
+    std::vector<TF_unit> units;
+    TF_Agent* defence;
+    TF_Agent* resource;
+    TF_Agent* scout;
 };
 
 #endif //CPP_SC2_ATTACK_BOT_HPP

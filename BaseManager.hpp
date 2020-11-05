@@ -14,25 +14,21 @@
 using namespace sc2;
 
 struct Base {
-	bool transferring; // if transferring from one location to another
-	Tag command;
 
 };
 
 class BaseManager {
 public:
-	BaseManager(threadsafe_priority_queue<Task>* task_queue)
-		: task_queue(task_queue)
+	BaseManager(threadsafe_priority_queue<Task>* task_queue, const ObservationInterface* obs)
+		: task_queue(task_queue), observation(obs)
 	{}
-	void addUnit(const Unit* u);
-	void deleteUnit(const Unit* u);
-	const Unit* getSCV(); // get's a free scv, or determines the best scv to free
-	void findResources(const Units units); // must be called after a command center is added
+
 
 private:
 	threadsafe_priority_queue<Task> *task_queue;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
+	const ObservationInterface* observation;
 };
 
 #endif

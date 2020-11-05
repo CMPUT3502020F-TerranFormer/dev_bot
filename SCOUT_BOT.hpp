@@ -10,7 +10,7 @@
 
 class SCOUT_BOT final : public TF_Agent {
 public:
-    SCOUT_BOT(TSqueue<BasicCommand>* a_queue);
+    SCOUT_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
 
     ~SCOUT_BOT();
 
@@ -18,7 +18,7 @@ public:
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
-    void step(const sc2::GameInfo& gi) final;
+    void step() final;
 
     /**
      * Cross agent communication
@@ -74,6 +74,7 @@ public:
     void setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* resourceb);
 
 private:
+    std::vector<TF_unit> units;
     TF_Agent *defence;
     TF_Agent *attack;
     TF_Agent *resource;

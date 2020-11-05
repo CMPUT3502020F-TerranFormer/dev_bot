@@ -4,18 +4,14 @@
 #include "TF_Bot.hpp"
 
 TF_Bot::TF_Bot() {
-    a_queue = new TSqueue<BasicCommand>;
-    attack = new ATTACK_BOT(a_queue);
-    defence = new DEFENCE_BOT(a_queue);
-    scout = new SCOUT_BOT(a_queue);
-    resource = new RESOURCE_BOT(a_queue);
+    attack = new ATTACK_BOT(Observation(), Actions(), Query());
+    defence = new DEFENCE_BOT(Observation(), Actions(), Query());
+    scout = new SCOUT_BOT(Observation(), Actions(), Query());
+    resource = new RESOURCE_BOT(Observation(), Actions(), Query());
 }
 
 TF_Bot::~TF_Bot() {
-    delete attack;
-    delete defence;
-    delete scout;
-    delete resource;
+
 }
 
 void TF_Bot::OnGameStart() {
@@ -24,36 +20,18 @@ void TF_Bot::OnGameStart() {
     resource->setAgents(defence, attack, scout);
     scout->setAgents(defence, attack, resource);
 
-    resource->gameStart(Observation()->GetUnits());
+    resource->gameStart();
 }
 
 void TF_Bot::OnGameEnd() {
-    delete attack;
-    delete defence;
-    delete scout;
-    delete resource;
+
 }
 
 void TF_Bot::OnStep() {
-    // get game info
-    const GameInfo& game_info = Observation()->GetGameInfo();
-    defence->step(game_info);
-    attack->step(game_info);
-    resource->step(game_info);
-    scout->step(game_info);
-
-
-    while (!a_queue->empty()) {
-        BasicCommand command = a_queue->dequeue();
-        const Unit* unit = Observation()->GetUnit(command.unit);
-        switch (command.t) {
-        case CommandType::SELF: Actions()->UnitCommand(unit, command.aid);
-            break;
-        case CommandType::POINT: Actions()->UnitCommand(unit, command.aid, command.point);
-            break;
-        case CommandType::TARGET: Actions()->UnitCommand(unit, command.aid, Observation()->GetUnit(command.target));
-        }
-    }
+    resource->step();
+    attack->step();
+    defence->step();
+    scout->step();
 }
 
 void TF_Bot::OnUnitDestroyed(const Unit* unit) {

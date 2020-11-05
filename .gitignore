@@ -353,3 +353,18 @@ MigrationBackup/
 .ionide/
 
 build/
+
+
+bot/*
+CMakeFiles/*
+CMakeCache.txt
+
+# for apple env
+.DS_Store
+# for CLion
+.idea/
+cmake-build-*/
+protocol/
+contrib/
+
+

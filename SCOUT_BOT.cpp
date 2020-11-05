@@ -3,8 +3,8 @@
 //
 #include "SCOUT_BOT.hpp"
 
-SCOUT_BOT::SCOUT_BOT(TSqueue<BasicCommand>* a_queue)
-    : TF_Agent(a_queue)
+SCOUT_BOT::SCOUT_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
+    : TF_Agent(obs, act, query)
 {
     defence = nullptr;
     attack = nullptr;
@@ -15,7 +15,7 @@ SCOUT_BOT::~SCOUT_BOT() {
 
 }
 
-void SCOUT_BOT::step(const sc2::GameInfo& gi) {
+void SCOUT_BOT::step() {
 
 }
 

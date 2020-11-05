@@ -2,18 +2,6 @@
 // Created by Kerry Cao on 2020-10-23.
 //
 
-/*
- * The resource agent accepts tasks of type BUILD, TRAIN, REPAIR, UPGRADE, MOVE, TRANSFER
- * BUILD ability id for scv to build the structure, the position
- * TRAIN specifies the building to do the training, AID specifies the unit to make, count = 1, to train many, issue multiple tasks
- * REPAIR specifies the target unit
- * UPGRADE specifies the unit to be upgraded, AID specifies the upgrade
- * MOVE specifies the unit to be move, position to (should only be used by Defence to escort, or prevent them from being killed)
- * TRANSFER specifies the unit to be transfered, or unit_type
- * 
- * This agent usually operates with priority 4-6, ensure that commands interfere minally
- */
-
 #ifndef CPP_SC2_RESOURCE_BOT_HPP
 #define CPP_SC2_RESOURCE_BOT_HPP
 
@@ -23,20 +11,20 @@
 
 class RESOURCE_BOT final : public TF_Agent {
 public:
-    RESOURCE_BOT(TSqueue<BasicCommand>* a_queue);
+    RESOURCE_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
 
     ~RESOURCE_BOT();
 
     /**
      * Intializes units with the initial scv's and command center
      */
-    void gameStart(const sc2::Units alliedUnits);
+    void gameStart();
 
     /**
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
-    void step(const sc2::GameInfo& gi) final;
+    void step() final;
 
     /**
      * Cross agent communication
@@ -91,11 +79,11 @@ public:
     void setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* scoutb);
 
 private:
+    std::vector<Tag> units;
     TF_Agent *defence;
     TF_Agent *attack;
     TF_Agent *scout;
-    std::vector<std::pair<SourceAgent, sc2::UNIT_TYPEID>> training;
-    BaseManager *baseManager;
+    BaseManager* baseManager;
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

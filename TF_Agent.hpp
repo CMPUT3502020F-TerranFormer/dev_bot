@@ -10,50 +10,19 @@
 #include <vector>
 #include "threadsafe_priority_queue.h"
 #include "TS_Queue.hpp"
-
+#include "TF_unit.hpp"
 #include "Task.hpp"
-
-/**
- * Data class for a unit belonging to a agent
- */
-struct TF_unit {
-    TF_unit(sc2::UNIT_TYPEID type, sc2::Tag tag)
-        : type(type), tag(tag)
-    {}
-    sc2::UNIT_TYPEID type;
-    sc2::Tag tag;
-};
-
-/**
- * Generic data class for unit commands
- * SELF -> UnitCommand(unit, aid)
- * MOVE -> UnitCommand(unit, aid, point)
- * TARGET -> UnitCommand(unit, aid, target)
- */
-
-enum CommandType {SELF, POINT, TARGET};
-
-struct BasicCommand // data for a command to itself
-{
-    BasicCommand(CommandType type, const sc2::Tag u, sc2::AbilityID aid,
-        const sc2::Point2D& point = sc2::Point2D(0, 0), const sc2::Tag target = Tag())
-        : t(type), unit(u), aid(aid), point(point), target(target)
-    {}
-
-    CommandType t;
-    const sc2::Tag unit;
-    sc2::AbilityID aid;
-    const sc2::Point2D& point;
-    const sc2::Tag target;
-};
+#include "sc2api/sc2_api.h"
 
 /**
  * Base TF_Agent class
  */
+using namespace sc2;
+
 class TF_Agent {
 public:
-    TF_Agent(TSqueue<BasicCommand>* a_queue) 
-        : action_queue(a_queue)
+    TF_Agent(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
+        : observation(obs), action(act), query(query)
     {}
     /**
      * Virtual Destructor
@@ -64,7 +33,7 @@ public:
      * Do actions base on game info provided
      * @param gi sc2::GameInfo
      */
-    virtual void step(const sc2::GameInfo &gi) = 0;
+    virtual void step() = 0;
 
     /**
      * Cross agent communication
@@ -121,9 +90,10 @@ public:
     virtual void upgradeCompleted(sc2::UpgradeID uid) = 0;
 
 protected:
-    std::vector<TF_unit> units;
     threadsafe_priority_queue<Task> task_queue;
-    TSqueue<BasicCommand> *action_queue;
+    const ObservationInterface* observation;
+    const ActionInterface* action;
+    const QueryInterface* query;
 };
 
 #endif //CPP_SC2_TF_AGENT_HPP

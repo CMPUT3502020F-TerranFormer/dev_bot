@@ -3,8 +3,8 @@
 //
 #include "DEFENCE_BOT.hpp"
 
-DEFENCE_BOT::DEFENCE_BOT(TSqueue<BasicCommand>* a_queue)
-    : TF_Agent(a_queue)
+DEFENCE_BOT::DEFENCE_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
+    : TF_Agent(obs, act, query)
 {
     scout = nullptr;
     attack = nullptr;
@@ -15,7 +15,7 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 
 }
 
-void DEFENCE_BOT::step(const sc2::GameInfo& gi) {
+void DEFENCE_BOT::step() {
 
 }
 
@@ -32,15 +32,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
-    // get UnitTag, then compare with TF_unit.tag
-    for (auto it = units.cbegin(); it != units.cend(); ++it)
-    {
-        if (it->tag == u->tag)
-        {
-            it = units.erase(it);
-            return;
-        }
-    }
+
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {

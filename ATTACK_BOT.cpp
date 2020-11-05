@@ -3,8 +3,8 @@
 //
 #include "ATTACK_BOT.hpp"
 
-ATTACK_BOT::ATTACK_BOT(TSqueue<BasicCommand>* a_queue) 
-    : TF_Agent(a_queue)
+ATTACK_BOT::ATTACK_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
+    : TF_Agent(obs, act, query)
 {
     defence = nullptr;
     scout = nullptr;
@@ -15,7 +15,7 @@ ATTACK_BOT::~ATTACK_BOT() {
 
 }
 
-void ATTACK_BOT::step(const sc2::GameInfo& gi) {
+void ATTACK_BOT::step() {
 
 }
 
