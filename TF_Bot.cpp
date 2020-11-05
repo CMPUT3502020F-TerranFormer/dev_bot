@@ -44,7 +44,9 @@ void TF_Bot::OnUpgradeCompleted(UpgradeID uid) {
 }
 
 void TF_Bot::OnBuildingConstructionComplete(const Unit* unit) {
-
+    UnitTypeData ut = Observation()->GetUnitTypeData(unit)[(UnitTypeID) unit->unit_type];
+    std::cout << "Buildling Complete: " << ut.name << std::endl;
+    resourceBuildingComplete(unit);
 }
 
 void TF_Bot::OnUnitEnterVision(const Unit* unit) {

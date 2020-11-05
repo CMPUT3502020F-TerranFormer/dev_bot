@@ -100,6 +100,7 @@ public:
 			if (active_bases.size() == 1) { // check for initial case where scv's were added before command center
 				if (active_bases.front().command.tag == -1) {
 					active_bases.front().command = TF_unit(u->unit_type, u->tag);
+					buildRefineries(u); // initial command center does not go through OnBuildingComplete()
 				}
 				else {
 					Base base = Base();
@@ -151,11 +152,7 @@ public:
 				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
 				return;
 			}
-			// if minerals are saturated, make sure refineries are built
-			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-				ABILITY_ID::BUILD_REFINERY, p.vespene.front().tag));
-			task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-				ABILITY_ID::BUILD_REFINERY, p.vespene.back().tag));
+			// if minerals are saturated, check vespene
 			Units vespene = observation->GetUnits(IsVespeneRefinery());
 			for (auto& v : vespene) {
 				if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
@@ -163,6 +160,28 @@ public:
 						task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
 						return;
 					}
+				}
+			}
+		}
+	}
+
+	void buildRefineries(const Unit* command) {
+		// should be called when a command center is completed -> adds refineries for 
+		// it to the task queue (when the geysers are guaranteed to be in vision)
+		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+			Units vespene = observation->GetUnits(IsVespeneGeyser());
+			for (auto& p : vespene) {
+				if (DistanceSquared2D(command->pos, p->pos) < 225) {
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+						ABILITY_ID::BUILD_REFINERY, p->tag));
+				}
+			}
+
+			// also update the vespene in the base
+			for (auto& p : active_bases) {
+				if (p.command.tag == command->tag) {
+					p.vespene.clear();
+					p.findResources(vespene);
 				}
 			}
 		}
@@ -176,6 +195,7 @@ public:
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // remove tag; try to build a new one at location (should be more advanced.. but for now)
+					// it is necessary to remove the base, so that scv's will be properly assigned
 			for (auto& p : active_bases) {
 				if (p.command.tag = u->tag) {
 					p.command = p.NoUnit;

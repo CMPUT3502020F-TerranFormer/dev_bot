@@ -49,6 +49,15 @@ struct IsCommandCenter {
 	}
 };
 
+struct IsVespeneGeyser {
+	bool operator() (const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
+		default: return false;
+		}
+	}
+};
+
 struct IsUnit {
 	IsUnit(UNIT_TYPEID id)
 		: uid(id) {}
