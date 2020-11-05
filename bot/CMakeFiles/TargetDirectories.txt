@@ -1,0 +1,14 @@
+D:/Bots/dev_bot/bot/CMakeFiles/annoying_helper.dir
+D:/Bots/dev_bot/bot/CMakeFiles/bot_micro.dir
+D:/Bots/dev_bot/bot/CMakeFiles/bot_simple.dir
+D:/Bots/dev_bot/bot/CMakeFiles/echo_actions.dir
+D:/Bots/dev_bot/bot/CMakeFiles/intermediate_bot.dir
+D:/Bots/dev_bot/bot/CMakeFiles/replay.dir
+D:/Bots/dev_bot/bot/CMakeFiles/tutorial.dir
+D:/Bots/dev_bot/bot/CMakeFiles/bot_mp.dir
+D:/Bots/dev_bot/bot/CMakeFiles/proxy.dir
+D:/Bots/dev_bot/bot/CMakeFiles/save_load.dir
+D:/Bots/dev_bot/bot/CMakeFiles/feature_layers.dir
+D:/Bots/dev_bot/bot/CMakeFiles/rendered.dir
+D:/Bots/dev_bot/bot/CMakeFiles/ALL_BUILD.dir
+D:/Bots/dev_bot/bot/CMakeFiles/ZERO_CHECK.dir

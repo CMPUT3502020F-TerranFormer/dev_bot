@@ -354,6 +354,11 @@ MigrationBackup/
 
 build/
 
+
+bot/*
+CMakeFiles/*
+CMakeCache.txt
+
 # for apple env
 .DS_Store
 # for CLion
@@ -361,4 +366,5 @@ build/
 cmake-build-*/
 protocol/
 contrib/
+
 
