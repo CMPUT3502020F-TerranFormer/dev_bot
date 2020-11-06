@@ -3,8 +3,8 @@
 //
 #include "ATTACK_BOT.hpp"
 
-ATTACK_BOT::ATTACK_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
-    : TF_Agent(obs, act, query)
+ATTACK_BOT::ATTACK_BOT(TF_Bot* bot)
+    : TF_Agent(bot)
 {
     defence = nullptr;
     scout = nullptr;
@@ -32,15 +32,7 @@ void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit* u) {
-    // get UnitTag, then compare with TF_unit.tag
-    for (auto it = units.cbegin(); it != units.cend(); ++it)
-    {
-        if (it->tag == u->tag)
-        {
-            it = units.erase(it);
-            return;
-        }
-    }
+
 }
 
 void ATTACK_BOT::unitCreated(const sc2::Unit* u) {

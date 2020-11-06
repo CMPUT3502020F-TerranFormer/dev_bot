@@ -5,12 +5,12 @@
 #ifndef CPP_SC2_SCOUT_BOT_HPP
 #define CPP_SC2_SCOUT_BOT_HPP
 
-#include "TF_Agent.hpp"
+#include "TF_Bot.hpp"
 #include "Task.hpp"
 
 class SCOUT_BOT final : public TF_Agent {
 public:
-    SCOUT_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
+    SCOUT_BOT(TF_Bot* bot);
 
     ~SCOUT_BOT();
 

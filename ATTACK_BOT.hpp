@@ -5,13 +5,13 @@
 #ifndef CPP_SC2_ATTACK_BOT_HPP
 #define CPP_SC2_ATTACK_BOT_HPP
 
-#include "TF_Agent.hpp"
+#include "TF_Bot.hpp"
 #include "Task.hpp"
 
 class ATTACK_BOT final : public TF_Agent {
 public:
 
-    ATTACK_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
+    ATTACK_BOT(TF_Bot* bot);
 
     ~ATTACK_BOT();
 
@@ -72,7 +72,7 @@ public:
      */
     void upgradeCompleted(sc2::UpgradeID uid) final;
 
-    void setAgents(TF_Agent* defenceb, TF_Agent*resourceb, TF_Agent* scoutb);
+    void setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* scoutb);
 
 private:
     std::vector<TF_unit> units;

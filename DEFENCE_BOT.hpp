@@ -5,12 +5,12 @@
 #ifndef CPP_SC2_DEFENCE_BOT_HPP
 #define CPP_SC2_DEFENCE_BOT_HPP
 
-#include "TF_Agent.hpp"
+#include "TF_Bot.hpp"
 #include "Task.hpp"
 
 class DEFENCE_BOT final : public TF_Agent {
 public:
-    DEFENCE_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
+    DEFENCE_BOT(TF_Bot* bot);
 
     ~DEFENCE_BOT();
 

@@ -3,8 +3,8 @@
 //
 #include "SCOUT_BOT.hpp"
 
-SCOUT_BOT::SCOUT_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
-    : TF_Agent(obs, act, query)
+SCOUT_BOT::SCOUT_BOT(TF_Bot* bot)
+    : TF_Agent(bot)
 {
     defence = nullptr;
     attack = nullptr;
@@ -32,15 +32,7 @@ void SCOUT_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
-    // get UnitTag, then compare with TF_unit.tag
-    for (auto it = units.cbegin(); it != units.cend(); ++it)
-    {
-        if (it->tag == u->tag)
-        {
-            it = units.erase(it);
-            return;
-        }
-    }
+
 }
 
 void SCOUT_BOT::unitCreated(const sc2::Unit* u) {

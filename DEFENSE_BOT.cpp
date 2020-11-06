@@ -3,8 +3,8 @@
 //
 #include "DEFENCE_BOT.hpp"
 
-DEFENCE_BOT::DEFENCE_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
-    : TF_Agent(obs, act, query)
+DEFENCE_BOT::DEFENCE_BOT(TF_Bot* bot)
+    : TF_Agent(bot)
 {
     scout = nullptr;
     attack = nullptr;

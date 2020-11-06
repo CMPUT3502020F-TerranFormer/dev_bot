@@ -2,12 +2,16 @@
 // Created by Carter Sabadash on 2020-10-24
 //
 #include "TF_Bot.hpp"
+#include "ATTACK_BOT.hpp"
+#include "DEFENCE_BOT.hpp"
+#include "RESOURCE_BOT.hpp"
+#include "SCOUT_BOT.hpp"
 
 TF_Bot::TF_Bot() {
-    attack = new ATTACK_BOT(Observation(), Actions(), Query());
-    defence = new DEFENCE_BOT(Observation(), Actions(), Query());
-    scout = new SCOUT_BOT(Observation(), Actions(), Query());
-    resource = new RESOURCE_BOT(Observation(), Actions(), Query());
+    attack = new ATTACK_BOT(this);
+    defence = new DEFENCE_BOT(this);
+    scout = new SCOUT_BOT(this);
+    resource = new RESOURCE_BOT(this);
 }
 
 TF_Bot::~TF_Bot() {

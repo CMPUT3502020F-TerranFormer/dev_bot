@@ -5,13 +5,13 @@
 #ifndef CPP_SC2_RESOURCE_BOT_HPP
 #define CPP_SC2_RESOURCE_BOT_HPP
 
-#include "TF_Agent.hpp"
+#include "TF_Bot.hpp"
 #include "Task.hpp"
 #include "BaseManager.hpp"
 
 class RESOURCE_BOT final : public TF_Agent {
 public:
-    RESOURCE_BOT(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query);
+    RESOURCE_BOT(TF_Bot* bot);
 
     ~RESOURCE_BOT();
 
@@ -84,6 +84,10 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     BaseManager* baseManager;
+
+    void buildSupplyDepot();
+
+    bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP
