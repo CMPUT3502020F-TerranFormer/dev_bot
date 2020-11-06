@@ -12,6 +12,7 @@
 #include "TS_Queue.hpp"
 #include "TF_unit.hpp"
 #include "Task.hpp"
+#include "Action.hpp"
 #include "sc2api/sc2_api.h"
 
 /**
@@ -21,8 +22,8 @@ using namespace sc2;
 
 class TF_Agent {
 public:
-    TF_Agent(const ObservationInterface* obs, const ActionInterface* act, const QueryInterface* query)
-        : observation(obs), action(act), query(query)
+    TF_Agent(const ObservationInterface* obs, TSqueue<Action>* act, const QueryInterface* query)
+        : observation(obs), action_queue(act), query(query)
     {}
     /**
      * Virtual Destructor
@@ -92,7 +93,7 @@ public:
 protected:
     threadsafe_priority_queue<Task> task_queue;
     const ObservationInterface* observation;
-    const ActionInterface* action;
+    TSqueue<Action> action_queue;
     const QueryInterface* query;
 };
 

@@ -16,6 +16,7 @@
 #include "RESOURCE_BOT.hpp"
 #include "SCOUT_BOT.hpp"
 #include "Task.hpp"
+#include "Action.hpp"
 
 using namespace sc2;
 
@@ -49,4 +50,5 @@ private:
     DEFENCE_BOT* defence;
     RESOURCE_BOT* resource;
     SCOUT_BOT* scout;
+    TSqueue<Action> action_queue;
 };
