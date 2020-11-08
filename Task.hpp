@@ -109,8 +109,19 @@ struct Task {
      * @param aid: The AbilityID the source_unit will use to perform the upgrade
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit, sc2::UPGRADE_ID uid, sc2::ABILITY_ID aid)
-        :
+        : action(action), source(source), priority(priority), self(source_unit), upgrade_id(uid), ability_id(aid)
     {}
+
+    /** TRANSFER - RESOURCES
+     * @param action : TRANSFER
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param source_unit : The Tag of the source unit, -1 for any scv
+     */
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
+        : action(action), source(source), priority(priority), self(source_unit)
+    {}
+
     enum AgentActions action;
 
     enum SourceAgent source;

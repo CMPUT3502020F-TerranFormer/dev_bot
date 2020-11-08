@@ -143,9 +143,43 @@ void RESOURCE_BOT::step() {
             break;
         }
         case TRANSFER: {
-            // Transfer a unit to another agent, and remove from resource unit list
-            // find in our unit list
-            std::cout << "Not Implemented: RESOURCE -> TRANSFER" << std::endl;
+            /* Transfer a unit to another agent, and remove from resource unit list
+            * Either the exact unit be specified, or it is an scv 
+            * The unit must exist (unless it is an scv) for this to behave properly
+            */
+            TF_unit unit;
+            if (t.self == -1) {
+                TF_unit scv = baseManager->getSCV();
+                if (scv.tag == -1) {
+                    task_queue.pop(); // no scvs
+                    break;
+                }
+                unit = scv;
+            }
+            else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
+
+            // add to correct agent
+            switch (t.source) {
+            case DEFENCE_AGENT: defence->addUnit(unit);
+                break;
+            case ATTACK_AGENT: attack->addUnit(unit);
+                break;
+            case SCOUT_AGENT: scout->addUnit(unit);
+                break;
+            default:
+                std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
+                task_queue.pop();
+                return;
+            }
+
+            // and remove from resource_units
+            for (auto it = units.cbegin(); it != units.cend(); ++it) {
+                if (*it == t.self) { 
+                    units.erase(it);
+                    break;
+                }
+            }
+            task_queue.pop();
             break;
         }
         default: {
