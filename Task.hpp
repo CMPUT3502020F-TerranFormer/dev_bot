@@ -77,6 +77,7 @@ struct Task {
     {}
 
     /** REPAIR - RESOURCES; specify which unit needs repairing -- it should be in a safe location
+     * (like by an active command center) 
      * @param action: REPAIR
      * @param source: The source agent
      * @param priority: The priority
@@ -99,6 +100,17 @@ struct Task {
         : action(action), source(source), priority(priority), ability_id(aid), position(position)
     {}
 
+    /** UPGRADE - RESOURCES This is for the upgrade task
+     * @param action : UPGRADE
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param source_unit: The unit that will be doing the upgrade
+     * @param uid: The UpGradeID of the upgrade
+     * @param aid: The AbilityID the source_unit will use to perform the upgrade
+     */
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit, sc2::UPGRADE_ID uid, sc2::ABILITY_ID aid)
+        :
+    {}
     enum AgentActions action;
 
     enum SourceAgent source;
@@ -114,12 +126,13 @@ struct Task {
      */
     int priority;
 
-    sc2::Tag target;                // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
-    sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
+    sc2::Tag target;                
+    sc2::UNIT_TYPEID unit_typeid;  
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;
     sc2::UNIT_TYPEID source_unit;
     sc2::Tag self;
+    sc2::UPGRADE_ID upgrade_id;
 
     int count;
 
