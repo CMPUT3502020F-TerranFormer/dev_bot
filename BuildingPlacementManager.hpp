@@ -40,7 +40,32 @@ public:
 	}
 
 	Point2D getNextCommandCenterLocation() {
-
+		// for now, build by clusters, in the future a more advanced build policy is needed
+		switch (map) {
+		case Map::CactusValleyLE:
+		{
+			// get the index of the starting base location, then increment it until a suitable location
+			// has been found
+			int base_index;
+			if (start_location == CactusValleyLEBaseLocations[0]) { base_index = 0; }
+			else if (start_location == CactusValleyLEBaseLocations[4]) { base_index = 4; }
+			else if (start_location == CactusValleyLEBaseLocations[8]) { base_index = 8; }
+			else { base_index = 12; }
+			for (int i = 0; i < 16; ++i) {
+				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, CactusValleyLEBaseLocations[(base_index + i) % 16]))
+				{
+					return CactusValleyLEBaseLocations[(base_index + i) % 16];
+				}
+			}
+			break;
+		}
+		case Map::BelShirVestigeLE:
+		{ break; }
+		case Map::ProximaStationLE:
+		{ break; }
+		default: std::cerr << "Invalid Map! Cannot get command center location" << std::endl;
+		}
+		return Point2D(0, 0);
 	}
 
 private:
@@ -58,10 +83,15 @@ private:
 	*
 	*For now this will do
 	*/
-	const Point2D CactusValleyLETopLeftBases[4] = { Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5) };
-	const Point2D CactusValleyLETopRightBases[4] = { Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5) };
-	const Point2D CactusValleyLEBottomLeftBases[4] = { Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5) };
-	const Point2D CactusValleyLEBottomRightBases[4] = { Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) };
+	//const Point2D CactusValleyLETopLeftBases[4] = { Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5) };
+	//const Point2D CactusValleyLETopRightBases[4] = { Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5) };
+	//const Point2D CactusValleyLEBottomLeftBases[4] = { Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5) };
+	//const Point2D CactusValleyLEBottomRightBases[4] = { Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) };
+	const Point2D CactusValleyLEBaseLocations[16] =
+			{ Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5), // Top Left
+			Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5), // Top Right
+			Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5), // Bottom Left
+			Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) }; // Bottom Right
 
 	/* ProximaStationLE Base Location (Arranged in order), * starting location
 	* (34.5, 144.5)			(93.5, 147.5)	(137.5, 139.5) (164.5, 140.5)
