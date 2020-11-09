@@ -21,8 +21,8 @@ void RESOURCE_BOT::gameStart() {
     std::cout << observation->GetStartLocation().x << "|" << observation->GetStartLocation().y << std::endl;
     std::cout << "Map: " << observation->GetGameInfo().map_name << std::endl;
 
-    baseManager = new BaseManager(&task_queue, observation, units);
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
+    baseManager = new BaseManager(&task_queue, observation, units, buildingPlacementManager);
 }
 
 void RESOURCE_BOT::step() {

@@ -39,11 +39,43 @@ public:
 		}
 	}
 
+	Point2D getNextCommandCenterLocation() {
+
+	}
+
 private:
 	Map map;
 	Point2D start_location;
 	const ObservationInterface* observation;
 	QueryInterface* query;
-};
+
+	/*CactusValleyLE Base Locations(Arranged in order), * starting location
+	** (33.5, 158.5) - (66.5, 161.5) - (93.5, 156.5) - -*(158.5, 158.5)
+	* -(54.5, 132.5) - -(132.5, 137.5) - (161.5, 125.5)
+	* (35.5, 93.5) - (156.5, 98.5)
+	* (30.5, 66.5) - (59.5, 54.5)						(137.5, 59.5)
+	* *(33.5, 33.5) - (98.5, 35.5) (125.5, 30.5) * (158.5, 33.5)
+	*
+	*For now this will do
+	*/
+	const Point2D CactusValleyLETopLeftBases[4] = { Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5) };
+	const Point2D CactusValleyLETopRightBases[4] = { Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5) };
+	const Point2D CactusValleyLEBottomLeftBases[4] = { Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5) };
+	const Point2D CactusValleyLEBottomRightBases[4] = { Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) };
+
+	/* ProximaStationLE Base Location (Arranged in order), * starting location
+	* (34.5, 144.5)			(93.5, 147.5)	(137.5, 139.5) (164.5, 140.5)
+	* (33.5, 98.5)		(72.5, 110.5)		(119.5, 111.5)	(149.5, 102.5)
+	* (50.5, 65.5)	(80.5, 56.5)		(127.5, 57.5)		(166.5, 69.5)
+	* (35.5, 27.5)	(62.5, 28.5)		(106.5, 20.5)		(165.5, 23.5)
+	*/
+
+	/* Bel'Shir Vestige LE Base Locations (Arranged in order), *starting location 
+	* (29.5, 134.5)		(61.5. 136.5)	(98.5, 138.5)
+	* (28.5, 96.5)										(120.5, 104.5)
+	* (23.5, 55.5)										(115.5, 63.5)
+	*				(45.5, 20.5)		(82.5, 23.5)	(114.5, 25.5)
+	*/
+};	
 
 #endif

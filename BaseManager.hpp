@@ -10,29 +10,17 @@
 #include <vector>
 #include "TF_unit.hpp"
 #include "utility.hpp"
+#include "BuildingPlacementManager.hpp"
 #include <iostream>
 
 
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
  * Currently this will build 3 command centers and mine all resources -> must implement command center building
- * Issues to fix: When building another command center, vespene doesn't build; also, when too many unit are assigned
- * to a command center they will just keep working there
+ * Issues to fix: when too many unit are assigned to a command center they will just keep working there
+ * also, getSCV() will always return the same scv if called multiple times during the same step
  * Associating scv's with a specific resource
- *
- * CactusValleyLE Base Locations (Arranged in order), *starting location
- * *(33.5, 158.5) - (66.5, 161.5) - (93.5, 156.5) - - *(158.5, 158.5)
- * - (54.5, 132.5) - -					(132.5, 137.5) - (161.5, 125.5)
- * (35.5, 93.5)					-						(156.5, 98.5)
- * (30.5, 66.5) - (59.5, 54.5)						(137.5, 59.5)
- * *(33.5, 33.5)		-		(98.5, 35.5) (125.5, 30.5) *(158.5, 33.5)
- *
- * For now this will do
  */
-const Point2D CactusValleyLETopLeftBases[4] = { Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5) };
-const Point2D CactusValleyLETopRightBases[4] = { Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5) };
-const Point2D CactusValleyLEBottomLeftBases[4] = { Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5) };
-const Point2D CactusValleyLEBottomRightBases[4] = { Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) };
 
 using namespace sc2;
 
@@ -48,13 +36,13 @@ struct Base {
 
 	void findResources(const Units units) {
 		// must be called after a command center is added, updates with the surrounding resources
+		IsMinerals min;
+		IsVespeneGeyser vesp;
 		for (auto& p : units) {
-			if (p->unit_type == UNIT_TYPEID::NEUTRAL_MINERALFIELD
-				&& DistanceSquared2D(location, p->pos) < 225) { // just add minerals close to command center
+			if (min(*p) && DistanceSquared2D(location, p->pos) < 225) { // just add minerals close to command center
 				minerals.push_back(TF_unit(p->unit_type, p->tag));
 			}
-			if (p->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER
-				&& DistanceSquared2D(location, p->pos) < 225) {
+			if (vesp(*p) && DistanceSquared2D(location, p->pos) < 225) {
 				vespene.push_back(TF_unit(p->unit_type, p->tag));
 			}
 		}
@@ -77,8 +65,9 @@ struct Base {
 
 class BaseManager {
 public:
-	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs, std::vector<Tag>& units)
-		: task_queue(t_queue), observation(obs), resource_units(units)
+	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs,
+		std::vector<Tag>& units, BuildingPlacementManager* bmp)
+		: task_queue(t_queue), observation(obs), resource_units(units), buildingPlacementManager(bmp)
 	{
 		Base base; // to account for if scv's are added before first command center
 		Point3D start = observation->GetStartLocation();
@@ -122,25 +111,18 @@ public:
 		// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
 		}
 
-		// and build command centers at 20/40 scv's
-		// PROBLEM: must first determine optimal places for command centers (likely store as a constant) (this should be as close as possible to a mineral group)
-		// then choose one following a placement policy (for now, look at the map editor for coords of closes placement to resources, then go through and use the first non-used one
+		// and build command centers at 20/40 scv's, or when a planetary fortress is running
+		// out of resources
 		for (auto& base : active_bases) {
 			if (base.buildNewCommand() || scv_count == 20 || scv_count == 40) {
-				// build a new command center, all current bases are saturated, for now, don't worry about deleted spots
+				// build a new command center, all current bases are saturated
 				int base_count = active_bases.size() + isolated_bases.size();
-				if (base_count < 4) {	// just try to build a new base -- need to get a good location first...
-									// for CactusValleyLE, they are in clusters or 4, so for now that's all I'll worry about
-					Point2D baseLocation;
-					Point3D start3d = observation->GetStartLocation();
-					Point2D start = Point2D(start3d.x, start3d.y);
-					if (start == CactusValleyLETopLeftBases[0]) { baseLocation = CactusValleyLETopLeftBases[base_count]; }
-					else if (start == CactusValleyLETopRightBases[0]) { baseLocation = CactusValleyLETopRightBases[base_count]; }
-					else if (start == CactusValleyLEBottomLeftBases[0]) { baseLocation = CactusValleyLEBottomLeftBases[base_count]; }
-					else { baseLocation = CactusValleyLEBottomRightBases[base_count]; }
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
-					return;
+				Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
+				if (baseLocation != Point2D(0, 0)) {
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, 
+						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
 				}
+				return;
 			}
 		}
 	}
@@ -274,6 +256,7 @@ public:
 private:
 	threadsafe_priority_queue<Task>* task_queue;
 	const ObservationInterface* observation;
+	BuildingPlacementManager* buildingPlacementManager;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
 	int scv_count; // total active scv count; aim for 70??

@@ -48,11 +48,24 @@ struct IsCommandCenter {
 	}
 };
 
+struct IsMinerals {
+	bool operator() (const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::NEUTRAL_MINERALFIELD: return true;
+		case UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD: return true;
+		case UNIT_TYPEID::NEUTRAL_MINERALFIELD450: return true;
+		case UNIT_TYPEID::NEUTRAL_MINERALFIELD750: return true;
+		case UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750: return true;
+		default: return false;
+		}
+	}
+};
 struct IsVespeneGeyser {
 	bool operator() (const Unit& u) {
 		switch (u.unit_type.ToType()) {
 		case UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
 		case UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER: return true;
+		case UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER: return true;
 		default: return false;
 		}
 	}
