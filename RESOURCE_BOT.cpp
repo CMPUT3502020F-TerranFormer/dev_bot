@@ -22,6 +22,7 @@ void RESOURCE_BOT::gameStart() {
     std::cout << "Map: " << observation->GetGameInfo().map_name << std::endl;
 
     baseManager = new BaseManager(&task_queue, observation, units);
+    buildingPlacementManager = new BuildingPlacementManager(observation, query);
 }
 
 void RESOURCE_BOT::step() {
@@ -183,7 +184,7 @@ void RESOURCE_BOT::step() {
             break;
         }
         default: {
-            std::cerr << "RESOURCE Unrecognized Task: " << t.source << std::endl;
+            std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
             task_queue.pop();
         }
         }

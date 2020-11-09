@@ -16,6 +16,7 @@
 #include "TS_Queue.hpp"
 #include "TF_unit.hpp"
 #include "Task.hpp"
+#include "BuildingPlacementManager.hpp"
 
 /**
  * Base TF_Agent class, forward declaration is needed and they are declared together
@@ -58,6 +59,7 @@ private:
     DEFENCE_BOT* defence;
     RESOURCE_BOT* resource;
     SCOUT_BOT* scout;
+
 };
 
 class TF_Agent {
@@ -140,6 +142,7 @@ protected:
     const ObservationInterface* observation;
     ActionInterface* action;
     QueryInterface* query;
+    BuildingPlacementManager* buildingPlacementManager;
 };
 
 #endif

@@ -80,12 +80,12 @@ public:
 	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs, std::vector<Tag>& units)
 		: task_queue(t_queue), observation(obs), resource_units(units)
 	{
-		// template
-		active_bases.push_back(Base()); // account for if scv's are added before first command center
+		Base base; // to account for if scv's are added before first command center
 		Point3D start = observation->GetStartLocation();
-		active_bases.front().location = Point2D(start.x, start.y);
-		active_bases.front().findResources(observation->GetUnits(Unit::Alliance::Neutral));
-		active_bases.front().command = Base().NoUnit;
+		base.location = Point2D(start.x, start.y);
+		base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+		base.command = base.NoUnit;
+		active_bases.push_back(base);
 		scv_count = 0;
 	}
 

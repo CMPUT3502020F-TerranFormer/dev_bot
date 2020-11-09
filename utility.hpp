@@ -52,6 +52,7 @@ struct IsVespeneGeyser {
 	bool operator() (const Unit& u) {
 		switch (u.unit_type.ToType()) {
 		case UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
+		case UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER: return true;
 		default: return false;
 		}
 	}
