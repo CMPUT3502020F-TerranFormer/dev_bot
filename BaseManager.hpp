@@ -18,11 +18,11 @@
 
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
- * Currently this will build 3 command centers and mine all resources -> must implement command center building
- * Issues to fix: when too many unit are assigned to a command center they will just keep working there
- * also, getSCV() will always return the same scv if called multiple times during the same step
- * Associating scv's with a specific resource
+ * Currently this will build 3 command centers and mine all resources
+ * And it heals all damaged units around an undamaged command center with radius 10
  * Issue: MULE functionality is incomplete and may not work (at all?)
+ * Issue: The command center transfer (when resources are depleted) has
+ * to be implemented (we are currently stuck at 3 command centers)
  */
 
 using namespace sc2;
@@ -39,13 +39,17 @@ struct Base {
 
 	void findResources(const Units units) {
 		// must be called after a command center is added, updates with the surrounding resources
+		minerals.clear();
+		vespene.clear();
 		IsMinerals min;
 		IsVespeneGeyser vesp;
 		for (auto& p : units) {
-			if (min(*p) && DistanceSquared2D(location, p->pos) < 225) { // just add minerals close to command center
+			if (min(*p) && DistanceSquared2D(location, p->pos) < 225 // just add minerals close to command center
+				&& p->mineral_contents > 0) {						 // must also have resources
 				minerals.push_back(TF_unit(p->unit_type, p->tag));
 			}
-			if (vesp(*p) && DistanceSquared2D(location, p->pos) < 225) {
+			if (vesp(*p) && DistanceSquared2D(location, p->pos) < 225
+				&& p->vespene_contents > 0) {
 				vespene.push_back(TF_unit(p->unit_type, p->tag));
 			}
 		}
@@ -59,6 +63,14 @@ struct Base {
 		return false;
 	}
 
+	/* Returns if all the resources are depleted;
+	 * findResources must be called first to ensure that we have accurate information
+	 * about the state of resources
+	 */
+	bool depleted() {
+		return (minerals.empty() && vespene.empty());
+	}
+
 	bool startTransfer() {
 		// start transfer process (move units if planetary; else move units + command) to new location
 		// implement this later
@@ -69,8 +81,8 @@ struct Base {
 class BaseManager {
 public:
 	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs,
-		std::vector<Tag>* units, BuildingPlacementManager* bmp)
-		: task_queue(t_queue), observation(obs), resource_units(units), buildingPlacementManager(bmp)
+		std::vector<Tag>* units, BuildingPlacementManager* bpm)
+		: task_queue(t_queue), observation(obs), resource_units(units), buildingPlacementManager(bpm)
 	{
 		Base base; // to account for if scv's are added before first command center
 		Point3D start = observation->GetStartLocation();
@@ -78,6 +90,7 @@ public:
 		base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
 		base.command = base.NoUnit;
 		active_bases.push_back(base);
+
 		scv_count = 0;
 		scv_target_count = 70;
 
@@ -121,7 +134,7 @@ public:
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 5, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
@@ -134,6 +147,12 @@ public:
 						break;
 					}
 				}
+			}
+
+			// we must also make sure the base still has resources, if not move it to isolated_bases
+			// or start the transfer process --> implement later
+			base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+			if (base.depleted()) {
 			}
 		}
 
@@ -158,7 +177,7 @@ public:
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 4, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}

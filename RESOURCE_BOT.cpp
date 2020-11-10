@@ -260,18 +260,10 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 }
 
 void RESOURCE_BOT::buildSupplyDepot() {
-    // checks that a supply depot is not already in progress then
-    // find a space where a supply depot can be build, then buildStructure
-    // for now, choose a (semi)-random point, in the future, have a policy to choose the point
+    // gets a location to build the supply depot then buildStructure
+    // which will prevent 2 from being built at the same time
 
-    Point2D point(0, 0);
-    while (!query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) {
-        Tag scv_tag = baseManager->getSCV().tag;
-        if (scv_tag == -1) { return; } // there are no scvs
-        const Unit* scv = observation->GetUnit(scv_tag);
-        point = scv->pos;
-        point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
-    }
+    Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
     buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
 
