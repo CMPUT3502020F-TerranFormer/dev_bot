@@ -84,7 +84,7 @@ struct Task {
      * @param target: The unit to repair
      * @param aid: The ABILITY_ID of the repair type that needs to be performed
      */
-    Task(enum AgentActions, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid)
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid)
         : action(action), source(source), priority(priority), target(target), ability_id(aid)
     {}
 

@@ -69,7 +69,7 @@ struct Base {
 class BaseManager {
 public:
 	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs,
-		std::vector<Tag>& units, BuildingPlacementManager* bmp)
+		std::vector<Tag>* units, BuildingPlacementManager* bmp)
 		: task_queue(t_queue), observation(obs), resource_units(units), buildingPlacementManager(bmp)
 	{
 		Base base; // to account for if scv's are added before first command center
@@ -80,10 +80,137 @@ public:
 		active_bases.push_back(base);
 		scv_count = 0;
 		scv_target_count = 70;
+
+		std::random_device r;
+		rand_gen = std::mt19937(r());
+	}
+
+	/**
+	 * This handles the actions that will be made during a step
+	 * It's easier (and more clear) to handle stuff like building refineries
+	 * in here instead of when a unit is added/idle/deleted
+	 * This automatically repairs all units close to the command center (10 units)
+	 */
+	void step() {
+		// Stuff that is particular to each base, such as refineries, handling excess scv's
+		// we must check that build progress is complete when looking for units that can be repaired
+		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
+		for (auto& base : active_bases) {
+			// smaller range than 15, should still include refineries and immediate units
+			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 100)); 
+			const Unit* command = observation->GetUnit(base.command.tag);
+
+			// do not build refineries while the command center is damaged -> wait until the command
+			// center is repaired, then it is probably safe
+			if (command->health < command->health_max
+				&& command->build_progress >= 1) {
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR));
+			}
+			else {
+				// if they are already built, this won't do anything; but it is simpler
+				// to just try than to check if they are not built
+
+				// must be finished so we are guaranteed to have vision of the geysers
+				if (command->build_progress >= 1) {
+					buildRefineries(command);
+				}
+
+				// repair all units that are close to the command center
+				// if it's not being attacked, it is probably safe for the scv
+				// I'm unsure if this works for units inside a bunker/medi-vac
+				for (auto& unit : units) {
+					if (unit->health < unit->health_max
+						&& command->build_progress >= 1) {
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR));
+					}
+				}
+			}
+
+			// we also deal with bases that have too many scvs mining (1 scv / base / step)
+			if (command->assigned_harvesters > command->ideal_harvesters) {
+				for (auto& unit : units) {
+					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
+						assignSCV(unit);
+						break;
+					}
+				}
+			}
+		}
+		
+		// we must also deal with vespene refineries that have excess workers
+		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
+		for (auto& r : refineries) {
+			if (r->assigned_harvesters > r->ideal_harvesters) {
+				for (auto& s : scvs) {
+					if (s->engaged_target_tag == r->tag) {
+						assignSCV(s);
+					}
+				}
+			}
+		}
+
+		// Isolated bases have a subset of the actions of active_bases
+		// they still repair nearby units to make it easy for the other agents,
+		// but it is preferred to send them to active bases
+		for (auto& base : isolated_bases) {
+			// smaller range than 15, should still include refineries and immediate units
+			const Unit* command = observation->GetUnit(base.tag);
+			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(command->pos, 100));
+
+			// do not build refineries while the command center is damaged -> wait until the command
+			// center is repaired, then it is probably safe
+			if (command->health < command->health_max
+				&& command->build_progress >= 1) {
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR));
+			}
+			else {
+				// repair all units that are close to the command center
+				// if it's not being attacked, it is probably safe for the scv
+				// I'm unsure if this works for units inside a bunker/medi-vac
+				for (auto& unit : units) {
+					if (unit->health < unit->health_max
+						&& command->build_progress >= 1) {
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR));
+					}
+				}
+			}
+			// if it turns out that when there are no resources left scvs
+			// continue working at a command center, then reassign all scvs
+		}
+
+		// Build a new command center if necessary, right now, we use preset conditions
+		// remember that a unit is added when it starts being build
+		// build command centers at 20/40 scv's, or when a planetary fortress is running out of resources
+		// ISSUE: Sometimes builds another command center when it shouldn't be
+		int num_command_centers = active_bases.size() + isolated_bases.size();
+		bool build = false;
+
+		// to stay alive as long as possible
+		if (num_command_centers == 0) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
+
+		// then check if we have a planetary fortress that is running out of resources
+		// build a new command center in advance so there is less idle time
+		// ISSUE: Implement base transfers with LIFT OFF
+		for (auto& base : active_bases) {
+			if (base.buildNewCommand()) {
+				build = true;
+				break;
+			}
+		}
+
+		if (build) {
+			Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
+			if (baseLocation != Point2D(0, 0)) {
+				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+					UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
+			}
+		}
 	}
 
 	void addUnit(const Unit* u) {
-		// add scv's to bases until they are maximally saturated, then add to idleSCVs
+		// Add MULES?? -> should still work because they are included in unitIdle()
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
 			++scv_count;
@@ -94,7 +221,6 @@ public:
 			if (active_bases.size() == 1) { // check for initial case where scv's were added before command center
 				if (active_bases.front().command.tag == -1) {
 					active_bases.front().command = TF_unit(u->unit_type, u->tag);
-					buildRefineries(u); // initial command center does not go through OnBuildingComplete()
 				}
 				else {
 					Base base = Base();
@@ -114,59 +240,22 @@ public:
 		}
 		// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
 		}
-
-		// and build command centers at 20/40 scv's, or when a planetary fortress is running
-		// out of resources
-		for (auto& base : active_bases) {
-			if (base.buildNewCommand() || scv_count == 20 || scv_count == 40) {
-				// build a new command center, all current bases are saturated
-				int base_count = active_bases.size() + isolated_bases.size();
-				Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
-				if (baseLocation != Point2D(0, 0)) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, 
-						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
-				}
-				return;
-			}
-		}
 	}
 
-	void buildRefineries(const Unit* command) {
-		// should be called when a command center is completed -> adds refineries for 
-		// it to the task queue (when the geysers are guaranteed to be in vision)
-		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-			Units vespene = observation->GetUnits(IsVespeneGeyser());
-			for (auto& p : vespene) {
-				if (DistanceSquared2D(command->pos, p->pos) < 225) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-						ABILITY_ID::BUILD_REFINERY, p->tag));
-				}
-			}
-
-			// also update the vespene in the base
-			for (auto& p : active_bases) {
-				if (p.command.tag == command->tag) {
-					p.vespene.clear();
-					p.findResources(vespene);
-				}
-			}
-		}
-	}
-
+	/**
+	 * Takes appropriate actions for the type of deleted unit
+	 * This does not modify resource_units; that's for the resource agent
+	 */
 	void deleteUnit(const Unit* u) {
-		// template
-		// if it's a COMMAND CENTER -> build a new one?
-		// also have to reassign all scv's (if not building a enw one)
-		// for now just decrease scv_count and delete from bases
+		// if it's a COMMAND CENTER also have to reassign all scvs
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
-		if (f(*u)) { // remove tag; try to build a new one at location (should be more advanced.. but for now)
-					// it is necessary to remove the base, so that scv's will be properly assigned
-			for (auto& p : active_bases) {
-				if (p.command.tag = u->tag) {
-					p.command = p.NoUnit;
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER,
-						ABILITY_ID::BUILD_COMMANDCENTER, p.location));
+		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
+					 // building command centers is handled in step()
+			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
+				if (it->command.tag == u->tag) {
+					active_bases.erase(it);
+					return;
 				}
 			}
 		}
@@ -195,7 +284,7 @@ public:
 		// first get all harvesting/idle (or close, if ia point is given) scv's
 		// check that they are also in resource_units
 		for (auto& scv : scvs) {
-			if (std::find(std::begin(resource_units), std::end(resource_units), scv->tag) == std::end(resource_units)) {
+			if (std::find(std::begin(*resource_units), std::end(*resource_units), scv->tag) == std::end(*resource_units)) {
 				continue;
 			}
 			if (scv->orders.empty()) {
@@ -232,13 +321,14 @@ public:
 		if (possible_scvs.empty()) { return TF_unit(scvs.front()->unit_type, scvs.front()->tag); }
 
 		// otherwise return a random scv
-		std::random_device r;
-		std::mt19937 rand_gen(r()); //Standard mersenne_twister_engine seeded with rd()
 		std::uniform_int_distribution<> distrib(0, possible_scvs.size() - 1);
 		int index = distrib(rand_gen);
 		return TF_unit(scvs.data()[index]->unit_type, scvs.data()[index]->tag);
 	}
 
+	/**
+	 * Handles idle units
+	 */
 	void unitIdle(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
 		switch (u->unit_type.ToType()) {
@@ -247,7 +337,7 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MULE: {
-
+			assignMULE(u);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
@@ -274,8 +364,11 @@ public:
 		}
 	}
 
+	/**
+	 * Depending on how many command centers we have, we want to have so much extra supply
+	 * available; try to keep 3/4/6 supply ahead (1/2/3+ command centers)
+	 */
 	int getSupplyFloat() {
-		// try to keep 3/4/6 supply ahead (1/2/3+ command centers)
 		int command_centers = isolated_bases.size() + active_bases.size();
 		if (command_centers <= 1) { return 3; }
 		else if (command_centers == 2) { return 4; }
@@ -288,9 +381,13 @@ private:
 	BuildingPlacementManager* buildingPlacementManager;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
+	
 	int scv_count; // total active scv count
 	int scv_target_count; // aim for 70?
-	std::vector<Tag> resource_units;
+
+	std::vector<Tag>* resource_units;
+
+	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
 		for (auto& p : active_bases) { // saturate bases with scv's
@@ -311,8 +408,7 @@ private:
 				}
 			}
 		}
-		// if all are saturated, just assign to first base
-		task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, active_bases.front().minerals.back().tag));
+		// if all are saturated, do nothing -> change this later??
 	}
 
 	void assignMULE(const Unit* u) {
@@ -331,6 +427,31 @@ private:
 		if (closest_base.minerals.size() == 0) { return; }
 		task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, closest_base.minerals.front().tag));
 	}
+
+	/**
+	 * Adds Refineries for the command center to the task queue
+	 * Must be called when the geysers are guaranteed to be in vision
+	 */
+	void buildRefineries(const Unit* command) {
+		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+			Units vespene = observation->GetUnits(IsVespeneGeyser());
+			for (auto& p : vespene) {
+				if (DistanceSquared2D(command->pos, p->pos) < 225) {
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+						ABILITY_ID::BUILD_REFINERY, p->tag));
+				}
+			}
+
+			// also update the vespene in the base
+			for (auto& p : active_bases) {
+				if (p.command.tag == command->tag) {
+					p.vespene.clear();
+					p.findResources(vespene);
+				}
+			}
+		}
+	}
+
 
 };
 #endif

@@ -81,4 +81,15 @@ struct IsUnit {
 	}
 };
 
+struct IsClose {
+	IsClose(Point2D location, int distanceSquared)
+		: p(location), d2(distanceSquared) {}
+	int d2;
+	Point2D p;
+	bool operator() (const Unit& u) {
+		if (DistanceSquared2D(u.pos, p) < d2) { return true; }
+		return false;
+	}
+};
+
 #endif //TFBOT_UTILITY_HPP

@@ -22,16 +22,18 @@ void RESOURCE_BOT::gameStart() {
     std::cout << "Map: " << observation->GetGameInfo().map_name << std::endl;
 
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
-    baseManager = new BaseManager(&task_queue, observation, units, buildingPlacementManager);
+    baseManager = new BaseManager(&task_queue, observation, &units, buildingPlacementManager);
 }
 
+/**
+ * This handles all actions taken by the bases
+ * And it also does resource management for all the agents
+ */
 void RESOURCE_BOT::step() {
-    /*MODIFY THIS AND HELPER METHODS TO CHECK IF THERE ARE ENOUGH RESOURCES TO BUILD FIRST
-    AND WHEN BUILDING BUILDINGS; ONLY BUILD ONE OF EACH TYPE AT A TIME (REMOVE DUPLICATES FROM THE QUEUE)
-    MAKE SURE THAT WE DON'T INTERRUPT ACTIONS AND MAKE SURE THIS WORKS WITH BARRACKS & OTHER UNIT TYPES
-    **THIS WILL PROBABLY BE CHANGED WHEN THE TASK_QUEUE IS CHANGED AND MOVED INTO ONUNITIDLE()
-    */
+    // actions for bases
+    baseManager->step();
 
+    // Resource Management
     // check if we need to build a supply depot
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
 
@@ -111,17 +113,21 @@ void RESOURCE_BOT::step() {
         case REPAIR: {
             // will repair unit anyway even if there is not enough resources
             // resource cost = %health lost * build cost
+            /* Must first limit the number of scv's that can repair a single unit
             Tag scv_tag = baseManager->getSCV().tag;
             if (scv_tag == -1) { break; } // no scv exists
             const Unit* scv = observation->GetUnit(scv_tag);
             const Unit* u = observation->GetUnit(t.target);
-            action->UnitCommand(scv, t.ability_id, u, true);
+            if (u != nullptr) {
+                action->UnitCommand(scv, t.ability_id, u, true);
 
-            // update resources
-            UnitTypeData ut = observation->GetUnitTypeData()[u->unit_type];
-            float lost_health = 1.0f - (u->health / u->health_max);
-            available_minerals -= ut.mineral_cost * lost_health;
-            available_vespene -= ut.vespene_cost * lost_health;
+                // update resources
+                UnitTypeData ut = observation->GetUnitTypeData()[u->unit_type];
+                float lost_health = 1.0f - (u->health / u->health_max);
+                available_minerals -= ut.mineral_cost * lost_health;
+                available_vespene -= ut.vespene_cost * lost_health;
+            }
+            */
             task_queue.pop();
             break;
         }
@@ -202,10 +208,7 @@ void RESOURCE_BOT::addUnit(TF_unit u) {
 }
 
 void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
-    // we are just paying attention to command centers to build the vespene
-    // if we don't actually see it (which may be the case when starting to build one
-    // then we don't have the tag to it and it will fail
-    baseManager->buildRefineries(u);
+
 }
 
 void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
@@ -219,8 +222,8 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
-    baseManager->addUnit(u);
     addUnit(TF_unit(u->unit_type, u->tag));
+    baseManager->addUnit(u);
 }
 
 void RESOURCE_BOT::unitEnterVision(const sc2::Unit* u) {
