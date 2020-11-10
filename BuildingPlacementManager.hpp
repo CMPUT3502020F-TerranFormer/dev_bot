@@ -8,7 +8,7 @@
 /**
  * This class contains all the information on where to build buildings
  * It will eventually have a method for each building type
- * When it is complete, we can modify the BUILD Task so that it is no longer necessary
+ * When it is complete, we can modify the BUILD Task so that it is no longer necessary (maybe????)
  * to provide a Point2D for placement, and instead call a method with the unit_type
  * which will return the correct Point2D
  */
