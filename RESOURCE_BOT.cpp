@@ -113,21 +113,34 @@ void RESOURCE_BOT::step() {
         case REPAIR: {
             // will repair unit anyway even if there is not enough resources
             // resource cost = %health lost * build cost
-            /* Must first limit the number of scv's that can repair a single unit
-            Tag scv_tag = baseManager->getSCV().tag;
-            if (scv_tag == -1) { break; } // no scv exists
-            const Unit* scv = observation->GetUnit(scv_tag);
-            const Unit* u = observation->GetUnit(t.target);
-            if (u != nullptr) {
-                action->UnitCommand(scv, t.ability_id, u, true);
-
-                // update resources
-                UnitTypeData ut = observation->GetUnitTypeData()[u->unit_type];
-                float lost_health = 1.0f - (u->health / u->health_max);
-                available_minerals -= ut.mineral_cost * lost_health;
-                available_vespene -= ut.vespene_cost * lost_health;
+            // we must also limit the number of scvs that can repair a unit at once
+            // -> t.count
+            Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
+            int current_scvs = 0;
+            for (auto& s : scvs) {
+                for (auto& order : s->orders) {
+                    if (order.ability_id == ABILITY_ID::EFFECT_REPAIR
+                        && order.target_unit_tag == t.target) {
+                        ++current_scvs;
+                        break;
+                    }
+                }
             }
-            */
+            if (current_scvs < t.count) {
+                Tag scv_tag = baseManager->getSCV().tag;
+                if (scv_tag == -1) { continue; } // no scv exists
+                const Unit* scv = observation->GetUnit(scv_tag);
+                const Unit* u = observation->GetUnit(t.target);
+                if (u != nullptr) {
+                    action->UnitCommand(scv, t.ability_id, u, true);
+
+                    // update resources
+                    UnitTypeData ut = observation->GetUnitTypeData()[u->unit_type];
+                    float lost_health = 1.0f - (u->health / u->health_max);
+                    available_minerals -= ut.mineral_cost * lost_health;
+                    available_vespene -= ut.vespene_cost * lost_health;
+                }
+            }
             task_queue.pop();
             break;
         }

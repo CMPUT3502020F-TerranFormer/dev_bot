@@ -104,7 +104,7 @@ public:
 			// center is repaired, then it is probably safe
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -120,8 +120,8 @@ public:
 				// I'm unsure if this works for units inside a bunker/medi-vac
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
-						&& command->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR));
+						&& unit->build_progress >= 1) {
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
@@ -132,18 +132,6 @@ public:
 					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
 						assignSCV(unit);
 						break;
-					}
-				}
-			}
-		}
-		
-		// we must also deal with vespene refineries that have excess workers
-		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
-		for (auto& r : refineries) {
-			if (r->assigned_harvesters > r->ideal_harvesters) {
-				for (auto& s : scvs) {
-					if (s->engaged_target_tag == r->tag) {
-						assignSCV(s);
 					}
 				}
 			}
@@ -161,7 +149,7 @@ public:
 			// center is repaired, then it is probably safe
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
 				// repair all units that are close to the command center
@@ -169,8 +157,8 @@ public:
 				// I'm unsure if this works for units inside a bunker/medi-vac
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
-						&& command->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR));
+						&& unit->build_progress >= 1) {
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
@@ -205,6 +193,22 @@ public:
 			if (baseLocation != Point2D(0, 0)) {
 				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
 					UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
+			}
+		}
+
+		// we must also deal with vespene refineries that have excess workers
+		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
+		for (auto& r : refineries) {
+			if (r->assigned_harvesters > r->ideal_harvesters) {
+				for (auto& s : scvs) {
+					for (auto& order : s->orders) {
+						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
+							&& order.target_unit_tag == r->tag) {
+							assignSCV(s);
+							return;
+						}
+					}
+				}
 			}
 		}
 	}

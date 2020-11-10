@@ -77,15 +77,16 @@ struct Task {
     {}
 
     /** REPAIR - RESOURCES; specify which unit needs repairing -- it should be in a safe location
-     * (like by an active command center) 
+     * (like by an active command center) When checking unit health, be sure to also check build progress!
      * @param action: REPAIR
      * @param source: The source agent
      * @param priority: The priority
      * @param target: The unit to repair
      * @param aid: The ABILITY_ID of the repair type that needs to be performed
+     * @param count: The maximum number of scvs that are allowed to repair the target at once (default 1)
      */
-    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid)
-        : action(action), source(source), priority(priority), target(target), ability_id(aid)
+    Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, int count = 1)
+        : action(action), source(source), priority(priority), target(target), ability_id(aid), count(count)
     {}
 
     /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
