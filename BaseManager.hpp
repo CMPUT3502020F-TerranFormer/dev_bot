@@ -15,9 +15,24 @@
 /**
  * The purpose of this class is to manage command centers, scv's and minerals/vespene
  * Currently this will build 3 command centers and mine all resources -> must implement command center building
- * Issues to fix: build another command center
+ * Issues to fix: When building another command center, vespene doesn't build; also, when too many unit are assigned
+ * to a command center they will just keep working there
  * Associating scv's with a specific resource
+ * 
+ * CactusValleyLE Base Locations (Arranged in order), *starting location
+ * *(33.5, 158.5) - (66.5, 161.5) - (93.5, 156.5) - - *(158.5, 158.5)
+ * - (54.5, 132.5) - -					(132.5, 137.5) - (161.5, 125.5)
+ * (35.5, 93.5)					-						(156.5, 98.5)
+ * (30.5, 66.5) - (59.5, 54.5)						(137.5, 59.5)
+ * *(33.5, 33.5)		-		(98.5, 35.5) (125.5, 30.5) *(158.5, 33.5)
+ * 
+ * For now this will do
  */
+const Point2D CactusValleyLETopLeftBases[4] = { Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5) };
+const Point2D CactusValleyLETopRightBases[4] = { Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5) };
+const Point2D CactusValleyLEBottomLeftBases[4] = { Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5) };
+const Point2D CactusValleyLEBottomRightBases[4] = { Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) };
+
 using namespace sc2;
 
 struct Base {
@@ -27,7 +42,6 @@ struct Base {
 	TF_unit command;
 	Point2D location;
 
-	std::vector<TF_unit> scvs;
 	std::vector<TF_unit> minerals;
 	std::vector<TF_unit> vespene;
 
@@ -86,12 +100,14 @@ public:
 			if (active_bases.size() == 1) { // check for initial case where scv's were added before command center
 				if (active_bases.front().command.tag == -1) {
 					active_bases.front().command = TF_unit(u->unit_type, u->tag);
+					buildRefineries(u); // initial command center does not go through OnBuildingComplete()
 				}
 				else {
 					Base base = Base();
 					base.command = TF_unit(u->unit_type, u->tag);
 					base.location = u->pos;
 					base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+					active_bases.push_back(base);
 				}
 			}
 			else {
@@ -99,6 +115,7 @@ public:
 				base.command = TF_unit(u->unit_type, u->tag);
 				base.location = u->pos;
 				base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+				active_bases.push_back(base);
 			}
 		}
 			// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
@@ -110,9 +127,17 @@ public:
 		for (auto& base : active_bases) {
 			if (base.buildNewCommand() || scv_count == 20 || scv_count == 40) {
 				// build a new command center, all current bases are saturated, for now, don't worry about deleted spots
-				int base = active_bases.size() + isolated_bases.size();
-				if (base <= 4) { // just try to build a new base -- need to get a good location first...
-					
+				int base_count = active_bases.size() + isolated_bases.size();
+				if (base_count < 4) {	// just try to build a new base -- need to get a good location first...
+									// for CactusValleyLE, they are in clusters or 4, so for now that's all I'll worry about
+					Point2D baseLocation;
+					Point3D start3d = observation->GetStartLocation();
+					Point2D start = Point2D(start3d.x, start3d.y);
+					if (start == CactusValleyLETopLeftBases[0]) { baseLocation = CactusValleyLETopLeftBases[base_count]; }
+					else if (start == CactusValleyLETopRightBases[0]) { baseLocation = CactusValleyLETopRightBases[base_count]; }
+					else if (start == CactusValleyLEBottomLeftBases[0]) { baseLocation = CactusValleyLEBottomLeftBases[base_count]; }
+					else { baseLocation = CactusValleyLEBottomRightBases[base_count]; }
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
 					return;
 				}
 			}
@@ -122,28 +147,43 @@ public:
 	void assignSCV(const Unit* u) {
 		for (auto& p : active_bases) { // saturate bases with scv's
 			if (p.command.tag == -1) { return; }
-			try {
-				const Unit* base = observation->GetUnit(p.command.tag);
-				if (base->assigned_harvesters < base->ideal_harvesters) {
-					task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, p.minerals.back().tag));
-					return;
-				}
-				// if minerals are saturated, make sure refineries are built
-				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-					ABILITY_ID::BUILD_REFINERY, p.vespene.front().tag));
-				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
-					ABILITY_ID::BUILD_REFINERY, p.vespene.back().tag));
-				Units vespene = observation->GetUnits(IsVespeneRefinery());
-				for (auto& v : vespene) {
-					if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
-						if (v->assigned_harvesters < v->ideal_harvesters) {
-							task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::SMART, v->tag));
-							return;
-						}
+			const Unit* base = observation->GetUnit(p.command.tag);
+			if (base->assigned_harvesters < base->ideal_harvesters) {
+				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
+				return;
+			}
+			// if minerals are saturated, check vespene
+			Units vespene = observation->GetUnits(IsVespeneRefinery());
+			for (auto& v : vespene) {
+				if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
+					if (v->assigned_harvesters < v->ideal_harvesters) {
+						task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
+						return;
 					}
 				}
 			}
-			catch (std::exception e) {} // right now, only occurs when there are no bases left...
+		}
+	}
+
+	void buildRefineries(const Unit* command) {
+		// should be called when a command center is completed -> adds refineries for 
+		// it to the task queue (when the geysers are guaranteed to be in vision)
+		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+			Units vespene = observation->GetUnits(IsVespeneGeyser());
+			for (auto& p : vespene) {
+				if (DistanceSquared2D(command->pos, p->pos) < 225) {
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+						ABILITY_ID::BUILD_REFINERY, p->tag));
+				}
+			}
+
+			// also update the vespene in the base
+			for (auto& p : active_bases) {
+				if (p.command.tag == command->tag) {
+					p.vespene.clear();
+					p.findResources(vespene);
+				}
+			}
 		}
 	}
 
@@ -155,6 +195,7 @@ public:
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // remove tag; try to build a new one at location (should be more advanced.. but for now)
+					// it is necessary to remove the base, so that scv's will be properly assigned
 			for (auto& p : active_bases) {
 				if (p.command.tag = u->tag) {
 					p.command = p.NoUnit;

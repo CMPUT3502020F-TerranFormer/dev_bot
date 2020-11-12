@@ -39,8 +39,8 @@ void TF_Bot::resourceStep() {
             // check that we have enough resources to do build unit
             UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (ut.food_required > available_food
-                && ut.mineral_cost > available_minerals
-                && ut.vespene_cost > available_vespene)
+                || ut.mineral_cost > available_minerals
+                || ut.vespene_cost > available_vespene)
             {
                 task_success = false;
                 break;
@@ -58,22 +58,27 @@ void TF_Bot::resourceStep() {
             /* This does not prevent multiple units from being produced at the same time */
             // get the producing unit
             if (t.target == -1) { 
-                resource_queue.pop();
-                std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID) t.source_unit << " Source : " << t.source << std::endl;
-                break; 
+                // try to get a target unit of the required type, we'll just take the first
+                Units workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(t.source_unit));
+                if (workers.size() == 0) {
+                    resource_queue.pop();
+                    std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
+                    break;
+                }
+                t.target = workers.front()->tag;
             }
             
             // check that we have enough resources to do ability
             UnitTypeData ut = Observation()->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (ut.food_required > available_food
-                && ut.mineral_cost > available_minerals
-                && ut.vespene_cost > available_vespene)
+                || ut.mineral_cost > available_minerals
+                || ut.vespene_cost > available_vespene)
             {
                 task_success = false;
                 break;
             }
 
-            Actions()->UnitCommand(Observation()->GetUnit(t.target), t.ability_id, false);
+            Actions()->UnitCommand(Observation()->GetUnit(t.target), t.ability_id, true);
             
             // update available resources
             available_food -= ut.food_required;
@@ -87,7 +92,7 @@ void TF_Bot::resourceStep() {
             // resource cost = %health lost * build cost
             const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
             const Unit* u = Observation()->GetUnit(t.target);
-            Actions()->UnitCommand(scv, t.ability_id, u);
+            Actions()->UnitCommand(scv, t.ability_id, u, true);
 
             // update resources
             UnitTypeData ut = Observation()->GetUnitTypeData()[u->unit_type];
@@ -98,6 +103,7 @@ void TF_Bot::resourceStep() {
         }
         case UPGRADE: {
             // determine cost of upgrade, then implement similar to TRAIN
+            std::cout << "Not Implemented: RESOURCE -> UPGRADE" << std::endl;
             break;
         }
         case MOVE: {
@@ -108,10 +114,12 @@ void TF_Bot::resourceStep() {
         case TRANSFER: {
             // Transfer a unit to another agent, and remove from resource unit list
             // find in our unit list
+            std::cout << "Not Implemented: RESOURCE -> TRANSFER" << std::endl;
             break;
         }
         case ORBIT_SCOUT: {
             //baseManager // orbital scan
+            std::cout << "Not Implemented: RESOURCE -> ORBIT_SCOUT" << std::endl;
             break;
         }
         default: {
@@ -126,6 +134,13 @@ void TF_Bot::resourceIdle(const Unit* u) {
     baseManager->unitIdle(u);
 }
 
+void TF_Bot::resourceBuildingComplete(const Unit* u) {
+    // we are just paying attention to command centers... to build the vespene
+    // if we don't actually see it (which may be the case when starting to build one
+    // then we don't have the tag to it
+    baseManager->buildRefineries(u);
+}
+
 void TF_Bot::buildSupplyDepot() {
     // checks that a supply depot is not already in progress then
     // find a space where a supply depot can be build, then buildStructure
@@ -137,7 +152,7 @@ void TF_Bot::buildSupplyDepot() {
         point = scv->pos;
         point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
     }
-    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point, -1);
+    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
 
 bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
@@ -152,16 +167,17 @@ bool TF_Bot::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point
     }
 
     const Unit* scv = Observation()->GetUnit(baseManager->getSCV().tag);
-    if (target != -1) { // build on a target
-        const Unit* base;
-        base = Observation()->GetUnit(target);
-        if (Query()->Placement(ability_to_build_structure, base->pos, base)) {
-            Actions()->UnitCommand(scv, ability_to_build_structure, base);
+    // commands are queued just in case the same scv is returned several times
+    if (target != -1) { // build on a target unit
+        const Unit* building = Observation()->GetUnit(target);
+        Units units = Observation()->GetUnits(IsUnit(UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        if (Query()->Placement(ability_to_build_structure, building->pos, building)) {
+            Actions()->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;
         }
     } else { // build at a location
         if (Query()->Placement(ability_to_build_structure, point)) {
-            Actions()->UnitCommand(scv, ability_to_build_structure, point);
+            Actions()->UnitCommand(scv, ability_to_build_structure, point, true);
             return true;
         }
     }
