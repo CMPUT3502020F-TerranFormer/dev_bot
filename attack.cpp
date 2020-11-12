@@ -28,6 +28,17 @@ void TF_Bot::attackStep() {
     while (!attack_queue.empty() && task_success) {
         Task t = attack_queue.top();
         switch (t.action) {
+            case ATTACK: {
+                // tell each unit to attack
+                // batch all the attack commands (i.e selects the units in the vector for attacking)
+                for (auto &unit : t.units) {
+                    Actions()->UnitCommand(unit, t.ability_id, t.position,true);
+                }
+
+                // All units attack
+                Actions()->SendActions();
+            }
+
             case BUILD: {
                 /* This will prevent multiple identical building from being produced at the same time
                    unless specifically allowed. Identical units will be removed from the queue */
@@ -44,14 +55,14 @@ void TF_Bot::attackStep() {
                     available_minerals -= ut.mineral_cost;
                     available_vespene -= ut.vespene_cost;
                 }
-                resource_queue.pop();
+                attack_queue.pop();
                 break;
             }
             case TRAIN: {
                 /* This does not prevent multiple units from being produced at the same time */
                 // get the producing unit
                 if (t.target == -1) {
-                    resource_queue.pop();
+                    attack_queue.pop();
                     std::cout << "Invalid Task: No Source Unit Available: " << (UnitTypeID) t.source_unit
                               << " Source : " << t.source << std::endl;
                     break;
@@ -71,7 +82,7 @@ void TF_Bot::attackStep() {
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
                 available_vespene -= ut.vespene_cost;
-                resource_queue.pop();
+                attack_queue.pop();
                 break;
             }
             case REPAIR: {
@@ -86,6 +97,8 @@ void TF_Bot::attackStep() {
                 float lost_health = 1.0f - (u->health / u->health_max);
                 available_minerals -= ut.mineral_cost * lost_health;
                 available_vespene -= ut.vespene_cost * lost_health;
+
+                attack_queue.pop();
                 break;
             }
             case UPGRADE: {
@@ -94,7 +107,7 @@ void TF_Bot::attackStep() {
             }
             default: {
                 // Purpose is attack so won't do harvesting or any other types of resources
-
+                std::cout << "ATTACK AGENT: Operation not supported" << std::endl;
                 break;
             }
         }
