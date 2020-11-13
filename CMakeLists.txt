@@ -61,8 +61,10 @@ include_directories(SYSTEM
     ${PROJECT_BINARY_DIR}/cpp-sc2/generated
 )
 
+find_package(SQLite3 REQUIRED)
+
 # Create the executable.
 add_executable(TFBot ${SOURCES_TFBOT})
 target_link_libraries(TFBot
-    sc2api sc2lib sc2utils
+    sc2api sc2lib sc2utils SQLite3
 )
