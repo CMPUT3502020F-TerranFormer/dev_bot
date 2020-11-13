@@ -71,7 +71,6 @@ void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
                                    UNIT_TYPEID::TERRAN_COMMANDCENTER));
             break;
     }
-
 }
 
 void SCOUT_BOT::unitCreated(const sc2::Unit* u) {
@@ -103,6 +102,7 @@ void SCOUT_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* resou
 std::vector<Unit> SCOUT_BOT::last_seen_near(Point2D location, int radius, int since) {
     std::vector<Unit> ret;
 
+    // run query
     for (auto &record : detection_record) {
         if (record.distance(location) < radius) {
             auto now = std::chrono::steady_clock::now();
@@ -116,7 +116,6 @@ std::vector<Unit> SCOUT_BOT::last_seen_near(Point2D location, int radius, int si
 }
 
 void SCOUT_BOT::init() {
-
     game_epoch = std::chrono::steady_clock::now();
 
     // order half of the max # of scv at lower priority
@@ -131,10 +130,13 @@ void SCOUT_BOT::init() {
     }
 
     gi = observation->GetGameInfo();
+    main_base = gi.start_locations.at(0);
+    enemy_main_base = gi.start_locations.at(0);
 
     // base on map name, get all point of interest
-    SQLITE3 scout_POI_db("TF_bot.db"); // open db
     try{
+        SQLITE3 scout_POI_db("TF_bot.db"); // open db
+
         // form query
         SQLITE3_QUERY q("SELECT x, y FROM SCOUT_POI WHERE map = ?;");
         q.add_binding(gi.map_name);
@@ -154,8 +156,19 @@ void SCOUT_BOT::init() {
         }
     } catch (std::runtime_error &err) {
         std::cerr << "FATAL ERROR: " << err.what() << std::endl;
-        scout_POI_db.perror();
-        scout_POI_db.print_result();
         exit(1);
     }
+
+    std::copy(poi.begin(), poi.end(), std::back_inserter(poi_close_to_base));
+    std::sort(poi_close_to_base.begin(), poi_close_to_base.end(), [this](const Point2D &p1, const Point2D &p2){
+        return distance(this->main_base, p1) < distance(this->main_base, p2);
+    });
+    std::copy(poi.begin(), poi.end(), std::back_inserter(poi_close_to_enemy));
+    std::sort(poi_close_to_base.begin(), poi_close_to_base.end(), [this](const Point2D &p1, const Point2D &p2){
+        return distance(this->enemy_main_base, p1) < distance(this->enemy_main_base, p2);
+    });
+}
+
+double SCOUT_BOT::distance(const Point2D &p1, const Point2D &p2) {
+    return sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2));
 }

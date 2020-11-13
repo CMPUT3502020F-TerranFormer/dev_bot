@@ -121,6 +121,8 @@ private:
     GameInfo gi;
 
     std::vector<Point2D> poi;
+    std::vector<Point2D> poi_close_to_base;
+    std::vector<Point2D> poi_close_to_enemy;
 
     std::vector<Spotted_Enemy> detection_record;
 
@@ -128,6 +130,16 @@ private:
 
     enum {MAX_SCOUT_COUNT = 20};
 
+    Point2D enemy_main_base;
+    Point2D main_base;
+
+    /**
+     * calculate the distance between 2 point2d
+     * @param p1
+     * @param p2
+     * @return
+     */
+    static double distance(const Point2D &p1, const Point2D &p2);
 
 };
 
