@@ -15,16 +15,24 @@ TF_Bot::TF_Bot() {
 }
 
 TF_Bot::~TF_Bot() {
-
+    // free mem
+    delete attack;
+    delete defence;
+    delete scout;
+    delete resource;
 }
 
 void TF_Bot::OnGameStart() {
+
     attack->setAgents(defence, resource, scout);
     defence->setAgents(attack, resource, scout);
     resource->setAgents(defence, attack, scout);
+
     scout->setAgents(defence, attack, resource);
 
     resource->gameStart();
+
+    scout->init();
 }
 
 void TF_Bot::OnGameEnd() {
