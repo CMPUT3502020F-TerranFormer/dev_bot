@@ -11,8 +11,14 @@
 
 /*
 SourceAgent findOwner(const Unit* unit) {
+<<<<<<< HEAD
 	UNIT_TYPEID type = unit->unit_type;
 	Tag tag = unit->tag;
+=======
+    UNIT_TYPEID type = unit->unit_type;
+    Tag tag = unit->tag;
+
+>>>>>>> origin
 }
 */
 
@@ -48,6 +54,7 @@ struct IsCommandCenter {
 	}
 };
 
+<<<<<<< HEAD
 struct IsMinerals {
 	bool operator() (const Unit& u) {
 		switch (u.unit_type.ToType()) {
@@ -60,12 +67,17 @@ struct IsMinerals {
 		}
 	}
 };
+=======
+>>>>>>> origin
 struct IsVespeneGeyser {
 	bool operator() (const Unit& u) {
 		switch (u.unit_type.ToType()) {
 		case UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
+<<<<<<< HEAD
 		case UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER: return true;
 		case UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER: return true;
+=======
+>>>>>>> origin
 		default: return false;
 		}
 	}
@@ -81,6 +93,7 @@ struct IsUnit {
 	}
 };
 
+<<<<<<< HEAD
 struct IsClose {
 	IsClose(Point2D location, int distanceSquared)
 		: p(location), d2(distanceSquared) {}
@@ -93,3 +106,6 @@ struct IsClose {
 };
 
 #endif //TFBOT_UTILITY_HPP
+=======
+#endif //TFBOT_UTILITY_HPP
+>>>>>>> origin

@@ -11,7 +11,11 @@
  * Possible action that can be taken
  * More can be added
  */
+<<<<<<< HEAD
 enum AgentActions { HARVEST, BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER };
+=======
+enum AgentActions {HARVEST, BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATTACK, REPAIR, MOVE, UPGRADE, TRANSFER};
+>>>>>>> origin
 
 /**
  * the source agent
@@ -33,15 +37,25 @@ struct Task {
         : action(action), priority(priority), self(source), ability_id(aid), target(target)
     {}
 
+<<<<<<< HEAD
     /** BUILD - RESOURCES;
+=======
+    /** BUILD - RESOURCES; 
+>>>>>>> origin
      * @param Action : BUILD
      * @param source : The source agent
      * @param priority: The priority
      * @param utype: The UNIT_TYPEID of the unit to build
      * @param aid: The ability id for an scv to produce the structure
+<<<<<<< HEAD
      * @param point: The point to place the structure; The task will be removed if it cannot be placed
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point)
+=======
+     * @param point: The point to place the structure; The task will be removed if it cannot be placed (Either this or the target is required)
+     */
+    Task (enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Point2D point)
+>>>>>>> origin
         : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), position(point)
     {
         target = -1; // for RESOURCE functionality
@@ -53,7 +67,11 @@ struct Task {
      * @param priority: The priority
      * @param utype: The UNIT_TYPEID of the unit to build
      * @param aid: The ability id for an scv to produce the structure
+<<<<<<< HEAD
      * @param target: The unit to build a structure on (ie. building refineries)
+=======
+     * @param target: The unit to build a structure on (ie. building refineries); not always required
+>>>>>>> origin
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::UNIT_TYPEID utype, sc2::ABILITY_ID aid, sc2::Tag target = -1)
         : action(action), source(source), priority(priority), unit_typeid(utype), ability_id(aid), target(target)
@@ -69,7 +87,12 @@ struct Task {
      * @param utype: The type of unit being produced (eg. scv)
      * @param source_unit: The type of unit producing the unit (eg. Command Center)
      * @param target:   The exact unit that will be used to produce the desired unit (not required)
+<<<<<<< HEAD
      *                  It is preferred to specify a target so that an action isn't delayed because of queuing
+=======
+     *                  It is preferred to specify a target so that an action isn't interrupted when randomly choosing a unit
+     *                  Or delayed because of queuing
+>>>>>>> origin
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::ABILITY_ID aid, sc2::UNIT_TYPEID utype,
         sc2::UNIT_TYPEID source_unit, sc2::Tag target = -1)
@@ -77,16 +100,25 @@ struct Task {
     {}
 
     /** REPAIR - RESOURCES; specify which unit needs repairing -- it should be in a safe location
+<<<<<<< HEAD
      * (like by an active command center) When checking unit health, be sure to also check build progress!
+=======
+>>>>>>> origin
      * @param action: REPAIR
      * @param source: The source agent
      * @param priority: The priority
      * @param target: The unit to repair
      * @param aid: The ABILITY_ID of the repair type that needs to be performed
+<<<<<<< HEAD
      * @param count: The maximum number of scvs that are allowed to repair the target at once (default 1)
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, int count = 1)
         : action(action), source(source), priority(priority), target(target), ability_id(aid), count(count)
+=======
+     */
+    Task(enum AgentActions, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid)
+        : action(action), source(source), priority(priority), target(target), ability_id(aid)
+>>>>>>> origin
     {}
 
     /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
@@ -99,6 +131,7 @@ struct Task {
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, sc2::Point2D position)
         : action(action), source(source), priority(priority), ability_id(aid), position(position)
+<<<<<<< HEAD
     {}
 
     /** UPGRADE - RESOURCES This is for the upgrade task
@@ -121,6 +154,8 @@ struct Task {
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
         : action(action), source(source), priority(priority), self(source_unit)
+=======
+>>>>>>> origin
     {}
 
     enum AgentActions action;
@@ -138,13 +173,21 @@ struct Task {
      */
     int priority;
 
+<<<<<<< HEAD
     sc2::Tag target;                
     sc2::UNIT_TYPEID unit_typeid;  
+=======
+    sc2::Tag target;                // a specific unit to use, sometimes this is required, otherwise if the exact unit doesn't matter (use nullptr)
+    sc2::UNIT_TYPEID unit_typeid;   // the unit_typeid is enough
+>>>>>>> origin
     sc2::ABILITY_ID ability_id;
     sc2::Point2D position;
     sc2::UNIT_TYPEID source_unit;
     sc2::Tag self;
+<<<<<<< HEAD
     sc2::UPGRADE_ID upgrade_id;
+=======
+>>>>>>> origin
 
     int count;
 
