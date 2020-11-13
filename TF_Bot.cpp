@@ -2,7 +2,6 @@
 // Created by Carter Sabadash on 2020-10-24
 //
 #include "TF_Bot.hpp"
-<<<<<<< HEAD
 #include "ATTACK_BOT.hpp"
 #include "DEFENCE_BOT.hpp"
 #include "RESOURCE_BOT.hpp"
@@ -37,78 +36,40 @@ void TF_Bot::OnStep() {
     attack->step();
     defence->step();
     scout->step();
-=======
-#include "helper_functions.hpp"
-
-TF_Bot::TF_Bot()
-{
 }
 
-TF_Bot::~TF_Bot()
-{
+void TF_Bot::OnUnitDestroyed(const Unit* unit) {
+    resource->unitDestroyed(unit);
+    defence->unitDestroyed(unit);
+    attack->unitDestroyed(unit);
+    scout->unitDestroyed(unit);
 }
 
-void TF_Bot::OnGameStart()
-{
-    // also need to get map name, enemy race -> create & store in TF_Bot variables
-    baseManager = new BaseManager(&resource_queue, Observation(), resource_units);
-    resourceGameStart();
+void TF_Bot::OnUnitCreated(const Unit* unit) {
+    resource->unitCreated(unit); // resource will call addUnit() to the appropriate agent
 }
 
-void TF_Bot::OnGameEnd()
-{
+void TF_Bot::OnUnitIdle(const Unit* unit) {
+    resource->unitIdle(unit);
+    attack->unitIdle(unit);
+    defence->unitIdle(unit);
+    scout->unitIdle(unit);
 }
 
-void TF_Bot::OnStep()
-{
-    attackStep();
-    resourceStep();
->>>>>>> origin
+void TF_Bot::OnUpgradeCompleted(UpgradeID uid) {
+    resource->upgradeCompleted(uid);
+    attack->upgradeCompleted(uid);
+    defence->upgradeCompleted(uid);
+    scout->upgradeCompleted(uid);
 }
 
-void TF_Bot::OnUnitDestroyed(const Unit *unit)
-{
-    baseManager->deleteUnit(unit);
+void TF_Bot::OnBuildingConstructionComplete(const Unit* unit) {
+    resource->buildingConstructionComplete(unit);
+    attack->buildingConstructionComplete(unit);
+    defence->buildingConstructionComplete(unit);
+    scout->buildingConstructionComplete(unit);
 }
 
-void TF_Bot::OnUnitCreated(const Unit *unit)
-{
-    // template
-    baseManager->addUnit(unit);
-    resource_units.push_back(unit->tag);
-}
-
-void TF_Bot::OnUnitIdle(const Unit *unit)
-{
-    resourceIdle(unit);
-    attackIdle(unit);
-}
-
-void TF_Bot::OnUpgradeCompleted(UpgradeID uid)
-{
-}
-
-void TF_Bot::OnBuildingConstructionComplete(const Unit *unit)
-{
-    resourceBuildingComplete(unit);
-    // will have to refactor but trying it here first
-
-    switch (unit->unit_type.ToType())
-    {
-    case (UNIT_TYPEID::TERRAN_BARRACKS):
-    {
-        buildAddOn(ABILITY_ID::BUILD_TECHLAB_BARRACKS, UNIT_TYPEID::TERRAN_BARRACKS);
-        break;
-    }
-
-    case (UNIT_TYPEID::TERRAN_STARPORT):
-    {
-        buildAddOn(ABILITY_ID::BUILD_TECHLAB_STARPORT, UNIT_TYPEID::TERRAN_STARPORT);
-        break;
-    }
-    }
-}
-
-void TF_Bot::OnUnitEnterVision(const Unit *unit)
-{
+void TF_Bot::OnUnitEnterVision(const Unit* unit) {
+    defence->unitEnterVision(unit); // defence will command other agents
 }

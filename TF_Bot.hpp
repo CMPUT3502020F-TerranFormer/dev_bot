@@ -1,31 +1,19 @@
 //
 // Created by Carter Sabadash on 2020-10-24
 //
-<<<<<<< HEAD
 #ifndef TF_Bot_HPP
 #define TF_Bot_HPP
-=======
-#ifndef TF_BOT_HPP
-#define TF_BOT_HPP
->>>>>>> origin
 
 #include "sc2api/sc2_api.h"
 #include "sc2api/sc2_args.h"
 #include "sc2lib/sc2_lib.h"
 #include "sc2utils/sc2_manage_process.h"
 #include "sc2utils/sc2_arg_parser.h"
-
 #include <iostream>
-#include <vector>
-#include "threadsafe_priority_queue.h"
 
-<<<<<<< HEAD
 #include <vector>
 #include "threadsafe_priority_queue.h"
 #include "TS_Queue.hpp"
-=======
-#include "BaseManager.hpp"
->>>>>>> origin
 #include "TF_unit.hpp"
 #include "Task.hpp"
 #include "BuildingPlacementManager.hpp"
@@ -67,7 +55,6 @@ public:
     virtual void OnUnitEnterVision(const Unit* unit) final;
 
 private:
-<<<<<<< HEAD
     ATTACK_BOT* attack;
     DEFENCE_BOT* defence;
     RESOURCE_BOT* resource;
@@ -156,13 +143,6 @@ protected:
     ActionInterface* action;
     QueryInterface* query;
     BuildingPlacementManager* buildingPlacementManager;
-=======
-    #include "resource.hpp"
-    #include "defence.hpp"
-    #include "attack.hpp"
-    #include "scout.hpp"
-    #include "utility.hpp"
->>>>>>> origin
 };
 
 #endif
