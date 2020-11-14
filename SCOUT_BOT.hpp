@@ -10,8 +10,8 @@
 
 #include "TF_Bot.hpp"
 #include "Task.hpp"
-#include "SQLITE3_QUERY.hpp"
-#include "SQLITE3.hpp"
+#include "./sqlite3/SQLITE3_QUERY.hpp"
+#include "./sqlite3/SQLITE3.hpp"
 
 #include "sc2api/sc2_map_info.h"
 
