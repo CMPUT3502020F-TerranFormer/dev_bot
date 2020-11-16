@@ -351,6 +351,8 @@ public:
 
 	/**
 	 * Handles idle units
+	 * **Command centers ignore the default priority limitations
+	 * and produce scvs with priority 8
 	 */
 	void unitIdle(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
@@ -371,7 +373,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 8, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}

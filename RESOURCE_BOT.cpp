@@ -241,7 +241,6 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
 
 void RESOURCE_BOT::unitEnterVision(const sc2::Unit* u) {
 
-
 }
 
 void RESOURCE_BOT::unitIdle(const sc2::Unit* u) {
