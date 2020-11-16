@@ -16,6 +16,10 @@ struct TF_unit {
     {}
     UNIT_TYPEID type;
     Tag tag;
+
+    bool operator==(TF_unit &rhs) const{
+        return type == rhs.type && tag == rhs.tag;
+    }
 };
 
 #endif

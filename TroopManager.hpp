@@ -62,7 +62,6 @@ public:
                 break;
             }
         }
-        if
     }
 
     // helps count the number of units present in the current game state

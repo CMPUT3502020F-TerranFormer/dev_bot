@@ -59,10 +59,11 @@ include_directories(SYSTEM
     ${PROJECT_SOURCE_DIR}/cpp-sc2/include
     ${PROJECT_SOURCE_DIR}/cpp-sc2/contrib/protobuf/src
     ${PROJECT_BINARY_DIR}/cpp-sc2/generated
+    ${PROJECT_SOURCE_DIR}/sqlite3
 )
 
 # Create the executable.
-add_executable(TFBot ${SOURCES_TFBOT})
+add_executable(TFBot ${SOURCES_TFBOT} ./sqlite3/sqlite3.c)
 target_link_libraries(TFBot
     sc2api sc2lib sc2utils
 )
