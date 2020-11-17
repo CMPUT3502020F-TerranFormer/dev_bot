@@ -131,6 +131,10 @@ void RESOURCE_BOT::step() {
                 if (scv_tag == -1) { continue; } // no scv exists
                 const Unit* scv = observation->GetUnit(scv_tag);
                 const Unit* u = observation->GetUnit(t.target);
+                if (u == nullptr) { // an error occurred somewhere
+                    task_queue.pop();
+                    return;
+                }
                 if (u != nullptr) {
                     action->UnitCommand(scv, t.ability_id, u, true);
 
@@ -225,6 +229,7 @@ void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
+    if (u->alliance != Unit::Alliance::Self) { return; }
     baseManager->deleteUnit(u);
     for (auto it = units.cbegin(); it != units.cend(); ++it) {
         if (*it == u->tag) {
@@ -261,7 +266,6 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 void RESOURCE_BOT::buildSupplyDepot() {
     // gets a location to build the supply depot then buildStructure
     // which will prevent 2 from being built at the same time
-
     Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
     buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
@@ -284,7 +288,7 @@ bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D
     // commands are queued just in case the same scv is returned several times
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
-        Units units = observation->GetUnits(IsUnit(UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        if (building == nullptr) { return false; }
         if (query->Placement(ability_to_build_structure, building->pos, building)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;
