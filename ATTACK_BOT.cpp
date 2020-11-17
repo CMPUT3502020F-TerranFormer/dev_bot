@@ -15,16 +15,100 @@ ATTACK_BOT::~ATTACK_BOT() {
 
 }
 
-void ATTACK_BOT::step() {
+void ATTACK_BOT::init() {
+    buildingPlacementManager = new BuildingPlacementManager(observation, query);
+    troopManager = new TroopManager(&task_queue, observation);
+}
 
+void ATTACK_BOT::step() {
+    // Why am I building only 1 barracks, 1 starport, 1 factory
+    // Popular opening in SC2
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 2) {
+        buildBarracks();
+    }
+
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+        buildFactory();
+    }
+
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_STARPORT) < 1) {
+        buildStarport();
+    }
+
+    // change this later, just proving it works
+    buildAddOn();
+
+    while (!task_queue.empty()) {
+        Task t = task_queue.top();
+        // push resource tasks from TroopManager into resources
+        // and perform other tasks as necessary
+        switch (t.action) {
+        case BUILD: {
+            resource->addTask(t);
+            task_queue.pop();
+            break;
+        }
+        case TRAIN: {
+            resource->addTask(t);
+            task_queue.pop();
+            break;
+        }
+        case REPAIR: {
+            resource->addTask(t);
+            task_queue.pop();
+            break;
+        }
+        case UPGRADE: {
+            resource->addTask(t);
+            task_queue.pop();
+            break;
+        }
+        case MOVE: {
+            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
+            task_queue.pop();
+            break;
+        }
+        case TRANSFER: {
+            TF_unit unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self);
+
+            // add to correct agent
+            switch (t.source) {
+            case DEFENCE_AGENT: defence->addUnit(unit);
+                break;
+            case RESOURCE_AGENT: resource->addUnit(unit);
+                break;
+            case SCOUT_AGENT: scout->addUnit(unit);
+                break;
+            default:
+                std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
+                task_queue.pop();
+                return;
+            }
+
+            // and remove from units
+            for (auto it = units.cbegin(); it != units.cend(); ++it) {
+                if (*it == unit) {
+                    units.erase(it);
+                    break;
+                }
+            }
+            task_queue.pop();
+            break;
+        }
+        default: {
+            std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
+            task_queue.pop();
+        }
+        }
+    }
 }
 
 void ATTACK_BOT::addTask(Task t) {
-
+    task_queue.push(t);
 }
 
 void ATTACK_BOT::addUnit(TF_unit u) {
-
+    units.push_back(u);
 }
 
 void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit* u) {
@@ -32,7 +116,12 @@ void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit* u) {
-
+    for (auto it = units.cbegin(); it != units.cend(); ++it) {
+        if (it->tag == u->tag) {
+            units.erase(it);
+            return;
+        }
+    }
 }
 
 void ATTACK_BOT::unitCreated(const sc2::Unit* u) {
@@ -44,7 +133,7 @@ void ATTACK_BOT::unitEnterVision(const sc2::Unit* u) {
 }
 
 void ATTACK_BOT::unitIdle(const sc2::Unit* u) {
-
+    troopManager->unitIdle(u);
 }
 
 void ATTACK_BOT::upgradeCompleted(sc2::UpgradeID uid) {
@@ -55,4 +144,41 @@ void ATTACK_BOT::setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* sc
     this->defence = defenceb;
     this->resource = resourceb;
     this->scout = scoutb;
+}
+
+void ATTACK_BOT::buildBarracks() {
+    // Prereqs of building barrack: Supply Depot
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+        return;
+    }
+    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS, 
+        ABILITY_ID::BUILD_BARRACKS, buildingPlacementManager->getNextBarracksLocation()));
+}
+
+void ATTACK_BOT::buildFactory() {
+    //  Prereqs of building factory: Barracks
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
+        return;
+    }
+    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY,
+        ABILITY_ID::BUILD_FACTORY, buildingPlacementManager->getNextFactoryLocation()));
+}
+
+void ATTACK_BOT::buildStarport() {
+    // Prereqs of building starport: Factory
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+        return;
+    }
+    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT,
+        ABILITY_ID::BUILD_STARPORT, buildingPlacementManager->getNextStarportLocation()));
+}
+
+void ATTACK_BOT::buildAddOn() {
+    // proof of concept, build a reactor on each barracks (should not actually use priority 8)
+    Units barracks = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
+    for (auto& p : barracks) {
+        if (p->build_progress != 1) { return; }
+        resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
+            ABILITY_ID::BUILD_REACTOR_BARRACKS, p->tag));
+    }
 }

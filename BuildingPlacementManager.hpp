@@ -104,6 +104,22 @@ public:
 		}
 	}
 
+	Point2D getNextBarracksLocation() {
+		// we'll just build it near a command center for now
+		// which is the same as the supply depots
+		return getNextSupplyDepotLocation();
+	}
+
+	Point2D getNextFactoryLocation() {
+		// same thing, build near a command center
+		return getNextSupplyDepotLocation();
+	}
+
+	Point2D getNextStarportLocation() {
+		// same thing
+		return getNextSupplyDepotLocation();
+	}
+
 private:
 	Map map;
 	Point2D start_location;
