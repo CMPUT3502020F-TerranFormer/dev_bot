@@ -112,6 +112,7 @@ public:
 			// smaller range than 15, should still include refineries and immediate units
 			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 100)); 
 			const Unit* command = observation->GetUnit(base.command.tag);
+			if (command == nullptr) { return; }
 
 			// do not build refineries while the command center is damaged -> wait until the command
 			// center is repaired, then it is probably safe
@@ -162,6 +163,7 @@ public:
 		for (auto& base : isolated_bases) {
 			// smaller range than 15, should still include refineries and immediate units
 			const Unit* command = observation->GetUnit(base.tag);
+			if (command == nullptr) { return; }
 			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(command->pos, 100));
 
 			// do not build refineries while the command center is damaged -> wait until the command

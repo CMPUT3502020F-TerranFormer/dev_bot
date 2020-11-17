@@ -248,9 +248,15 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
         if (it->second == u->unit_type) {
             auto tfu = TF_unit(it->second, u->tag);
             switch (it->first) {
-            case ATTACK_AGENT: attack->addUnit(tfu);
-            case DEFENCE_AGENT: defence->addUnit(tfu);
-            case SCOUT_AGENT: scout->addUnit(tfu);
+            case ATTACK_AGENT: 
+                attack->addUnit(tfu);
+                break;
+            case DEFENCE_AGENT: 
+                defence->addUnit(tfu);
+                break;
+            case SCOUT_AGENT: 
+                scout->addUnit(tfu);
+                break;
             default: // RESOURCE_AGENT
                 addUnit(TF_unit(u->unit_type, u->tag));
                 baseManager->addUnit(u);
