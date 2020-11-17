@@ -26,15 +26,15 @@ void ATTACK_BOT::step() {
     // Why am I building only 1 barracks, 1 starport, 1 factory
     // Popular opening in SC2
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
         buildBarracks();
     }
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1) {
         buildFactory();
     }
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_STARPORT) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_STARPORT) < 1) {
         buildStarport();
     }
 
@@ -160,7 +160,7 @@ void ATTACK_BOT::setAgents(TF_Agent *defenceb, TF_Agent *resourceb, TF_Agent *sc
 
 void ATTACK_BOT::buildBarracks() {
     // Prereqs of building barrack: Supply Depot
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
         return;
     }
     resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
@@ -169,7 +169,7 @@ void ATTACK_BOT::buildBarracks() {
 
 void ATTACK_BOT::buildFactory() {
     //  Prereqs of building factory: Barracks
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
         buildBarracks();
     }
     resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY,
@@ -178,7 +178,7 @@ void ATTACK_BOT::buildFactory() {
 
 void ATTACK_BOT::buildStarport() {
     // Prereqs of building starport: Factory
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1) {
         buildFactory();
     }
     resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT,
