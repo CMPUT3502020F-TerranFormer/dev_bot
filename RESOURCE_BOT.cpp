@@ -101,6 +101,9 @@ void RESOURCE_BOT::step() {
                 break;
             }
 
+            // when the unit is created we want to add it to the correct agent
+            ordered_units.push_back(order_unit(t.source, t.unit_typeid));
+
             action->UnitCommand(observation->GetUnit(t.target), t.ability_id, true);
 
             // update available resources
@@ -240,6 +243,31 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
+    // add it to the correct agent
+    for (auto it = ordered_units.cbegin(); it != ordered_units.cend(); ++it) {
+        if (it->second == u->unit_type) {
+            auto tfu = TF_unit(it->second, u->tag);
+            switch (it->first) {
+            case ATTACK_AGENT: 
+                attack->addUnit(tfu);
+                break;
+            case DEFENCE_AGENT: 
+                defence->addUnit(tfu);
+                break;
+            case SCOUT_AGENT: 
+                scout->addUnit(tfu);
+                break;
+            default: // RESOURCE_AGENT
+                addUnit(TF_unit(u->unit_type, u->tag));
+                baseManager->addUnit(u);
+                break;
+            }
+            // and remove the unit from ordered_units
+            ordered_units.erase(it);
+            return;
+        }
+    }
+    // not in ordered_units -> resource agent
     addUnit(TF_unit(u->unit_type, u->tag));
     baseManager->addUnit(u);
 }

@@ -5,6 +5,7 @@
 #include "sc2lib/sc2_lib.h"
 #include <cstring>
 #include "utility.hpp"
+#include <cassert>
 
 /**
  * This class contains all the information on where to build buildings
@@ -38,6 +39,20 @@ public:
 			std::cerr << "Unrecognized Map: " << map_name << std::endl;
 			map = Map::CactusValleyLE;
 		}
+
+		assert(observation->GetGameInfo().player_info.size() == 2);
+		// this is not guaranteed to be correct because the race can be random -> 
+		// can change it later when an enemy unit is sighted 
+		for (auto& p : observation->GetGameInfo().player_info) {
+			if (p.player_id != observation->GetPlayerID()) {
+				if (p.race_actual == Race::Random) { enemyRace = p.race_requested; }
+				else { enemyRace = p.race_actual; }
+			}
+		}
+	}
+
+	void setEnemyRace(Race race) {
+		enemyRace = race;
 	}
 
 	Point2D getNextCommandCenterLocation() {
@@ -125,6 +140,7 @@ private:
 	Point2D start_location;
 	const ObservationInterface* observation;
 	QueryInterface* query;
+	Race enemyRace;
 
 	/*CactusValleyLE Base Locations(Arranged in order), * starting location
 	** (33.5, 158.5) - (66.5, 161.5) - (93.5, 156.5) - -*(158.5, 158.5)
