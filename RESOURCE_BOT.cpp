@@ -260,12 +260,16 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
             default: // RESOURCE_AGENT
                 addUnit(TF_unit(u->unit_type, u->tag));
                 baseManager->addUnit(u);
+                break;
             }
             // and remove the unit from ordered_units
             ordered_units.erase(it);
             return;
         }
     }
+    // not in ordered_units -> resource agent
+    addUnit(TF_unit(u->unit_type, u->tag));
+    baseManager->addUnit(u);
 }
 
 void RESOURCE_BOT::unitEnterVision(const sc2::Unit* u) {
