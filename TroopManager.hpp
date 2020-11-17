@@ -52,6 +52,7 @@ public:
     }
 
     // helps count the number of units present in the current game state
+    // note that it does not account for variations caused by add-ons
     int CountUnitType(UnitTypeID unit_type) {
         int count = 0;
         Units my_units = observation->GetUnits(Unit::Alliance::Self);

@@ -112,7 +112,21 @@ void ATTACK_BOT::addUnit(TF_unit u) {
 }
 
 void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit* u) {
+    // we will build add-ons for Barracks, Factories, and Starports here
+    switch (u->unit_type.ToType()) {
+    case UNIT_TYPEID::TERRAN_BARRACKS: {
 
+        break;
+    }
+    case UNIT_TYPEID::TERRAN_FACTORY: {
+
+        break;
+    }
+    case UNIT_TYPEID::TERRAN_STARPORT: {
+
+        break;
+    }
+    }
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit* u) {
