@@ -9,6 +9,6 @@
 
 
 int main(int argc, char *argv[]) {
-
     RunBot(argc, argv, new TF_Bot(), sc2::Race::Terran);
+    return 0;
 }

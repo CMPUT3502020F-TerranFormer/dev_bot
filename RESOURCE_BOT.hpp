@@ -80,6 +80,8 @@ public:
 
 private:
     std::vector<Tag> units;
+    typedef std::pair<SourceAgent, UNIT_TYPEID> order_unit;
+    std::vector<order_unit> ordered_units;
     TF_Agent *defence;
     TF_Agent *attack;
     TF_Agent *scout;

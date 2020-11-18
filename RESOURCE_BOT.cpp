@@ -72,6 +72,7 @@ void RESOURCE_BOT::step() {
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
                 available_vespene -= ut.vespene_cost;
+                task_success = false; // only take one build task / step -> ensure that unnecessary duplicates aren't created
             }
             task_queue.pop();
             break;
@@ -100,6 +101,9 @@ void RESOURCE_BOT::step() {
                 task_success = false;
                 break;
             }
+
+            // when the unit is created we want to add it to the correct agent
+            ordered_units.push_back(order_unit(t.source, t.unit_typeid));
 
             action->UnitCommand(observation->GetUnit(t.target), t.ability_id, true);
 
@@ -131,6 +135,10 @@ void RESOURCE_BOT::step() {
                 if (scv_tag == -1) { continue; } // no scv exists
                 const Unit* scv = observation->GetUnit(scv_tag);
                 const Unit* u = observation->GetUnit(t.target);
+                if (u == nullptr) { // an error occurred somewhere
+                    task_queue.pop();
+                    return;
+                }
                 if (u != nullptr) {
                     action->UnitCommand(scv, t.ability_id, u, true);
 
@@ -225,6 +233,7 @@ void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
+    if (u->alliance != Unit::Alliance::Self) { return; }
     baseManager->deleteUnit(u);
     for (auto it = units.cbegin(); it != units.cend(); ++it) {
         if (*it == u->tag) {
@@ -235,12 +244,36 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
 }
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
+    // add it to the correct agent
+    for (auto it = ordered_units.cbegin(); it != ordered_units.cend(); ++it) {
+        if (it->second == u->unit_type) {
+            auto tfu = TF_unit(it->second, u->tag);
+            switch (it->first) {
+            case ATTACK_AGENT: 
+                attack->addUnit(tfu);
+                break;
+            case DEFENCE_AGENT: 
+                defence->addUnit(tfu);
+                break;
+            case SCOUT_AGENT: 
+                scout->addUnit(tfu);
+                break;
+            default: // RESOURCE_AGENT
+                addUnit(TF_unit(u->unit_type, u->tag));
+                baseManager->addUnit(u);
+                break;
+            }
+            // and remove the unit from ordered_units
+            ordered_units.erase(it);
+            return;
+        }
+    }
+    // not in ordered_units -> resource agent
     addUnit(TF_unit(u->unit_type, u->tag));
     baseManager->addUnit(u);
 }
 
 void RESOURCE_BOT::unitEnterVision(const sc2::Unit* u) {
-
 
 }
 
@@ -262,7 +295,6 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 void RESOURCE_BOT::buildSupplyDepot() {
     // gets a location to build the supply depot then buildStructure
     // which will prevent 2 from being built at the same time
-
     Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
     buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
@@ -285,7 +317,7 @@ bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D
     // commands are queued just in case the same scv is returned several times
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
-        Units units = observation->GetUnits(IsUnit(UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        if (building == nullptr) { return false; }
         if (query->Placement(ability_to_build_structure, building->pos, building)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;

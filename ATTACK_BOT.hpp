@@ -7,6 +7,7 @@
 
 #include "TF_Bot.hpp"
 #include "Task.hpp"
+#include "TroopManager.hpp"
 
 class ATTACK_BOT final : public TF_Agent {
 public:
@@ -74,11 +75,25 @@ public:
 
     void setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* scoutb);
 
+
+    void init();
+
+    // Same as buildStructure, except in this case, we build much closer to the building
+    // template, change later
+    void buildAddOn(const Unit* unit);
+
+    void buildBarracks();
+
+    void buildFactory();
+
+    void buildStarport();
+
 private:
     std::vector<TF_unit> units;
     TF_Agent* defence;
     TF_Agent* resource;
     TF_Agent* scout;
+    TroopManager* troopManager;
 };
 
 #endif //CPP_SC2_ATTACK_BOT_HPP
