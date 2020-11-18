@@ -80,7 +80,7 @@ struct Base {
 	bool startTransfer() {
 		// start transfer process (move units if planetary; else move units + command) to new location
 		// implement this later
-		if (minerals.size() <= 3 && vespene.size() <= 2 && transfer == false) {
+		if ((minerals.size() <= 4 || vespene.size() <= 1) && transfer == false) {
 			transfer = true; // we don't want to build multiple bases in place of one
 			return true;
 		}
@@ -222,8 +222,9 @@ public:
 
 		// to stay alive as long as possible
 		if (num_command_centers == 0) { build = true; }
-		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 18) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
+		else if (active_bases.size() < 4 && scv_count == scv_target_count) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
