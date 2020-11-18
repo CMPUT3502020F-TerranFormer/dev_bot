@@ -56,6 +56,11 @@ void ATTACK_BOT::step() {
                 task_queue.pop();
                 break;
             }
+            case ATTACK: {
+                action->UnitCommand(t.unit, t.ability_id, t.position);
+                task_queue.pop();
+                break;
+            }
             case REPAIR: {
                 resource->addTask(t);
                 task_queue.pop();
@@ -144,7 +149,6 @@ void ATTACK_BOT::unitCreated(const sc2::Unit *u) {
 }
 
 void ATTACK_BOT::unitEnterVision(const sc2::Unit *u) {
-
 }
 
 void ATTACK_BOT::unitIdle(const sc2::Unit *u) {
