@@ -128,6 +128,15 @@ struct Task {
         : action(action), source(source), priority(priority), self(source_unit), upgrade_id(uid), ability_id(aid)
     {}
 
+    /** SCOUT - ask scout agent to scout a position
+     * @param action : BASIC_SCOUT or ORBIT_SCOUT
+     * @param priority int
+     * @param position scouting target
+     */
+    Task(enum AgentActions action, int priority, Point2D position)
+        : action(action), priority(priority), position(position)
+    {}
+
     /** TRANSFER - RESOURCES, ATTACK
      * @param action : TRANSFER
      * @param source : The source agent
