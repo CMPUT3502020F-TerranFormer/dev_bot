@@ -64,11 +64,13 @@ struct Base {
 	}
 
 	/* Returns if all the resources are depleted;
+	 * By waiting until all resources are gone we often lose scv efficiency
+	 * so wait until 1/2 resources are gone
 	 * findResources must be called first to ensure that we have accurate information
 	 * about the state of resources
 	 */
 	bool depleted() {
-		return (minerals.empty() && vespene.empty());
+		return (minerals.size() <= 3 && vespene.size() <= 2);
 	}
 
 	bool startTransfer() {

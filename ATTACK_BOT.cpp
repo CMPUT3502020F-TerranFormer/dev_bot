@@ -23,25 +23,28 @@ void ATTACK_BOT::init() {
 }
 
 void ATTACK_BOT::step() {
-    // Why am I building only 1 barracks, 1 starport, 1 factory
-    // Popular opening in SC2
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
+    // for now, only allow this many barracks/factories/starports
+    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
+    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
+    if (barracks_count < 3 * command_count) {
         buildBarracks();
     }
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
+    if (factory_count < 2 * command_count) {
         buildFactory();
     }
 
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_STARPORT) < 1) {
+    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
+    if (starport_count < 2 * command_count) {
         buildStarport();
     }
 
     while (!task_queue.empty()) {
         Task t = task_queue.top();
         // push resource tasks from TroopManager into resources
-        // and perform other tasks as necessary
+        // and perform other tasks as necessary (sometimes re-using code from resources)
         switch (t.action) {
             case BUILD: {
                 resource->addTask(t);
@@ -160,29 +163,52 @@ void ATTACK_BOT::setAgents(TF_Agent *defenceb, TF_Agent *resourceb, TF_Agent *sc
 
 void ATTACK_BOT::buildBarracks() {
     // Prereqs of building barrack: Supply Depot
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
         return;
     }
-    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
-                           ABILITY_ID::BUILD_BARRACKS, buildingPlacementManager->getNextBarracksLocation()));
+    else {
+        resource->addTask(
+            Task(BUILD, 
+                ATTACK_AGENT, 
+                5, // we want to prioritize building units over buildings 
+                UNIT_TYPEID::TERRAN_BARRACKS,
+                ABILITY_ID::BUILD_BARRACKS, 
+                buildingPlacementManager->getNextBarracksLocation()));
+    }
 }
 
 void ATTACK_BOT::buildFactory() {
     //  Prereqs of building factory: Barracks
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 1) {
         buildBarracks();
     }
-    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY,
-                           ABILITY_ID::BUILD_FACTORY, buildingPlacementManager->getNextFactoryLocation()));
+    else {
+        resource->addTask(
+            Task(BUILD,
+                ATTACK_AGENT,
+                5,
+                UNIT_TYPEID::TERRAN_FACTORY,
+                ABILITY_ID::BUILD_FACTORY,
+                buildingPlacementManager->getNextFactoryLocation())
+        );
+    }
 }
 
 void ATTACK_BOT::buildStarport() {
     // Prereqs of building starport: Factory
-    if (troopManager->CountUnitType(observation, UNIT_TYPEID::TERRAN_FACTORY) < 1) {
+    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1) {
         buildFactory();
     }
-    resource->addTask(Task(BUILD, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT,
-                           ABILITY_ID::BUILD_STARPORT, buildingPlacementManager->getNextStarportLocation()));
+    else {
+        resource->addTask(
+            Task(BUILD,
+                ATTACK_AGENT,
+                5,
+                UNIT_TYPEID::TERRAN_STARPORT,
+                ABILITY_ID::BUILD_STARPORT,
+                buildingPlacementManager->getNextStarportLocation())
+        );
+    }
 }
 
 void ATTACK_BOT::buildAddOn(const Unit *u) {

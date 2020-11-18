@@ -40,13 +40,13 @@ public:
         case UNIT_TYPEID::TERRAN_BARRACKS:
         {
 
-            if (CountUnitType(observation, UNIT_TYPEID::TERRAN_MARINE) < 25)
+            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
                                       UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
 
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
+            task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
                                   UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             break;
         }
@@ -76,7 +76,7 @@ public:
     // note that it does not account for variations caused by add-ons
     int CountUnitType(UnitTypeID unit_type) {
         int count = 0;
-        Units my_units = obs->GetUnits(Unit::Alliance::Self);
+        Units my_units = observation->GetUnits(Unit::Alliance::Self);
         for (const auto unit : my_units)
         {
             if (unit->unit_type == unit_type)

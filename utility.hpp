@@ -92,4 +92,40 @@ struct IsClose {
 	}
 };
 
+struct IsBarracks {
+	bool operator() (const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::TERRAN_BARRACKS: return true;
+		case UNIT_TYPEID::TERRAN_BARRACKSFLYING: return true;
+		case UNIT_TYPEID::TERRAN_BARRACKSREACTOR: return true;
+		case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB: return true;
+		default: return false;
+		}
+	}
+};
+
+struct IsFactory {
+	bool operator() (const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::TERRAN_FACTORY: return true;
+		case UNIT_TYPEID::TERRAN_FACTORYFLYING: return true;
+		case UNIT_TYPEID::TERRAN_FACTORYREACTOR: return true;
+		case UNIT_TYPEID::TERRAN_FACTORYTECHLAB: return true;
+		default: return false;
+		}
+	}
+};
+
+struct IsStarport {
+	bool operator() (const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::TERRAN_STARPORT: return true;
+		case UNIT_TYPEID::TERRAN_STARPORTFLYING: return true;
+		case UNIT_TYPEID::TERRAN_STARPORTREACTOR: return true;
+		case UNIT_TYPEID::TERRAN_STARPORTTECHLAB: return true;
+		default: return false;
+		}
+	}
+};
+
 #endif //TFBOT_UTILITY_HPP
