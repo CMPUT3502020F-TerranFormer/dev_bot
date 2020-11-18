@@ -122,12 +122,12 @@ struct Task {
         : action(action), priority(priority), position(position)
     {}
 
-            /** TRANSFER - RESOURCES
-             * @param action : TRANSFER
-             * @param source : The source agent
-             * @param priority: The priority
-             * @param source_unit : The Tag of the source unit, -1 for any scv
-             */
+    /** TRANSFER - RESOURCES
+     * @param action : TRANSFER
+     * @param source : The source agent
+     * @param priority: The priority
+     * @param source_unit : The Tag of the source unit, -1 for any scv
+     */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
         : action(action), source(source), priority(priority), self(source_unit)
     {}
