@@ -72,6 +72,7 @@ void RESOURCE_BOT::step() {
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
                 available_vespene -= ut.vespene_cost;
+                task_success = false; // only take one build task / step -> ensure that unnecessary duplicates aren't created
             }
             task_queue.pop();
             break;

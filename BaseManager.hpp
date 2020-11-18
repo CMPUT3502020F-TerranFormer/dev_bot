@@ -30,9 +30,12 @@ using namespace sc2;
 struct Base {
 	TF_unit NoUnit = TF_unit((UNIT_TYPEID)0, (Tag)-1);
 
-	Base() {}
+	Base() {
+		transfer = false;
+	}
 	TF_unit command;
 	Point2D location;
+	bool transfer;
 
 	std::vector<TF_unit> minerals;
 	std::vector<TF_unit> vespene;
@@ -64,16 +67,23 @@ struct Base {
 	}
 
 	/* Returns if all the resources are depleted;
-	 * findResources must be called first to ensure that we have accurate information
-	 * about the state of resources
 	 */
 	bool depleted() {
 		return (minerals.empty() && vespene.empty());
 	}
 
+	/** By waiting until all resources are gone we often lose scv efficiency
+	 * so wait until 1/2 resources are gone
+	 * findResources must be called first to ensure that we have accurate information
+	 * about the state of resources
+	 */
 	bool startTransfer() {
 		// start transfer process (move units if planetary; else move units + command) to new location
 		// implement this later
+		if ((minerals.size() <= 4 || vespene.size() <= 1) && transfer == false) {
+			transfer = true; // we don't want to build multiple bases in place of one
+			return true;
+		}
 		return false;
 	}
 };
@@ -153,7 +163,23 @@ public:
 			// we must also make sure the base still has resources, if not move it to isolated_bases
 			// or start the transfer process --> implement later
 			base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
-			if (base.depleted()) {
+			if (command->build_progress == 1) {
+				if (base.startTransfer()) {
+					Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
+					if (baseLocation != Point2D(0, 0)) {
+						task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+							UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
+					}
+				}
+				else if (base.depleted()) {
+					isolated_bases.push_back(base.command);
+					for (auto& it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
+						if (base.command.tag == it->command.tag) {
+							active_bases.erase(it);
+							return;
+						}
+					}
+				}
 			}
 		}
 
@@ -196,8 +222,9 @@ public:
 
 		// to stay alive as long as possible
 		if (num_command_centers == 0) { build = true; }
-		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 18) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
+		else if (active_bases.size() < 4 && scv_count == scv_target_count) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
