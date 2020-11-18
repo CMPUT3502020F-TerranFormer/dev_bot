@@ -164,7 +164,8 @@ public:
 			// or start the transfer process --> implement later
 			base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
 			if (command->build_progress == 1) {
-				if (base.startTransfer()) {
+				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
+				if (base.startTransfer() && command->ideal_harvesters <= 8) {
 					Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
 					if (baseLocation != Point2D(0, 0)) {
 						task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
@@ -485,22 +486,16 @@ private:
 	/**
 	 * Adds Refineries for the command center to the task queue
 	 * Must be called when the geysers are guaranteed to be in vision
+	 * don't add to queue when refineries already exist
 	 */
 	void buildRefineries(const Unit* command) {
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+			if (observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery()).size() >= 2) { return; }
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225) {
 					task_queue->push(Task(BUILD, RESOURCE_AGENT, 5, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
-				}
-			}
-
-			// also update the vespene in the base
-			for (auto& p : active_bases) {
-				if (p.command.tag == command->tag) {
-					p.vespene.clear();
-					p.findResources(vespene);
 				}
 			}
 		}

@@ -36,29 +36,48 @@ public:
             // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
             //
             // to train marauders, check for the presence of a tech lab first
-        case UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
-        case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
+        case UNIT_TYPEID::TERRAN_BARRACKSREACTOR: {
+            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
+            {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+            }
+            break;
+        }
+        case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB: {
+            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
+            {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+            }
+            if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 30)
+            {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
+                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+            }
+            break;
+        }
         case UNIT_TYPEID::TERRAN_BARRACKS:
         {
-
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
             {
                 task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
                                       UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
-
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
-                                  UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             break;
         }
         case UNIT_TYPEID::TERRAN_STARPORTREACTOR:
         case UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
         case UNIT_TYPEID::TERRAN_STARPORT:
         {
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
-                                  UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
-                                  UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+            if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 10) {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                    UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+            }
+            if (CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC) < 10) {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+                    UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+            }
             break;
         }
 
@@ -77,14 +96,7 @@ public:
     // helps count the number of units present in the current game state
     // note that it does not account for variations caused by add-ons
     int CountUnitType(UnitTypeID unit_type) {
-        int count = 0;
-        Units my_units = observation->GetUnits(Unit::Alliance::Self);
-        for (const auto unit : my_units)
-        {
-            if (unit->unit_type == unit_type)
-                ++count;
-        }
-        return count;
+        return observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
     }
 
 private:

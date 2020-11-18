@@ -81,6 +81,7 @@ void RESOURCE_BOT::step() {
             /* This does not prevent multiple units from being produced at the same time */
 
             // get the producing unit if not specified
+            const Unit* worker = nullptr;
             if (t.target == -1) {
                 // try to get a target unit of the required type, we'll just take the first
                 Units workers = observation->GetUnits(Unit::Alliance::Self, IsUnit(t.source_unit));
@@ -89,8 +90,9 @@ void RESOURCE_BOT::step() {
                     std::cerr << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
                     break;
                 }
-                t.target = workers.front()->tag;
+                worker = workers.front();
             }
+            else { worker = observation->GetUnit(t.target); }
 
             // check that we have enough resources to do ability
             UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
@@ -105,10 +107,12 @@ void RESOURCE_BOT::step() {
             // when the unit is created we want to add it to the correct agent
             ordered_units.push_back(order_unit(t.source, t.unit_typeid));
 
-            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, true);
+            action->UnitCommand(worker, t.ability_id, true);
 
-            // update available resources
-            available_food -= ut.food_required;
+            // update available resources -- don't worry about supply for queued units
+            // units can be queued without it, they just won't build
+            // units that overfill the queue will be discarded
+            if (worker->orders.size() == 0) { available_food -= ut.food_required; }
             available_minerals -= ut.mineral_cost;
             available_vespene -= ut.vespene_cost;
             task_queue.pop();
@@ -142,11 +146,8 @@ void RESOURCE_BOT::step() {
                 if (u != nullptr) {
                     action->UnitCommand(scv, t.ability_id, u, true);
 
-                    // update resources
-                    UnitTypeData ut = observation->GetUnitTypeData()[u->unit_type];
-                    float lost_health = 1.0f - (u->health / u->health_max);
-                    available_minerals -= ut.mineral_cost * lost_health;
-                    available_vespene -= ut.vespene_cost * lost_health;
+                    // don't update resources as they have not been used yet
+                    // and we want to flush out all extra repair tasks
                 }
             }
             task_queue.pop();
@@ -224,8 +225,9 @@ void RESOURCE_BOT::addTask(Task t) {
 }
 
 void RESOURCE_BOT::addUnit(TF_unit u) {
-    // add a unit to units
+    // add a unit to units, and baseManager
     units.push_back(u.tag);
+    baseManager->addUnit(observation->GetUnit(u.tag));
 }
 
 void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
@@ -245,9 +247,9 @@ void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
 
 void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
     // add it to the correct agent
+    auto tfu = TF_unit(u->unit_type, u->tag);
     for (auto it = ordered_units.cbegin(); it != ordered_units.cend(); ++it) {
         if (it->second == u->unit_type) {
-            auto tfu = TF_unit(it->second, u->tag);
             switch (it->first) {
             case ATTACK_AGENT: 
                 attack->addUnit(tfu);
@@ -259,8 +261,7 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
                 scout->addUnit(tfu);
                 break;
             default: // RESOURCE_AGENT
-                addUnit(TF_unit(u->unit_type, u->tag));
-                baseManager->addUnit(u);
+                addUnit(tfu);
                 break;
             }
             // and remove the unit from ordered_units
@@ -270,7 +271,6 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
     }
     // not in ordered_units -> resource agent
     addUnit(TF_unit(u->unit_type, u->tag));
-    baseManager->addUnit(u);
 }
 
 void RESOURCE_BOT::unitEnterVision(const sc2::Unit* u) {
@@ -300,16 +300,6 @@ void RESOURCE_BOT::buildSupplyDepot() {
 }
 
 bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
-    // checks that a unit of the same type is not being built (can change this later)
-    for (const auto& unit : observation->GetUnits(Unit::Alliance::Self, IsSCV())) {
-        for (const auto& order : unit->orders) {
-            if (order.ability_id == ability_to_build_structure
-                && ability_to_build_structure != ABILITY_ID::BUILD_REFINERY) { // exclude Vespene refinery
-                return false;
-            }
-        }
-    }
-
     Tag scv_tag = baseManager->getSCV().tag;
     if (scv_tag == -1) { return false; } // there are no scvs
     const Unit* scv = observation->GetUnit(scv_tag);
@@ -318,15 +308,30 @@ bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
         if (building == nullptr) { return false; }
-        if (query->Placement(ability_to_build_structure, building->pos, building)) {
+        if (query->Placement(ability_to_build_structure, building->pos, building)
+            && !buildCheckDuplicate(ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;
         }
     }
     else { // build at a location
-        if (query->Placement(ability_to_build_structure, point)) {
+        if (query->Placement(ability_to_build_structure, point)
+            && !buildCheckDuplicate(ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, point, true);
             return true;
+        }
+    }
+    return false;
+}
+
+bool RESOURCE_BOT::buildCheckDuplicate(ABILITY_ID ability_to_build_structure) {
+    // checks that a unit of the same type is not being built (can change this later)
+    for (const auto& unit : observation->GetUnits(Unit::Alliance::Self, IsSCV())) {
+        for (const auto& order : unit->orders) {
+            if (order.ability_id == ability_to_build_structure
+                && ability_to_build_structure != ABILITY_ID::BUILD_REFINERY) { // exclude Vespene refinery
+                return true;
+            }
         }
     }
     return false;
