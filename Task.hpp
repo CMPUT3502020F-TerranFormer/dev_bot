@@ -113,12 +113,21 @@ struct Task {
         : action(action), source(source), priority(priority), self(source_unit), upgrade_id(uid), ability_id(aid)
     {}
 
-    /** TRANSFER - RESOURCES
-     * @param action : TRANSFER
-     * @param source : The source agent
-     * @param priority: The priority
-     * @param source_unit : The Tag of the source unit, -1 for any scv
+    /** SCOUT - ask scout agent to scout a position
+     * @param action : BASIC_SCOUT or ORBIT_SCOUT
+     * @param priority int
+     * @param position scouting target
      */
+    Task(enum AgentActions action, int priority, Point2D position)
+        : action(action), priority(priority), position(position)
+    {}
+
+            /** TRANSFER - RESOURCES
+             * @param action : TRANSFER
+             * @param source : The source agent
+             * @param priority: The priority
+             * @param source_unit : The Tag of the source unit, -1 for any scv
+             */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
         : action(action), source(source), priority(priority), self(source_unit)
     {}
