@@ -121,8 +121,8 @@ private:
     GameInfo gi;
 
     std::vector<Point2D> poi;
-    std::vector<Point2D> poi_close_to_base;
-    std::vector<Point2D> poi_close_to_enemy;
+    std::pair<int, std::vector<Point2D>> poi_close_to_base;
+    std::pair<int, std::vector<Point2D>> poi_close_to_enemy;
 
     std::vector<Spotted_Enemy> detection_record;
 
