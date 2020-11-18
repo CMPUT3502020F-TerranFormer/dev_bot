@@ -222,8 +222,8 @@ public:
 
 		// to stay alive as long as possible
 		if (num_command_centers == 0) { build = true; }
-		else if (active_bases.size() < 2 && scv_count >= 18) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
 		else if (active_bases.size() < 4 && scv_count == scv_target_count) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
@@ -402,7 +402,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}
@@ -491,7 +491,7 @@ private:
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 5, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
 			}
