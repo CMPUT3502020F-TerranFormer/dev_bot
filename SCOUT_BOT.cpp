@@ -86,11 +86,12 @@ void SCOUT_BOT::unitEnterVision(const sc2::Unit* u) {
 }
 
 void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
-    const std::deque<Task> task_queue_iterable(task_queue.get_container());
-    if (task_queue_iterable.empty()) {
-        action->UnitCommand(u, MOVE, poi_close_to_enemy[0]);
+    if (task_queue.empty()) {
+        action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, poi_close_to_enemy[0]);
         return;
     }
+
+    const std::deque<Task> task_queue_iterable(task_queue.get_container());
 
     // Get highest priority task in queue
     Task taskToDo = task_queue_iterable[0];
@@ -123,8 +124,13 @@ void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
         }
     }
 
-    // Command unit to perform task
-    action->UnitCommand(u, taskToDo.ability_id, taskToDo.position);
+    switch (taskToDo.action) {
+        case BASIC_SCOUT:
+            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, taskToDo.position);
+            break;
+        case ORBIT_SCOUT:
+            break;
+    }
 }
 
 void SCOUT_BOT::upgradeCompleted(sc2::UpgradeID uid) {
