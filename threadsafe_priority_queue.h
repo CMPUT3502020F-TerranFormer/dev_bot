@@ -9,57 +9,46 @@
 #include <mutex>
 #include <cassert>
 
-template <typename T>
+template<typename T>
 using QBase = std::priority_queue<T>;
 
 /**
  * Implements the basic methods for a threadsafe priority_queue
  */
-template <typename T>
-class threadsafe_priority_queue : private QBase<T>
-{
-	std::mutex mutex;
+template<typename T>
+class threadsafe_priority_queue : private QBase<T> {
+    std::mutex mutex;
 public:
-	using Base = QBase<T>;
+    using Base = QBase<T>;
 
+    bool empty() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return Base::empty();
+    }
 
-	bool empty()
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		return Base::empty();
-	}
+    void push(T &x) {
+        std::lock_guard<std::mutex> lock(mutex);
+        Base::push(x);
+    }
 
-	const T& top()
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		assert(!Base::empty());
-		return Base::top();
-	}
+    void push(const T &x) {
+        std::lock_guard<std::mutex> lock(mutex);
+        Base::push(x);
+    }
 
-	void push(T& x)
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		Base::push(x);
-	}
+    const T &pop() {
+        std::lock_guard<std::mutex> lock(mutex);
+        assert(!Base::empty());
+        auto ret = Base::top();
+        Base::pop();
 
-	void push(const T& x)
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		Base::push(x);
-	}
+        return ret;
+    }
 
-	void pop()
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		assert(!Base::empty());
-		Base::pop();
-	}
-
-	const size_t size()
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		return Base::size();
-	}
+    const size_t size() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return Base::size();
+    }
 };
 
 #endif
