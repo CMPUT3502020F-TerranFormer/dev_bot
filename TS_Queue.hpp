@@ -48,6 +48,12 @@ public:
 		std::lock_guard<std::mutex> lock(mutex);
 		Base::push(x);
 	}
+
+	const typename Base::container_type& get_container()
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		return this->c;
+	}
 };
 
 
