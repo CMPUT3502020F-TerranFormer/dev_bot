@@ -52,11 +52,10 @@ void RESOURCE_BOT::step() {
 
     bool task_success = true; // we also want to stop when we don't have resources to complete any other tasks
     while (!task_queue.empty() && task_success) {
-        Task t = task_queue.top();
+        Task t = task_queue.pop();
         switch (t.action) {
         case HARVEST: {
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
-            task_queue.pop();
             break;
         }
         case BUILD: {
@@ -69,6 +68,7 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
@@ -79,7 +79,6 @@ void RESOURCE_BOT::step() {
                 available_vespene -= ut.vespene_cost;
                 task_success = false; // only take one build task / step -> ensure that unnecessary duplicates aren't created
             }
-            task_queue.pop();
             break;
         }
         case TRAIN: {
@@ -91,13 +90,13 @@ void RESOURCE_BOT::step() {
                 // try to get a target unit of the required type, we'll just take the first
                 Units workers = observation->GetUnits(Unit::Alliance::Self, IsUnit(t.source_unit));
                 if (workers.size() == 0) {
-                    task_queue.pop();
                     std::cerr << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
                     break;
                 }
                 worker = workers.front();
             }
             else { worker = observation->GetUnit(t.target); }
+            if (worker == nullptr) { break; }
 
             // check that we have enough resources to do ability
             UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
@@ -105,6 +104,7 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
@@ -120,7 +120,6 @@ void RESOURCE_BOT::step() {
             if (worker->orders.size() == 0) { available_food -= ut.food_required; }
             available_minerals -= ut.mineral_cost;
             available_vespene -= ut.vespene_cost;
-            task_queue.pop();
             break;
         }
         case REPAIR: {
@@ -155,7 +154,6 @@ void RESOURCE_BOT::step() {
                     // and we want to flush out all extra repair tasks
                 }
             }
-            task_queue.pop();
             break;
         }
         case UPGRADE: {
@@ -164,16 +162,15 @@ void RESOURCE_BOT::step() {
             if (ud.mineral_cost > available_minerals
                 || ud.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id);
-            task_queue.pop();
             break;
         }
         case MOVE: {
             action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
-            task_queue.pop();
             break;
         }
         case TRANSFER: {
@@ -185,7 +182,6 @@ void RESOURCE_BOT::step() {
             if (t.self == -1) {
                 TF_unit scv = baseManager->getSCV();
                 if (scv.tag == -1) {
-                    task_queue.pop(); // no scvs
                     break;
                 }
                 unit = scv;
@@ -202,7 +198,6 @@ void RESOURCE_BOT::step() {
                 break;
             default:
                 std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
-                task_queue.pop();
                 return;
             }
 
@@ -213,12 +208,10 @@ void RESOURCE_BOT::step() {
                     break;
                 }
             }
-            task_queue.pop();
             break;
         }
         default: {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
-            task_queue.pop();
         }
         }
     }
@@ -349,8 +342,7 @@ void RESOURCE_BOT::reduce_tasks() {
     std::unordered_set<Task, TaskHash> task_set;
 
     while (!task_queue.empty()) {
-        task_set.insert(task_queue.top());
-        task_queue.pop();
+        task_set.insert(task_queue.pop());
     }
 
     // then add elements back

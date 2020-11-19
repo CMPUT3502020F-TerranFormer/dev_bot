@@ -87,7 +87,7 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     BaseManager* baseManager;
-    static constexpr int task_queue_max = 10000;
+    static constexpr int task_queue_max = 1000;
 
     void buildSupplyDepot();
 

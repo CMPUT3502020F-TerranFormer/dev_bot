@@ -207,6 +207,7 @@ struct Task
         return priority < r.priority;
     }
 
+    /* All train and attack tasks are different */
     bool operator==(const Task& r) const {
         if (action != r.action) { return false; }
         if (priority != r.priority) { return false; }
@@ -221,7 +222,7 @@ struct Task
                 && ability_id == r.ability_id
                 && target == r.target
                 && position != r.position);
-        case TRAIN:
+        case TRAIN: return false;
             return (source == r.source
                 && ability_id == r.ability_id
                 && unit_typeid == r.unit_typeid
@@ -233,9 +234,7 @@ struct Task
                 && position != r.position);
         case DEFEND:
         case ATTACK:
-            return (source == r.source
-                && ability_id == r.ability_id
-                && position != r.position);
+            return false;
         case REPAIR:
             return (source == r.source
                 && target == r.target
