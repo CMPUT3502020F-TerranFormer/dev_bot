@@ -202,13 +202,8 @@ struct Task
      * Compares the priority of tasks;
      * implemented for priority queue
      */
-<<<<<<< HEAD
     bool operator<(const Task &r) const {
         if (priority == r.priority) { return source < r.source; }
-=======
-    bool operator<(const Task &r) const
-    {
->>>>>>> 4144ea04748bc01dad9f420c17e4821b53b495ce
         return priority < r.priority;
     }
 
@@ -268,7 +263,6 @@ struct Task
     }
 };
 
-<<<<<<< HEAD
 // https://stackoverflow.com/questions/25251034/unordered-set-example-compiler-error-hash-and-equivalence-function-error-possib
 // Note: will not work correctly for ATTACK
 struct TaskHash {
@@ -337,6 +331,4 @@ struct TaskHash {
     }
 };
 
-=======
->>>>>>> 4144ea04748bc01dad9f420c17e4821b53b495ce
 #endif //TF_TASK_HPP
