@@ -88,11 +88,11 @@ private:
     TF_Agent *scout;
     BaseManager* baseManager;
 
-    void buildSupplyDepot();
+    void buildSupplyDepot(Units scvs);
 
-    bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
+    bool buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 
-    bool buildCheckDuplicate(ABILITY_ID ability_to_build_structure);
+    bool buildCheckDuplicate(Units scvs, ABILITY_ID ability_to_build_structure);
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP
