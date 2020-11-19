@@ -87,15 +87,12 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     BaseManager* baseManager;
-    static constexpr int task_queue_max = 1000;
 
     void buildSupplyDepot();
 
     bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 
     bool buildCheckDuplicate(ABILITY_ID ability_to_build_structure);
-
-    void reduce_tasks();
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

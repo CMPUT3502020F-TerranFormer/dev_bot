@@ -30,11 +30,6 @@ void RESOURCE_BOT::gameStart() {
  * And it also does resource management for all the agents
  */
 void RESOURCE_BOT::step() {
-    // occasionally we should clean out the task queue to prevent it from getting too large
-    // when too many tasks are added -> create a set of tasks from the queue? -> clear it, then
-    // add all tasks back from the set?, when size > 1000?
-    if (task_queue.size() >= task_queue_max) { reduce_tasks(); }
-
     // actions for bases
     baseManager->step();
 
@@ -333,21 +328,4 @@ bool RESOURCE_BOT::buildCheckDuplicate(ABILITY_ID ability_to_build_structure) {
         }
     }
     return false;
-}
-
-
-void RESOURCE_BOT::reduce_tasks() {
-    // when the task_queue is large we remove duplicate tasks to maintain proper performance
-    // and so the extras don't interfere with proper functioning
-    std::unordered_set<Task, TaskHash> task_set;
-
-    while (!task_queue.empty()) {
-        task_set.insert(task_queue.pop());
-    }
-
-    // then add elements back
-    for (auto p : task_set) {
-        int c = task_set.count(p);
-        task_queue.push(p);
-    }
 }

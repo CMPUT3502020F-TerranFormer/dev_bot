@@ -117,6 +117,8 @@ public:
 	void step() {
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
+
+		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
 		for (auto& base : active_bases) {
 			// smaller range than 15, should still include refineries and immediate units
