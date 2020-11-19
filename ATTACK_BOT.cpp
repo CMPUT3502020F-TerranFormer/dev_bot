@@ -24,19 +24,20 @@ void ATTACK_BOT::init() {
 
 void ATTACK_BOT::step() {
 
-    // for now, only allow this many barracks/factories/starports
+    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
     int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
     int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
-    if (barracks_count < 2 * command_count) {
+    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
+    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
+    if (barracks_count < 1 + (2 * command_count)) {
+
         buildBarracks();
     }
 
-    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
     if (factory_count < 2 * command_count) {
         buildFactory();
     }
 
-    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
     if (starport_count < 1 * command_count) {
         buildStarport();
     }

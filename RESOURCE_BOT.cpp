@@ -30,6 +30,10 @@ void RESOURCE_BOT::gameStart() {
  * And it also does resource management for all the agents
  */
 void RESOURCE_BOT::step() {
+    // occasionally we should clean out the task queue to prevent it from getting too large
+    // when too many tasks are added -> create a set of tasks from the queue? -> clear it, then
+    // add all tasks back from the set?, when size > 1000?
+
     // actions for bases
     baseManager->step();
 
