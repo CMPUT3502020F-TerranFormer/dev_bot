@@ -39,7 +39,7 @@ public:
         case UNIT_TYPEID::TERRAN_BARRACKSREACTOR: {
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
                     UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             break;
@@ -47,12 +47,12 @@ public:
         case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB: {
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
                     UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 30)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
                     UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             break;
@@ -61,7 +61,7 @@ public:
         {
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 30)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
                                       UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             break;
@@ -72,7 +72,7 @@ public:
         {
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 3)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 5, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -90,7 +90,7 @@ public:
             {
                 Point2D enemy_loc = enemy_locations.back();
                 task_queue->push(
-                    Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+                    Task(ATTACK, ATTACK_AGENT, 7, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
                 if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
                 {
                     enemy_locations.pop_back();
@@ -111,7 +111,7 @@ public:
                 }
                 Point2D enemy_loc = enemy_locations.back();
                 task_queue->push(
-                    Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+                    Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
 
                     // Tried to limit choke points by designing an area as accepted rather than a point
                 if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)

@@ -203,7 +203,7 @@ struct Task
      * implemented for priority queue
      */
     bool operator<(const Task &r) const {
-        if (priority == r.priority) { return source < r.source; }
+        if (priority == r.priority) { return source > r.source; } // reverse in the queue, so Defence, resource, scout, attack
         return priority < r.priority;
     }
 };

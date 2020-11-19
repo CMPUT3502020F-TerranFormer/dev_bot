@@ -226,8 +226,7 @@ public:
 		// to stay alive as long as possible
 		if (num_command_centers == 0) { build = true; }
 		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
-		else if (active_bases.size() < 4 && scv_count == scv_target_count) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 42) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
@@ -492,12 +491,10 @@ private:
 	 */
 	void buildRefineries(const Unit* command) {
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-			if (observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery()).size() 
-				>= 2 * (active_bases.size() + isolated_bases.size())) { return; }
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 5, UNIT_TYPEID::TERRAN_REFINERY,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
 			}
