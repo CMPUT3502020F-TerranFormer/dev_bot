@@ -101,26 +101,26 @@ void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
     }
 
     if (taskToDo.priority != 11) {
-    // Determine closest highest priority task to the unit
+        // Determine closest highest priority task to the unit
 
-    // Calculate distances to each task
-    std::vector<std::pair<Task, float>> task_distances;
-    float furthest_distance = 0;
-    for (auto& task : task_queue_iterable) {
-        float distance = sc2::Distance2D(u->pos, task.position);
-        task_distances.push_back({task, distance});
-        furthest_distance = std::max(furthest_distance, distance);
-    }
-    // Find the task with the highest score (priority minus distance)
-    int highest_score = -11;
-    for (auto& [task, distance] : task_distances) {
-        int normalized_distance = 10 * distance / furthest_distance;
-        int score = task.priority - normalized_distance;
-        if (score > highest_score) {
-        highest_score = score;
-        taskToDo = task;
+        // Calculate distances to each task
+        std::vector<std::pair<Task, float>> task_distances;
+        float furthest_distance = 0;
+        for (auto& task : task_queue_iterable) {
+            float distance = sc2::Distance2D(u->pos, task.position);
+            task_distances.push_back({task, distance});
+            furthest_distance = std::max(furthest_distance, distance);
         }
-    }
+        // Find the task with the highest score (priority minus distance)
+        int highest_score = -11;
+        for (auto& [task, distance] : task_distances) {
+            int normalized_distance = 10 * distance / furthest_distance;
+            int score = task.priority - normalized_distance;
+            if (score > highest_score) {
+                highest_score = score;
+                taskToDo = task;
+            }
+        }
     }
 
     // Command unit to perform task
