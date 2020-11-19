@@ -133,6 +133,8 @@ private:
     Point2D enemy_main_base;
     Point2D main_base;
 
+    bool second_init_order = true;
+
     /**
      * calculate the distance between 2 point2d
      * @param p1

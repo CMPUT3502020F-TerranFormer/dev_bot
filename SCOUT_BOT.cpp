@@ -17,30 +17,17 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
-    auto now = std::chrono::steady_clock::now();
-    auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - game_epoch).count();
+    // if not busy
+    if (task_queue.size() < 5) {
+        Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first%poi_close_to_enemy.second.size()));
+        poi_close_to_enemy.first += 1;
 
-    // at 2 minutes time point, request the rest of the required SCV at a higher priority
-    if (time_elapsed > 120 && time_elapsed < 500) {
-        auto t = Task(TRAIN,
-                      SCOUT_AGENT,
-                      6,
-                      ABILITY_ID::TRAIN_SCV,
-                      UNIT_TYPEID::TERRAN_SCV,
-                      UNIT_TYPEID::TERRAN_COMMANDCENTER);
-        for (int i = 0; i < MAX_SCOUT_COUNT/2; ++i) {
-            resource->addTask(t);
-        }
+        Task t2(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_base.first%poi_close_to_base.second.size()));
+        poi_close_to_base.first += 1;
+
+        addTask(t1);
+        addTask(t2);
     }
-
-    Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first%poi_close_to_enemy.second.size()));
-    poi_close_to_enemy.first += 1;
-
-    Task t2(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_base.first%poi_close_to_base.second.size()));
-    poi_close_to_base.first += 1;
-
-    addTask(t1);
-    addTask(t2);
 }
 
 void SCOUT_BOT::addTask(Task t) {
@@ -48,7 +35,16 @@ void SCOUT_BOT::addTask(Task t) {
 }
 
 void SCOUT_BOT::addUnit(TF_unit u) {
+    //std::cout << "scout unit added" << std::endl;
+
+    // add unit to units
     units.emplace_back(u.type, u.tag);
+
+    // give unit a task
+    while (task_queue.empty()) {std::this_thread::sleep_for(std::chrono::milliseconds(20));}
+
+    auto t = task_queue.pop();
+    action->UnitCommand(observation->GetUnit(u.tag), ABILITY_ID::MOVE_MOVE, t.position);
 }
 
 void SCOUT_BOT::buildingConstructionComplete(const sc2::Unit* u) {
@@ -69,17 +65,13 @@ void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
         }
     }
 
-    // request new unit
-    switch ((int) type) {
-        case (int) UNIT_TYPEID::TERRAN_SCV:
-            resource->addTask(Task(TRAIN,
-                                   SCOUT_AGENT,
-                                   5,
-                                   ABILITY_ID::TRAIN_SCV,
-                                   UNIT_TYPEID::TERRAN_SCV,
-                                   UNIT_TYPEID::TERRAN_COMMANDCENTER));
-            break;
-    }
+    resource->addTask(Task(TRAIN,
+                           SCOUT_AGENT,
+                           6,
+                           ABILITY_ID::TRAIN_SCV,
+                           UNIT_TYPEID::TERRAN_SCV,
+                           UNIT_TYPEID::TERRAN_COMMANDCENTER));
+    //std::cout << "scout destroyed, order new ones" << std::endl;
 }
 
 void SCOUT_BOT::unitCreated(const sc2::Unit* u) {
@@ -96,7 +88,7 @@ void SCOUT_BOT::unitEnterVision(const sc2::Unit* u) {
 
 void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
     if (!task_queue.empty()){
-        auto task = task_queue.top();
+        auto task = task_queue.pop();
 
         switch (task.action) {
             case BASIC_SCOUT:
@@ -105,8 +97,6 @@ void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
             case ORBIT_SCOUT:
                 break;
         }
-
-        task_queue.pop();
     }
 }
 
@@ -139,15 +129,23 @@ std::vector<Unit> SCOUT_BOT::last_seen_near(Point2D location, int radius, int si
 void SCOUT_BOT::init() {
     game_epoch = std::chrono::steady_clock::now();
 
-    // order half of the max # of scv at lower priority
-    auto t = Task(TRAIN,
+    // order 20 scv
+    auto t1 = Task(TRAIN,
+                  SCOUT_AGENT,
+                  4,
+                  ABILITY_ID::TRAIN_SCV,
+                  UNIT_TYPEID::TERRAN_SCV,
+                  UNIT_TYPEID::TERRAN_COMMANDCENTER);
+    auto t2 = Task(TRAIN,
                   SCOUT_AGENT,
                   6,
                   ABILITY_ID::TRAIN_SCV,
                   UNIT_TYPEID::TERRAN_SCV,
                   UNIT_TYPEID::TERRAN_COMMANDCENTER);
+
     for (int i = 0; i < MAX_SCOUT_COUNT/2; ++i) {
-        resource->addTask(t);
+        resource->addTask(t1);
+        resource->addTask(t2);
     }
 
     gi = observation->GetGameInfo();
