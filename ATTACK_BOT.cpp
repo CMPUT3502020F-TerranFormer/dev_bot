@@ -43,38 +43,32 @@ void ATTACK_BOT::step() {
     }
 
     while (!task_queue.empty()) {
-        Task t = task_queue.top();
+        Task t = task_queue.pop();
         // push resource tasks from TroopManager into resources
         // and perform other tasks as necessary (sometimes re-using code from resources)
         switch (t.action) {
             case BUILD: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case TRAIN: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case ATTACK: {
                 action->UnitCommand(t.unit, t.ability_id, t.position);
-                task_queue.pop();
                 break;
             }
             case REPAIR: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case UPGRADE: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case MOVE: {
                 action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
-                task_queue.pop();
                 break;
             }
             case TRANSFER: {
@@ -93,7 +87,6 @@ void ATTACK_BOT::step() {
                         break;
                     default:
                         std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
-                        task_queue.pop();
                         return;
                 }
 
@@ -104,12 +97,10 @@ void ATTACK_BOT::step() {
                         break;
                     }
                 }
-                task_queue.pop();
                 break;
             }
             default: {
                 std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
-                task_queue.pop();
             }
         }
     }

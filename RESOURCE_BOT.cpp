@@ -52,7 +52,7 @@ void RESOURCE_BOT::step() {
 
     bool task_success = true; // we also want to stop when we don't have resources to complete any other tasks
     while (!task_queue.empty() && task_success) {
-        Task t = task_queue.top();
+        Task t = task_queue.pop();
         switch (t.action) {
         case HARVEST: {
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
@@ -79,7 +79,6 @@ void RESOURCE_BOT::step() {
                 available_vespene -= ut.vespene_cost;
                 task_success = false; // only take one build task / step -> ensure that unnecessary duplicates aren't created
             }
-            task_queue.pop();
             break;
         }
         case TRAIN: {
@@ -349,8 +348,7 @@ void RESOURCE_BOT::reduce_tasks() {
     std::unordered_set<Task, TaskHash> task_set;
 
     while (!task_queue.empty()) {
-        task_set.insert(task_queue.top());
-        task_queue.pop();
+        task_set.insert(task_queue.pop());
     }
 
     // then add elements back
