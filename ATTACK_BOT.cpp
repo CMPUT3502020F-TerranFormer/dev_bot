@@ -30,6 +30,7 @@ void ATTACK_BOT::step() {
     int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
     int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
     if (barracks_count < 1 + (2 * command_count)) {
+
         buildBarracks();
     }
 
@@ -37,7 +38,7 @@ void ATTACK_BOT::step() {
         buildFactory();
     }
 
-    if (starport_count < 2 * command_count) {
+    if (starport_count < 1 * command_count) {
         buildStarport();
     }
 
@@ -53,6 +54,11 @@ void ATTACK_BOT::step() {
             }
             case TRAIN: {
                 resource->addTask(t);
+                task_queue.pop();
+                break;
+            }
+            case ATTACK: {
+                action->UnitCommand(t.unit, t.ability_id, t.position);
                 task_queue.pop();
                 break;
             }
@@ -144,7 +150,6 @@ void ATTACK_BOT::unitCreated(const sc2::Unit *u) {
 }
 
 void ATTACK_BOT::unitEnterVision(const sc2::Unit *u) {
-
 }
 
 void ATTACK_BOT::unitIdle(const sc2::Unit *u) {
