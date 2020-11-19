@@ -216,17 +216,17 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
 
     switch (u->unit_type.ToType()) {
         case UNIT_TYPEID::TERRAN_BARRACKS:
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
                                    ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
 
         case UNIT_TYPEID::TERRAN_FACTORY:
             resource->addTask(
-                    Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
+                    Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
                          u->tag));
 
         case UNIT_TYPEID::TERRAN_STARPORT:
             resource->addTask(
-                    Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
+                    Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
                          u->tag));
     }
 }

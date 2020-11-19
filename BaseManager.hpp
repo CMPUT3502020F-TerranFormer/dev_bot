@@ -117,6 +117,8 @@ public:
 	void step() {
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
+		if (!update) { return; } // this prevents us from running the following code when not necessary
+		// if things are happening the flag will be set again (eg. command center being damamged, too many scvs assigned)
 
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
@@ -130,6 +132,7 @@ public:
 			// center is repaired, then it is probably safe
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
+				update = true;
 				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
@@ -156,6 +159,7 @@ public:
 			if (command->assigned_harvesters > command->ideal_harvesters) {
 				for (auto& unit : units) {
 					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
+						update = true;
 						assignSCV(unit);
 						break;
 					}
@@ -254,6 +258,7 @@ public:
 					for (auto& order : s->orders) {
 						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
 							&& order.target_unit_tag == r->tag) {
+							update = true;
 							assignSCV(s);
 							return;
 						}
@@ -264,6 +269,7 @@ public:
 	}
 
 	void addUnit(const Unit* u) {
+		update = true;
 		// Add MULES?? -> should still work because they are included in unitIdle()
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
@@ -301,6 +307,7 @@ public:
 	 * This does not modify resource_units; that's for the resource agent
 	 */
 	void deleteUnit(const Unit* u) {
+		if (u->alliance == Unit::Alliance::Self) { update = true; }
 		// if it's a COMMAND CENTER also have to reassign all scvs
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
@@ -422,12 +429,12 @@ public:
 
 	/**
 	 * Depending on how many command centers we have, we want to have so much extra supply
-	 * available; try to keep 3/4/6 supply ahead (1/2/3+ command centers)
+	 * available; try to keep 3/5/6 supply ahead (1/2/3+ command centers)
 	 */
 	int getSupplyFloat() {
 		int command_centers = isolated_bases.size() + active_bases.size();
 		if (command_centers <= 1) { return 3; }
-		else if (command_centers == 2) { return 4; }
+		else if (command_centers == 2) { return 5; }
 		else { return 6; }
 	}
 
@@ -437,6 +444,8 @@ private:
 	BuildingPlacementManager* buildingPlacementManager;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
+
+	bool update; // we set this when things happen/are happening so we don't execute step() when not needed
 	
 	int scv_count; // total active scv count
 	int scv_target_count; // aim for 70?

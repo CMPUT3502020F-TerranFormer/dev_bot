@@ -31,7 +31,6 @@ public:
         // if unit is idle,
         switch (unit->unit_type.ToType())
         {
-
             // barracks train marine
             // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
             //
