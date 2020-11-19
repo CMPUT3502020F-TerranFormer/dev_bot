@@ -27,7 +27,7 @@ void ATTACK_BOT::step() {
     // for now, only allow this many barracks/factories/starports
     int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
     int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
-    if (barracks_count < 3 * command_count) {
+    if (barracks_count < 2 * command_count) {
         buildBarracks();
     }
 
@@ -37,7 +37,7 @@ void ATTACK_BOT::step() {
     }
 
     int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
-    if (starport_count < 2 * command_count) {
+    if (starport_count < 1 * command_count) {
         buildStarport();
     }
 

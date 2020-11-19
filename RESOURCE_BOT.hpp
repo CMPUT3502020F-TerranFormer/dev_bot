@@ -90,6 +90,8 @@ private:
     void buildSupplyDepot();
 
     bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
+
+    bool buildCheckDuplicate(ABILITY_ID ability_to_build_structure);
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP
