@@ -174,7 +174,7 @@ public:
 				}
 				else if (base.depleted()) {
 					isolated_bases.push_back(base.command);
-					for (auto& it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
+					for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 						if (base.command.tag == it->command.tag) {
 							active_bases.erase(it);
 							return;
