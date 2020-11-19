@@ -35,7 +35,7 @@ void SCOUT_BOT::addTask(Task t) {
 }
 
 void SCOUT_BOT::addUnit(TF_unit u) {
-    std::cout << "scout unit added" << std::endl;
+    //std::cout << "scout unit added" << std::endl;
 
     // add unit to units
     units.emplace_back(u.type, u.tag);
@@ -71,7 +71,7 @@ void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
                            ABILITY_ID::TRAIN_SCV,
                            UNIT_TYPEID::TERRAN_SCV,
                            UNIT_TYPEID::TERRAN_COMMANDCENTER));
-    std::cout << "scout destroyed, order new ones" << std::endl;
+    //std::cout << "scout destroyed, order new ones" << std::endl;
 }
 
 void SCOUT_BOT::unitCreated(const sc2::Unit* u) {
@@ -95,24 +95,6 @@ void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
                 action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, task.position);
                 break;
             case ORBIT_SCOUT:
-                break;
-            case HARVEST:
-                break;
-            case BUILD:
-                break;
-            case TRAIN:
-                break;
-            case DEFEND:
-                break;
-            case ATTACK:
-                break;
-            case REPAIR:
-                break;
-            case MOVE:
-                break;
-            case UPGRADE:
-                break;
-            case TRANSFER:
                 break;
         }
     }
