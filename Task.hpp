@@ -234,7 +234,6 @@ struct Task
         case DEFEND:
         case ATTACK:
             return (source == r.source
-                && units == r.units
                 && ability_id == r.ability_id
                 && position != r.position);
         case REPAIR:
