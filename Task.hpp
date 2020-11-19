@@ -6,6 +6,7 @@
 #define TF_TASK_HPP
 
 #include <sc2api/sc2_api.h>
+#include <functional>
 
 /**
  * Possible action that can be taken
@@ -18,7 +19,7 @@ enum AgentActions { HARVEST, BUILD, TRAIN, BASIC_SCOUT, ORBIT_SCOUT, DEFEND, ATT
 /**
  * the source agent
  */
-enum SourceAgent { DEFENCE_AGENT, ATTACK_AGENT, RESOURCE_AGENT, SCOUT_AGENT };
+enum SourceAgent { DEFENCE_AGENT, RESOURCE_AGENT, SCOUT_AGENT, ATTACK_AGENT };
 
 
 /**
@@ -180,17 +181,14 @@ struct Task {
      * implemented for priority queue
      */
     bool operator<(const Task &r) const {
+        if (priority == r.priority) { return source < r.source; }
         return priority < r.priority;
     }
 
-    /**
-     * For when comparison is necessary
-     * Compares only used fields for each task
-     */
     bool operator==(const Task& r) const {
-        if (r.action != action) { return false; }
-        if (r.priority != priority) { return false; }
-        switch (r.action) {
+        if (action != r.action) { return false; }
+        if (priority != r.priority) { return false; }
+        switch (action) {
         case HARVEST:
             return (self == r.self
                 && ability_id == r.ability_id
@@ -200,7 +198,7 @@ struct Task {
                 && unit_typeid == r.unit_typeid
                 && ability_id == r.ability_id
                 && target == r.target
-                && position == r.position);
+                && position != r.position);
         case TRAIN:
             return (source == r.source
                 && ability_id == r.ability_id
@@ -210,13 +208,13 @@ struct Task {
         case BASIC_SCOUT: // same as orbit_scout
         case ORBIT_SCOUT:
             return (source == r.source
-                && position == r.position);
+                && position != r.position);
         case DEFEND:
         case ATTACK:
             return (source == r.source
                 && units == r.units
                 && ability_id == r.ability_id
-                && position == position);
+                && position != r.position);
         case REPAIR:
             return (source == r.source
                 && target == r.target
@@ -225,7 +223,7 @@ struct Task {
         case MOVE:
             return (source == r.source
                 && ability_id == r.ability_id
-                && position == r.position);
+                && position != r.position);
         case UPGRADE:
             return (source == r.source
                 && self == r.self
@@ -237,7 +235,78 @@ struct Task {
         default: return false;
         }
     }
+
+    bool operator!=(const Task& r) const {
+        return !(*this == r);
+    }
 };
 
+// https://stackoverflow.com/questions/25251034/unordered-set-example-compiler-error-hash-and-equivalence-function-error-possib
+// Note: will not work correctly for ATTACK
+struct TaskHash {
+    bool operator() (const Task& t) const {
+        size_t h1 = std::hash<int>() (t.action);
+        size_t h2 = std::hash<int>() (t.priority);
+        size_t h3, h4, h5, h6, h7, h8;
+        switch (t.action) {
+        case HARVEST:
+            h3 = std::hash<int>() (t.self);
+            h4 = std::hash<int>() ((int) t.ability_id);
+            h5 = std::hash<int>() (t.target);
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5;
+        case BUILD:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() ((int) t.unit_typeid);
+            h5 = std::hash<int>() ((int) t.ability_id);
+            h6 = std::hash<int>() (t.target);
+            h7 = std::hash<int>() (t.position.x);
+            h8 = std::hash<int>() (t.position.y);
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6 ^ h7 ^ h8;
+        case TRAIN:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() ((int)t.unit_typeid);
+            h5 = std::hash<int>() ((int)t.ability_id);
+            h6 = std::hash<int>() (t.target);
+            h7 = std::hash<int>() ((int) t.source_unit);
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6 ^ h7;
+        case BASIC_SCOUT: // same as orbit_scout
+        case ORBIT_SCOUT:
+            h3 = std::hash<int>() (t.source);
+            h7 = std::hash<int>() (t.position.x);
+            h8 = std::hash<int>() (t.position.y);
+            return h1 ^ h2 ^ h3 ^ h7 ^ h8;
+        case DEFEND:
+        case ATTACK:
+            h3 = std::hash<int>() (t.source);
+            h5 = std::hash<int>() ((int)t.ability_id);
+            h7 = std::hash<int>() (t.position.x);
+            h8 = std::hash<int>() (t.position.y);
+            return h1 ^ h2 ^ h3 ^ h5 ^ h7 ^ h8;
+        case REPAIR:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() (t.target);
+            h5 = std::hash<int>() ((int)t.ability_id);
+            h6 = std::hash<int>() (t.count);
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6;
+        case MOVE:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() ((int)t.ability_id);
+            h5 = std::hash<int>() (t.position.x);
+            h6 = std::hash<int>() (t.position.y);
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6;
+        case UPGRADE:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() ((int)t.ability_id);
+            h5 = std::hash<int>() (t.self);
+            h6 = std::hash<int>() ((int)t.upgrade_id);;
+            return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6;
+        case TRANSFER:
+            h3 = std::hash<int>() (t.source);
+            h4 = std::hash<int>() (t.self);
+            return h1 ^ h2 ^ h3 ^ h4;
+        default: return 0;
+        }
+    }
+};
 
 #endif //TF_TASK_HPP

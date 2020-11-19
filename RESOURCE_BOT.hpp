@@ -8,6 +8,7 @@
 #include "TF_Bot.hpp"
 #include "Task.hpp"
 #include "BaseManager.hpp"
+#include <unordered_set>
 
 class RESOURCE_BOT final : public TF_Agent {
 public:
@@ -86,12 +87,15 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     BaseManager* baseManager;
+    static constexpr int task_queue_max = 10000;
 
     void buildSupplyDepot();
 
     bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 
     bool buildCheckDuplicate(ABILITY_ID ability_to_build_structure);
+
+    void reduce_tasks();
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

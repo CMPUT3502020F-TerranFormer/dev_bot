@@ -54,6 +54,12 @@ public:
 		assert(!Base::empty());
 		Base::pop();
 	}
+
+	const size_t size()
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		return Base::size();
+	}
 };
 
 #endif
