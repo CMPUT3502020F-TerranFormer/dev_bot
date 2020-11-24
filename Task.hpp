@@ -52,7 +52,8 @@ struct Task
      * @param target: The mineral field/refinery
      */
     Task(enum AgentActions action, int priority, sc2::Tag source, sc2::ABILITY_ID aid, sc2::Tag target)
-            : action(action), priority(priority), self(source), ability_id(aid), target(target) {
+            : action(action), priority(priority), self(source), ability_id(aid), target(target) 
+    {
         source = RESOURCE_AGENT;
     }
 
@@ -111,8 +112,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, int count = 1)
         : action(action), source(source), priority(priority), target(target), ability_id(aid), count(count)
-    {
-    }
+    {}
 
     /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
      * @param Action : MOVE
@@ -148,8 +148,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit, sc2::UPGRADE_ID uid, sc2::ABILITY_ID aid)
         : action(action), source(source), priority(priority), self(source_unit), upgrade_id(uid), ability_id(aid)
-    {
-    }
+    {}
 
     /** SCOUT - ask scout agent to scout a position
      * @param action : BASIC_SCOUT or ORBIT_SCOUT
@@ -158,8 +157,7 @@ struct Task
      */
     Task(enum AgentActions action, int priority, Point2D position)
         : action(action), priority(priority), position(position)
-    {
-    }
+    {}
 
     /** TRANSFER - RESOURCES, ATTACK
      * @param action : TRANSFER
@@ -169,8 +167,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
         : action(action), source(source), priority(priority), self(source_unit)
-    {
-    }
+    {}
 
     enum AgentActions action;
     enum SourceAgent source;
@@ -203,7 +200,7 @@ struct Task
      * implemented for priority queue
      */
     bool operator<(const Task &r) const {
-        if (priority == r.priority) { return source > r.source; } // reverse in the queue, so Defence, resource, scout, attack
+        if (priority == r.priority) { return source > r.source; } // reversed so prefer Defence->resource->scout->attack
         return priority < r.priority;
     }
 };
