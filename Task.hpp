@@ -203,6 +203,14 @@ struct Task
         if (priority == r.priority) { return source > r.source; } // reversed so prefer Defence->resource->scout->attack
         return priority < r.priority;
     }
+
+    /**
+     * Checks if two tasks are the same;
+     * Implemented for Scout tasks only
+     */
+    bool operator==(const Task &r) const {
+        return action == r.action && priority == r.priority && position == r.position;
+    }
 };
 
 #endif //TF_TASK_HPP
