@@ -20,8 +20,8 @@ using namespace sc2;
 class TroopManager
 {
 public:
-    TroopManager(threadsafe_priority_queue<Task> *t_queue, const ObservationInterface *obs)
-        : task_queue(t_queue), observation(obs)
+    TroopManager(threadsafe_priority_queue<Task> *t_queue, const ObservationInterface *obs, TF_Agent* scout)
+        : task_queue(t_queue), observation(obs), scout(scout)
     {
         enemy_locations = observation->GetGameInfo().enemy_start_locations; // positions of possible enemy starting locations
     }
@@ -107,6 +107,12 @@ public:
                 if (enemy_locations.size() == 0)
                 {
                     enemy_locations = observation->GetGameInfo().enemy_start_locations; // positions of possible enemy starting locations
+                    
+                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 10 seconds
+                    for (auto &record : scout->last_seen_near(sc2::Point2D(0, 0), std::numeric_limits<int>::max(), 10))
+                    {
+                        enemy_locations.push_back(record.location);
+                    }
                 }
                 Point2D enemy_loc = enemy_locations.back();
                 task_queue->push(
@@ -155,6 +161,7 @@ public:
 private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
+    TF_Agent* scout;
     std::vector<Point2D> enemy_locations;
 };
 

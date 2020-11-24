@@ -19,7 +19,7 @@ ATTACK_BOT::~ATTACK_BOT() {
 
 void ATTACK_BOT::init() {
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
-    troopManager = new TroopManager(&task_queue, observation);
+    troopManager = new TroopManager(&task_queue, observation, scout);
 }
 
 void ATTACK_BOT::step() {
@@ -229,4 +229,8 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
                     Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
                          u->tag));
     }
+}
+
+std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since) {
+    // do nothing
 }

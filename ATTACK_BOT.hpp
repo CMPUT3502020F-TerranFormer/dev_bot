@@ -88,6 +88,8 @@ public:
 
     void buildStarport();
 
+    std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
+
 private:
     std::vector<TF_unit> units;
     TF_Agent* defence;
