@@ -15,24 +15,6 @@
 
 #include "sc2api/sc2_map_info.h"
 
-/**
- * A struct to record spotted enemy position and time of detection
- */
-struct Spotted_Enemy {
-    Unit u;
-    Point2D location;
-    std::chrono::time_point<std::chrono::steady_clock> time;
-
-    Spotted_Enemy(Unit _u, Point2D _location, std::chrono::time_point<std::chrono::steady_clock> _time) :
-    u(std::move(_u)), location(_location), time(_time) {
-
-    }
-
-    int distance(Point2D p) const {
-        return static_cast<int>(sqrt(pow(p.x - location.x, 2) + pow(p.y - location.y, 2)));
-    }
-};
-
 class SCOUT_BOT final : public TF_Agent {
 public:
     SCOUT_BOT(TF_Bot* bot);
@@ -103,9 +85,9 @@ public:
      * @param location search location
      * @param radius radius of search
      * @param since time limit
-     * @return a vector of units
+     * @return a vector of Spotted_Enemy
      */
-    std::vector<Unit> last_seen_near(Point2D location, int radius, int since);
+    std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
 
     /**
      * Initialize agent

@@ -49,6 +49,19 @@ public:
         std::lock_guard<std::mutex> lock(mutex);
         return Base::size();
     }
+
+    const typename Base::container_type &get_container() {
+		std::lock_guard<std::mutex> lock(mutex);
+		return this->c;
+	}
+
+    void remove(T &x) {
+        auto it = std::find(this->c.begin(), this->c.end(), x);
+        if (it != this->c.end()) {
+            this->c.erase(it);
+            std::make_heap(this->c.begin(), this->c.end(), this->comp);
+        }
+    }
 };
 
 #endif

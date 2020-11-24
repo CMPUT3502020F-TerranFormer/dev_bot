@@ -334,3 +334,7 @@ bool RESOURCE_BOT::buildCheckDuplicate(Units scvs, ABILITY_ID ability_to_build_s
     }
     return false;
 }
+
+std::vector<Spotted_Enemy> RESOURCE_BOT::last_seen_near(Point2D location, int radius, int since) {
+    // do nothing
+}

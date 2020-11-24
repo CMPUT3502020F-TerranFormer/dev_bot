@@ -73,6 +73,8 @@ public:
 
     void setAgents(TF_Agent* attackb, TF_Agent* resourceb, TF_Agent* scoutb);
 
+    std::vector<Spotted_Enemy> last_seen_near(sc2::Point2D location, int radius, int since);
+
 private:
     std::vector<TF_unit> units;
     TF_Agent *attack;
