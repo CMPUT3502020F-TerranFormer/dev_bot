@@ -23,11 +23,9 @@ TF_Bot::~TF_Bot() {
 }
 
 void TF_Bot::OnGameStart() {
-
     attack->setAgents(defence, resource, scout);
     defence->setAgents(attack, resource, scout);
     resource->setAgents(defence, attack, scout);
-
     scout->setAgents(defence, attack, resource);
 
     resource->gameStart();
@@ -55,6 +53,9 @@ void TF_Bot::OnUnitDestroyed(const Unit* unit) {
 
 void TF_Bot::OnUnitCreated(const Unit* unit) {
     resource->unitCreated(unit); // resource will call addUnit() to the appropriate agent
+    attack->unitCreated(unit); // this is where most of the logic for when to build what is
+    defence->unitCreated(unit);
+    scout->unitCreated(unit);
 }
 
 void TF_Bot::OnUnitIdle(const Unit* unit) {
@@ -79,5 +80,8 @@ void TF_Bot::OnBuildingConstructionComplete(const Unit* unit) {
 }
 
 void TF_Bot::OnUnitEnterVision(const Unit* unit) {
-    defence->unitEnterVision(unit); // defence will command other agents
+    resource->unitEnterVision(unit);
+    defence->unitEnterVision(unit);
+    attack->unitEnterVision(unit);
+    scout->unitEnterVision(unit);
 }

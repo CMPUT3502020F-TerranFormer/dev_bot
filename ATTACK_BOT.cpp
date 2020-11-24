@@ -23,25 +23,7 @@ void ATTACK_BOT::init() {
 }
 
 void ATTACK_BOT::step() {
-
-    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
-    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
-    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
-    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
-    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
-    if (barracks_count < 1 + (2 * command_count)) {
-
-        buildBarracks();
-    }
-
-    if (factory_count < 2 * command_count) {
-        buildFactory();
-    }
-
-    if (starport_count < 1 * command_count) {
-        buildStarport();
-    }
-
+    // perform actions in the task queue
     while (!task_queue.empty()) {
         Task t = task_queue.pop();
         // push resource tasks from TroopManager into resources
@@ -137,7 +119,25 @@ void ATTACK_BOT::unitDestroyed(const sc2::Unit *u) {
 }
 
 void ATTACK_BOT::unitCreated(const sc2::Unit *u) {
+    // this is  where we want to check for building pre-requisites and try to build them.
 
+    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
+    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
+    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
+    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
+    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
+    if (barracks_count < 1 + (2 * command_count)) {
+
+        buildBarracks();
+    }
+
+    if (factory_count < 2 * command_count) {
+        buildFactory();
+    }
+
+    if (starport_count < 1 * command_count) {
+        buildStarport();
+    }
 }
 
 void ATTACK_BOT::unitEnterVision(const sc2::Unit *u) {
