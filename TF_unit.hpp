@@ -20,6 +20,10 @@ struct TF_unit {
     bool operator==(TF_unit &rhs) const{
         return type == rhs.type && tag == rhs.tag;
     }
+
+    bool operator==(TF_unit rhs) {
+        return type == rhs.type && tag == rhs.tag;
+    }
 };
 
 #endif

@@ -87,6 +87,11 @@ void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
 }
 
 void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
+    auto ret = std::find(units.begin(), units.end(), TF_unit(u->unit_type, u->tag));
+    if (ret == units.end()) {
+        return;
+    }
+
     if (!task_queue.empty()) {
         const auto task_queue_container(task_queue.get_container());
         // Get highest priority task in queue
