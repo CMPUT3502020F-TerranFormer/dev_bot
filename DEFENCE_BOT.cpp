@@ -35,7 +35,7 @@ void DEFENCE_BOT::step() {
                 return distance(p, p1) < distance(p, p2);
             });
             // build missile turret on the 2 nearest poi
-            for (int i = 0; i < 3; ++i) {
+            for (int i = 0; i < 2; ++i) {
                 buildMissileTurret();
             }
         }
@@ -53,30 +53,61 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 }
 
 void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
-    units.emplace_back(u->unit_type,u->tag);
+    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        base_needs_defence.emplace_back(u->pos);
+    }
 }
 
 void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
-
+    if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
+        buildEngineeringBay();
+    } else if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
+        buildArmory();
+    }
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
+    std::sort(poi.begin(), poi.end(), [u](const Point2D& p1, const Point2D& p2) {
+        return distance(u->pos, p1) < distance(u->pos, p2);
+    });
 
+    switch ((int) u->unit_type) {
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
+        case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+        case (int) UNIT_TYPEID::TERRAN_MARAUDER:
+        case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
+            break;
+        default:
+            break;
+    }
 }
 
 void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
-
+    if (u->alliance == sc2::Unit::Enemy) {
+        for (auto &b : bases) {
+            if (distance(u->pos, b) < 5) {
+                // TODO: wait for api from attack
+            }
+        }
+    }
 }
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
+    }
+    if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3);
     }
 }
 
@@ -141,7 +172,7 @@ void DEFENCE_BOT::buildMissileTurret() {
             8,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
-            buildingPlacementManager->getNextEngineeringBayLocation());
+            buildingPlacementManager->getNextSupplyDepotLocation());
     resource->addTask(dp);
 }
 
@@ -158,7 +189,7 @@ void DEFENCE_BOT::buildArmory() {
 void DEFENCE_BOT::buildEngineeringBay() {
     Task buildEB(BUILD,
             DEFENCE_AGENT,
-            8,
+            10,
             UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
             ABILITY_ID::BUILD_ENGINEERINGBAY,
             buildingPlacementManager->getNextEngineeringBayLocation());
