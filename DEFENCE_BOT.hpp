@@ -8,6 +8,9 @@
 #include "TF_Bot.hpp"
 #include "Task.hpp"
 
+#include "SQLITE3.hpp"
+#include "SQLITE3_QUERY.hpp"
+
 class DEFENCE_BOT final : public TF_Agent {
 public:
     DEFENCE_BOT(TF_Bot* bot);
@@ -75,11 +78,37 @@ public:
 
     std::vector<Spotted_Enemy> last_seen_near(sc2::Point2D location, int radius, int since);
 
+    void NewBaseBuilt(Point2D pos);
+
+    void init();
+
 private:
     std::vector<TF_unit> units;
     TF_Agent *attack;
     TF_Agent *resource;
     TF_Agent *scout;
+
+    std::vector<Point2D> poi;
+    std::vector<Point2D> bases;
+    std::vector<Point2D> base_needs_defence;
+
+    bool hasBarracks = false;
+    bool hasEngineeringBay = false;
+    bool hasFactory = false;
+
+    bool orderedArmoury = false;
+
+    static double distance(const Point2D &p1, const Point2D &p2);
+
+    void buildMissileTurret();
+
+    void buildEngineeringBay();
+
+    void buildArmory();
+
+    void check_for_engineering_bay();
+
+    void check_for_factory();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP

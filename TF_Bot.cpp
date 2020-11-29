@@ -31,6 +31,7 @@ void TF_Bot::OnGameStart() {
     resource->gameStart();
     attack->init();
     scout->init();
+    defence->init();
 }
 
 void TF_Bot::OnGameEnd() {

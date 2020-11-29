@@ -135,6 +135,10 @@ public:
 		return getNextSupplyDepotLocation();
 	}
 
+	Point2D getNextEngineeringBayLocation() {
+        return getNextSupplyDepotLocation();
+	}
+
 private:
 	Map map;
 	Point2D start_location;
