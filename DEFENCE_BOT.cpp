@@ -125,12 +125,6 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
 
-    // if refinery idle, meaning gas exhausted, salvage building
-    if (u->unit_type == UNIT_TYPEID::TERRAN_REFINERY) {
-        action->UnitCommand(u, ABILITY_ID::EFFECT_SALVAGE);
-        return;
-    }
-
     // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
