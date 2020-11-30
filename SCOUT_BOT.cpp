@@ -17,6 +17,26 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
+    // order scv 120sec into game time
+    if (!ordered_scv) {
+        if (steps / 16 > 120) {
+            // order 20 scv
+            auto t = Task(TRAIN,
+                           SCOUT_AGENT,
+                           6,
+                           ABILITY_ID::TRAIN_SCV,
+                           UNIT_TYPEID::TERRAN_SCV,
+                           UNIT_TYPEID::TERRAN_COMMANDCENTER);
+
+            for (int i = 0; i < MAX_SCOUT_COUNT; ++i) {
+                resource->addTask(t);
+            }
+            ordered_scv = true;
+        } else {
+            steps += 1;
+        }
+    }
+
     // if not busy
     if (task_queue.size() < 5) {
         Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first % poi_close_to_enemy.second.size()));
@@ -163,27 +183,6 @@ std::vector<Spotted_Enemy> SCOUT_BOT::last_seen_near(Point2D location, int radiu
 }
 
 void SCOUT_BOT::init() {
-    game_epoch = std::chrono::steady_clock::now();
-
-    // order 20 scv
-    auto t1 = Task(TRAIN,
-        SCOUT_AGENT,
-        4,
-        ABILITY_ID::TRAIN_SCV,
-        UNIT_TYPEID::TERRAN_SCV,
-        UNIT_TYPEID::TERRAN_COMMANDCENTER);
-    auto t2 = Task(TRAIN,
-        SCOUT_AGENT,
-        6,
-        ABILITY_ID::TRAIN_SCV,
-        UNIT_TYPEID::TERRAN_SCV,
-        UNIT_TYPEID::TERRAN_COMMANDCENTER);
-
-    for (int i = 0; i < MAX_SCOUT_COUNT / 2; ++i) {
-        resource->addTask(t1);
-        resource->addTask(t2);
-    }
-
     gi = observation->GetGameInfo();
     main_base = gi.start_locations.at(0);
     enemy_main_base = gi.start_locations.at(0);

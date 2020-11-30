@@ -16,15 +16,24 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 }
 
 void DEFENCE_BOT::step() {
-    if (!hasEngineeringBay) {
-        stepsEng += 1;
-        if (stepsEng/16 > 800) {
+    // build engineering bay once a barracks is built
+    if (!hasBarracks) {
+        check_for_barracks();
+    } else {
+        if (!orderedEngBay) {
             buildEngineeringBay();
-            stepsEng = 0;
+            orderedEngBay = true;
+        } else if (!hasEngineeringBay){
+            stepsEng += 1;
+            check_for_engineering_bay();
+            if (!hasEngineeringBay && stepsEng / 16 > 10) {
+                buildEngineeringBay();
+                stepsEng = 0;
+            }
         }
-        check_for_engineering_bay();
     }
 
+    // build armoury bay once a factory is built
     if (!hasFactory) {
         check_for_factory();
     } else {
@@ -34,7 +43,7 @@ void DEFENCE_BOT::step() {
         } else if (!hasArmoury){
             stepsArm += 1;
             check_for_armoury();
-            if (!hasArmoury && stepsArm / 16 > 300) {
+            if (!hasArmoury && stepsArm / 16 > 10) {
                 buildArmory();
                 stepsArm = 0;
             }
@@ -65,8 +74,10 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 }
 
 void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
-    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) { // new command center added
         base_needs_defence.emplace_back(u->pos);
+    } else if (u->unit_type == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) { // supply depot auto lower to save space
+        action->UnitCommand(u, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
     }
 }
 
@@ -84,10 +95,14 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
     });
 
     switch ((int) u->unit_type) {
-        case (int) UNIT_TYPEID::TERRAN_MARINE:
+        // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
+            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+            break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
             break;
         default:
@@ -109,30 +124,38 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
     /**
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
+
+    // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
-        if (infantryUpgradePhase1Complete) {
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
+        if (sAndVUpgradePhase1Complete) {
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
-            if (infantryUpgradePhase2Complete) {
+            if (sAndVUpgradePhase2Complete) {
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
             }
         }
     }
 
+    // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
         if (infantryUpgradePhase1Complete){
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
             if (infantryUpgradePhase2Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
+                if (infantryUpgradePhase3Complete){
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
+                }
             }
         }
     }
@@ -144,22 +167,22 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
 
 void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
     switch((int) uid){
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1:
+        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
             infantryUpgradePhase1Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
+        case (int) UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2:
             infantryUpgradePhase2Complete = true;
             break;
         case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3:
             infantryUpgradePhase3Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1:
             infantryUpgradePhase1Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2:
             infantryUpgradePhase2Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3:
             infantryUpgradePhase3Complete = true;
             break;
     }
@@ -208,8 +231,6 @@ void DEFENCE_BOT::init() {
 
     bases.push_back(gi.start_locations[0]);
     base_needs_defence.push_back(gi.start_locations[0]);
-
-    buildEngineeringBay();
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -222,7 +243,7 @@ void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
             8,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
-            pos);
+            buildingPlacementManager->getNextMissileTurretLocation());
     resource->addTask(dp);
 }
 
@@ -232,7 +253,7 @@ void DEFENCE_BOT::buildArmory() {
             8,
             UNIT_TYPEID::TERRAN_ARMORY,
             ABILITY_ID::BUILD_ARMORY,
-            buildingPlacementManager->getNextSupplyDepotLocation());
+            buildingPlacementManager->getNextArmoryLocation());
     resource->addTask(dp);
 }
 
@@ -291,4 +312,18 @@ void DEFENCE_BOT::check_for_armoury() {
 void DEFENCE_BOT::NewBaseBuilt(Point2D pos) {
     base_needs_defence.push_back(pos);
     bases.push_back(pos);
+}
+
+void DEFENCE_BOT::check_for_barracks() {
+    auto ret = observation->GetUnits([](const Unit& unit){
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+            return true;
+        } else {
+            return false;
+        }
+    });
+
+    if(!ret.empty()) {
+        hasBarracks = true;
+    }
 }

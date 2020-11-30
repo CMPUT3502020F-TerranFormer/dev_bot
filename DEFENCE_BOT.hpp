@@ -98,6 +98,7 @@ private:
     bool hasArmoury = false;
 
     bool orderedArmoury = false;
+    bool orderedEngBay = false;
 
     bool infantryUpgradePhase1Complete = false;
     bool infantryUpgradePhase2Complete = false;
@@ -123,6 +124,8 @@ private:
     void check_for_factory();
 
     void check_for_armoury();
+
+    void check_for_barracks();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP

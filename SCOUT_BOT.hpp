@@ -108,7 +108,8 @@ private:
 
     std::vector<Spotted_Enemy> detection_record;
 
-    std::chrono::time_point<std::chrono::steady_clock> game_epoch;
+    int steps = 0;
+    bool ordered_scv = false;
 
     enum {MAX_SCOUT_COUNT = 20};
 
