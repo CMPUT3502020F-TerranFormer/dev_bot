@@ -74,8 +74,10 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 }
 
 void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
-    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) { // new command center added
         base_needs_defence.emplace_back(u->pos);
+    } else if (u->unit_type == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) { // supply depot auto lower to save space
+        action->UnitCommand(u, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
     }
 }
 
@@ -93,10 +95,14 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
     });
 
     switch ((int) u->unit_type) {
-        case (int) UNIT_TYPEID::TERRAN_MARINE:
+        // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
+            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+            break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
             break;
         default:
@@ -118,6 +124,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
     /**
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
+
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
