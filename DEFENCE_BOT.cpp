@@ -125,6 +125,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
 
+    // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
@@ -140,6 +141,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
         }
     }
 
+    // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
         if (infantryUpgradePhase1Complete){
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
