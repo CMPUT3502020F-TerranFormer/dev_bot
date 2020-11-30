@@ -95,12 +95,24 @@ private:
     bool hasBarracks = false;
     bool hasEngineeringBay = false;
     bool hasFactory = false;
+    bool hasArmoury = false;
 
     bool orderedArmoury = false;
 
+    bool infantryUpgradePhase1Complete = false;
+    bool infantryUpgradePhase2Complete = false;
+    bool infantryUpgradePhase3Complete = false;
+
+    bool sAndVUpgradePhase1Complete = false;
+    bool sAndVUpgradePhase2Complete = false;
+    bool sAndVUpgradePhase3Complete = false;
+
+    int stepsEng = 0;
+    int stepsArm = 0;
+
     static double distance(const Point2D &p1, const Point2D &p2);
 
-    void buildMissileTurret();
+    void buildMissileTurret(Point2D pos);
 
     void buildEngineeringBay();
 
@@ -109,6 +121,8 @@ private:
     void check_for_engineering_bay();
 
     void check_for_factory();
+
+    void check_for_armoury();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
