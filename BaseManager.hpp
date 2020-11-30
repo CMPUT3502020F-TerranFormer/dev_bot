@@ -235,7 +235,11 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		if (num_command_centers == 0) { build = true; }
+		auto command_build_priority = 6;
+		if (num_command_centers == 0) { 
+			build = true;
+			command_build_priority = 20;
+		}
 		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
 		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
 
@@ -252,7 +256,7 @@ public:
 		if (build) {
 			Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
 			if (baseLocation != Point2D(0, 0)) {
-				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+				task_queue->push(Task(BUILD, RESOURCE_AGENT, command_build_priority,
 					UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
 			}
 		}
@@ -315,7 +319,7 @@ public:
 	 */
 	void deleteUnit(const Unit* u) {
 		if (u->alliance == Unit::Alliance::Self) { update = true; }
-		// if it's a COMMAND CENTER also have to reassign all scvs
+		// if it's a COMMAND CENTER also have to reassign all scvs -> done in step
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
