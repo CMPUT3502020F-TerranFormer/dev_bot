@@ -16,15 +16,24 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 }
 
 void DEFENCE_BOT::step() {
-    if (!hasEngineeringBay) {
-        stepsEng += 1;
-        if (stepsEng/16 > 800) {
+    // build engineering bay once a barracks is built
+    if (!hasBarracks) {
+        check_for_barracks();
+    } else {
+        if (!orderedEngBay) {
             buildEngineeringBay();
-            stepsEng = 0;
+            orderedEngBay = true;
+        } else if (!hasEngineeringBay){
+            stepsEng += 1;
+            check_for_engineering_bay();
+            if (!hasEngineeringBay && stepsEng / 16 > 10) {
+                buildEngineeringBay();
+                stepsEng = 0;
+            }
         }
-        check_for_engineering_bay();
     }
 
+    // build armoury bay once a factory is built
     if (!hasFactory) {
         check_for_factory();
     } else {
@@ -34,7 +43,7 @@ void DEFENCE_BOT::step() {
         } else if (!hasArmoury){
             stepsArm += 1;
             check_for_armoury();
-            if (!hasArmoury && stepsArm / 16 > 300) {
+            if (!hasArmoury && stepsArm / 16 > 10) {
                 buildArmory();
                 stepsArm = 0;
             }
@@ -208,8 +217,6 @@ void DEFENCE_BOT::init() {
 
     bases.push_back(gi.start_locations[0]);
     base_needs_defence.push_back(gi.start_locations[0]);
-
-    buildEngineeringBay();
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -222,7 +229,7 @@ void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
             8,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
-            pos);
+            buildingPlacementManager->getNextMissileTurretLocation());
     resource->addTask(dp);
 }
 
@@ -232,7 +239,7 @@ void DEFENCE_BOT::buildArmory() {
             8,
             UNIT_TYPEID::TERRAN_ARMORY,
             ABILITY_ID::BUILD_ARMORY,
-            buildingPlacementManager->getNextSupplyDepotLocation());
+            buildingPlacementManager->getNextArmoryLocation());
     resource->addTask(dp);
 }
 
@@ -291,4 +298,18 @@ void DEFENCE_BOT::check_for_armoury() {
 void DEFENCE_BOT::NewBaseBuilt(Point2D pos) {
     base_needs_defence.push_back(pos);
     bases.push_back(pos);
+}
+
+void DEFENCE_BOT::check_for_barracks() {
+    auto ret = observation->GetUnits([](const Unit& unit){
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+            return true;
+        } else {
+            return false;
+        }
+    });
+
+    if(!ret.empty()) {
+        hasBarracks = true;
+    }
 }
