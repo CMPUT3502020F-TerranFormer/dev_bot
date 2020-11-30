@@ -125,16 +125,22 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
 
+    // if refinery idle, meaning gas exhausted, salvage building
+    if (u->unit_type == UNIT_TYPEID::TERRAN_REFINERY) {
+        action->UnitCommand(u, ABILITY_ID::EFFECT_SALVAGE);
+        return;
+    }
+
     // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
-        if (infantryUpgradePhase1Complete) {
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
+        if (sAndVUpgradePhase1Complete) {
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
-            if (infantryUpgradePhase2Complete) {
+            if (sAndVUpgradePhase2Complete) {
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
             }
@@ -143,14 +149,19 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
 
     // TODO use behavior tree to replace the following logic
     if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
+        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
         if (infantryUpgradePhase1Complete){
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
             if (infantryUpgradePhase2Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
+                if (infantryUpgradePhase3Complete){
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
+                }
             }
         }
     }
@@ -162,22 +173,22 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
 
 void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
     switch((int) uid){
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1:
+        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
             infantryUpgradePhase1Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
+        case (int) UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2:
             infantryUpgradePhase2Complete = true;
             break;
         case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3:
             infantryUpgradePhase3Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1:
             infantryUpgradePhase1Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2:
             infantryUpgradePhase2Complete = true;
             break;
-        case (int) UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3:
+        case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3:
             infantryUpgradePhase3Complete = true;
             break;
     }
