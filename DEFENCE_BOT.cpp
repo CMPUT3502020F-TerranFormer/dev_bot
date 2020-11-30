@@ -74,7 +74,7 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 }
 
 void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
-    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) { // new command center added
+    if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && u->alliance == Unit::Self) { // new command center added
         base_needs_defence.emplace_back(u->pos);
     } else if (u->unit_type == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) { // supply depot auto lower to save space
         action->UnitCommand(u, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
@@ -84,9 +84,13 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         buildEngineeringBay();
+        return;
     } else if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
         buildArmory();
+        return;
     }
+
+    All_Attack_Units.erase(u->tag);
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
@@ -97,12 +101,14 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
         case (int) UNIT_TYPEID::TERRAN_MARINE:
+            All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
             break;
         default:
@@ -111,10 +117,19 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
 }
 
 void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
-    if (u->alliance == sc2::Unit::Enemy) {
+    if (u->alliance != sc2::Unit::Self) {
         for (auto &b : bases) {
-            if (distance(u->pos, b) < 5) {
-                // TODO: wait for api from attack
+            if (distance(u->pos, b) < 30) {
+                std::cout << "Defence Activated" << std::endl;
+                for (auto unit : All_Attack_Units) {
+                    if (unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED || unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK) {
+                        action->UnitCommand(unit.second, ABILITY_ID::MORPH_UNSIEGE);
+                        action->SendActions();
+                    }
+                    action->UnitCommand(unit.second, ABILITY_ID::MOVE_MOVE, u->pos, true);
+                    action->UnitCommand(unit.second, ABILITY_ID::MORPH_SIEGEMODE, true);
+                    action->UnitCommand(unit.second, ABILITY_ID::ATTACK_ATTACK, u->pos, true);
+                }
             }
         }
     }
@@ -126,6 +141,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
      */
 
     // TODO use behavior tree to replace the following logic
+    // engineering bay upgrade tree
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
@@ -142,6 +158,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
     }
 
     // TODO use behavior tree to replace the following logic
+    // armoury upgrade tree
     if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
         if (infantryUpgradePhase1Complete){
@@ -229,8 +246,17 @@ void DEFENCE_BOT::init() {
         exit(1);
     }
 
-    bases.push_back(gi.start_locations[0]);
-    base_needs_defence.push_back(gi.start_locations[0]);
+    auto ret = observation->GetUnits([](const Unit& unit){
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+            return true;
+        } else {
+            return false;
+        }
+    });
+    for (auto cmd : ret) {
+        bases.emplace_back(cmd->pos);
+        base_needs_defence.emplace_back(cmd->pos);
+    }
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -243,7 +269,7 @@ void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
             8,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
-            buildingPlacementManager->getNextMissileTurretLocation());
+            buildingPlacementManager->getNextMissileTurretLocation(pos));
     resource->addTask(dp);
 }
 
@@ -309,11 +335,6 @@ void DEFENCE_BOT::check_for_armoury() {
     }
 }
 
-void DEFENCE_BOT::NewBaseBuilt(Point2D pos) {
-    base_needs_defence.push_back(pos);
-    bases.push_back(pos);
-}
-
 void DEFENCE_BOT::check_for_barracks() {
     auto ret = observation->GetUnits([](const Unit& unit){
         if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
@@ -327,3 +348,5 @@ void DEFENCE_BOT::check_for_barracks() {
         hasBarracks = true;
     }
 }
+
+

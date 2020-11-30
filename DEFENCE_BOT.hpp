@@ -78,8 +78,6 @@ public:
 
     std::vector<Spotted_Enemy> last_seen_near(sc2::Point2D location, int radius, int since);
 
-    void NewBaseBuilt(Point2D pos);
-
     void init();
 
 private:
@@ -91,6 +89,8 @@ private:
     std::vector<Point2D> poi;
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
+
+    std::map<sc2::Tag, Unit *> All_Attack_Units;
 
     bool hasBarracks = false;
     bool hasEngineeringBay = false;
