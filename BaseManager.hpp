@@ -476,12 +476,12 @@ private:
 				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
 				return;
 			}
-			// if minerals are saturated, check vespene
-			for (auto& v : vespene) {
-				if (v->assigned_harvesters < v->ideal_harvesters) {
-					task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
-					return;
-				}
+		}
+		// if minerals are saturated, check vespene
+		for (auto& v : vespene) {
+			if (v->assigned_harvesters < v->ideal_harvesters) {
+				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
+				return;
 			}
 		}
 		// if all are saturated, do nothing -> change this later??
