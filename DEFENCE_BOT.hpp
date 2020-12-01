@@ -146,8 +146,6 @@ private:
     int stepsEng = 0;
     int stepsArm = 0;
 
-    std::vector<Point2D> refineryPendingBuild;
-
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution;
 

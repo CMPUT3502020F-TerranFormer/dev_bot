@@ -15,14 +15,12 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 }
 
 void DEFENCE_BOT::step() {
+    check_for_engineering_bay();
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
-            std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
-                return distance(p, p1) < distance(p, p2);
-            });
-            // build missile turret on the 2 nearest poi
+            // build 2 missile turret on each base
             for (int i = 0; i < 2; ++i) {
-                buildMissileTurret(poi[i]);
+                buildMissileTurret(p);
             }
         }
 
@@ -67,9 +65,9 @@ void DEFENCE_BOT::step() {
         if (hasStarport) {
             orderBattleCruiser(1);
         }
-        orderSiegeTank(3);
-        orderCyclone(2);
-        orderMarine(10);
+        orderSiegeTank(2);
+        orderCyclone(1);
+        orderMarine(8);
         orderMarauder(5);
     } else if (mCount > 1000 && hasFactory) {
         orderThor(1);
@@ -77,8 +75,6 @@ void DEFENCE_BOT::step() {
     } else if (mCount > 600 && hasFactory) {
         if (distribution(generator)) {
             orderSiegeTank(1);
-        } else {
-            orderCyclone(1);
         }
 
         if (hasBarracks) {
@@ -95,6 +91,7 @@ void DEFENCE_BOT::step() {
         }
     } else if (mCount > 400) {
         orderMarauder(1);
+        orderMarine(1);
     } else if (mCount > 200 && hasBarracks && All_Attack_Units.size() < 30) {
         orderMarine(1);
     }
@@ -450,7 +447,7 @@ double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
 void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
     Task dp(BUILD,
             DEFENCE_AGENT,
-            8,
+            6,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
             buildingPlacementManager->getNextMissileTurretLocation(pos));
