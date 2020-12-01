@@ -212,6 +212,7 @@ void RESOURCE_BOT::step() {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
         }
         }
+        action->SendActions();
     }
 }
 
