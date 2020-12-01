@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include "stdlib.h"
+
 #if defined(_WIN32)
 #if !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS /* Disable deprecation warning in VS2005 */

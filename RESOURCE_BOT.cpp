@@ -30,19 +30,17 @@ void RESOURCE_BOT::gameStart() {
  * And it also does resource management for all the agents
  */
 void RESOURCE_BOT::step() {
-    // occasionally we should clean out the task queue to prevent it from getting too large
-    // when too many tasks are added -> create a set of tasks from the queue? -> clear it, then
-    // add all tasks back from the set?, when size > 1000?
-
     // actions for bases
-    baseManager->step();
+    Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
+
+    baseManager->step(scvs);
 
     // Resource Management
     // check if we need to build a supply depot
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
 
     if (available_food <= baseManager->getSupplyFloat()) {
-        buildSupplyDepot();
+        buildSupplyDepot(scvs);
     }
 
     // we don't want to remove tasks from queue if there are not enough resources to perform them
@@ -51,11 +49,10 @@ void RESOURCE_BOT::step() {
 
     bool task_success = true; // we also want to stop when we don't have resources to complete any other tasks
     while (!task_queue.empty() && task_success) {
-        Task t = task_queue.top();
+        Task t = task_queue.pop();
         switch (t.action) {
         case HARVEST: {
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
-            task_queue.pop();
             break;
         }
         case BUILD: {
@@ -68,17 +65,17 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
-            if (buildStructure(t.ability_id, t.position, t.target)) { // if building succeeded
+            if (buildStructure(scvs, t.ability_id, t.position, t.target)) { // if building succeeded
                 // update available resources
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
                 available_vespene -= ut.vespene_cost;
                 task_success = false; // only take one build task / step -> ensure that unnecessary duplicates aren't created
             }
-            task_queue.pop();
             break;
         }
         case TRAIN: {
@@ -90,13 +87,13 @@ void RESOURCE_BOT::step() {
                 // try to get a target unit of the required type, we'll just take the first
                 Units workers = observation->GetUnits(Unit::Alliance::Self, IsUnit(t.source_unit));
                 if (workers.size() == 0) {
-                    task_queue.pop();
                     std::cerr << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
                     break;
                 }
                 worker = workers.front();
             }
             else { worker = observation->GetUnit(t.target); }
+            if (worker == nullptr) { break; }
 
             // check that we have enough resources to do ability
             UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
@@ -104,6 +101,7 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
@@ -119,7 +117,6 @@ void RESOURCE_BOT::step() {
             if (worker->orders.size() == 0) { available_food -= ut.food_required; }
             available_minerals -= ut.mineral_cost;
             available_vespene -= ut.vespene_cost;
-            task_queue.pop();
             break;
         }
         case REPAIR: {
@@ -127,7 +124,6 @@ void RESOURCE_BOT::step() {
             // resource cost = %health lost * build cost
             // we must also limit the number of scvs that can repair a unit at once
             // -> t.count
-            Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
             int current_scvs = 0;
             for (auto& s : scvs) {
                 for (auto& order : s->orders) {
@@ -139,7 +135,7 @@ void RESOURCE_BOT::step() {
                 }
             }
             if (current_scvs < t.count) {
-                Tag scv_tag = baseManager->getSCV().tag;
+                Tag scv_tag = baseManager->getSCV(scvs).tag;
                 if (scv_tag == -1) { continue; } // no scv exists
                 const Unit* scv = observation->GetUnit(scv_tag);
                 const Unit* u = observation->GetUnit(t.target);
@@ -154,7 +150,6 @@ void RESOURCE_BOT::step() {
                     // and we want to flush out all extra repair tasks
                 }
             }
-            task_queue.pop();
             break;
         }
         case UPGRADE: {
@@ -163,16 +158,15 @@ void RESOURCE_BOT::step() {
             if (ud.mineral_cost > available_minerals
                 || ud.vespene_cost > available_vespene)
             {
+                task_queue.push(t);
                 task_success = false;
                 break;
             }
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id);
-            task_queue.pop();
             break;
         }
         case MOVE: {
             action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
-            task_queue.pop();
             break;
         }
         case TRANSFER: {
@@ -182,9 +176,8 @@ void RESOURCE_BOT::step() {
             */
             TF_unit unit;
             if (t.self == -1) {
-                TF_unit scv = baseManager->getSCV();
+                TF_unit scv = baseManager->getSCV(scvs);
                 if (scv.tag == -1) {
-                    task_queue.pop(); // no scvs
                     break;
                 }
                 unit = scv;
@@ -201,7 +194,6 @@ void RESOURCE_BOT::step() {
                 break;
             default:
                 std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
-                task_queue.pop();
                 return;
             }
 
@@ -212,12 +204,10 @@ void RESOURCE_BOT::step() {
                     break;
                 }
             }
-            task_queue.pop();
             break;
         }
         default: {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
-            task_queue.pop();
         }
         }
     }
@@ -235,6 +225,8 @@ void RESOURCE_BOT::addUnit(TF_unit u) {
 }
 
 void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
+    // deal with morphs here; not necessary yet -> when we will use orbital command
+    // and planetary fortresses
 
 }
 
@@ -255,14 +247,14 @@ void RESOURCE_BOT::unitCreated(const sc2::Unit* u) {
     for (auto it = ordered_units.cbegin(); it != ordered_units.cend(); ++it) {
         if (it->second == u->unit_type) {
             switch (it->first) {
-            case ATTACK_AGENT: 
-                attack->addUnit(tfu);
+            case SCOUT_AGENT: 
+                scout->addUnit(tfu);
                 break;
             case DEFENCE_AGENT: 
                 defence->addUnit(tfu);
                 break;
-            case SCOUT_AGENT: 
-                scout->addUnit(tfu);
+            case ATTACK_AGENT: 
+                attack->addUnit(tfu);
                 break;
             default: // RESOURCE_AGENT
                 addUnit(tfu);
@@ -296,31 +288,33 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
     this->scout = scoutb;
 }
 
-void RESOURCE_BOT::buildSupplyDepot() {
+void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
     // gets a location to build the supply depot then buildStructure
     // which will prevent 2 from being built at the same time
     Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
-    buildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, point);
+    buildStructure(scvs, ABILITY_ID::BUILD_SUPPLYDEPOT, point);
 }
 
-bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
-    Tag scv_tag = baseManager->getSCV().tag;
+/* We pass in scvs because this may be called multiple times/step so it's more efficient */
+bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+    Tag scv_tag = baseManager->getSCV(scvs).tag;
     if (scv_tag == -1) { return false; } // there are no scvs
     const Unit* scv = observation->GetUnit(scv_tag);
+    if (scv == nullptr) { return false; }
 
     // commands are queued just in case the same scv is returned several times
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
         if (building == nullptr) { return false; }
         if (query->Placement(ability_to_build_structure, building->pos, building)
-            && !buildCheckDuplicate(ability_to_build_structure)) {
+            && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;
         }
     }
     else { // build at a location
         if (query->Placement(ability_to_build_structure, point)
-            && !buildCheckDuplicate(ability_to_build_structure)) {
+            && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, point, true);
             return true;
         }
@@ -328,9 +322,9 @@ bool RESOURCE_BOT::buildStructure(ABILITY_ID ability_to_build_structure, Point2D
     return false;
 }
 
-bool RESOURCE_BOT::buildCheckDuplicate(ABILITY_ID ability_to_build_structure) {
+bool RESOURCE_BOT::buildCheckDuplicate(Units scvs, ABILITY_ID ability_to_build_structure) {
     // checks that a unit of the same type is not being built (can change this later)
-    for (const auto& unit : observation->GetUnits(Unit::Alliance::Self, IsSCV())) {
+    for (const auto& unit : scvs) {
         for (const auto& order : unit->orders) {
             if (order.ability_id == ability_to_build_structure
                 && ability_to_build_structure != ABILITY_ID::BUILD_REFINERY) { // exclude Vespene refinery
@@ -339,4 +333,8 @@ bool RESOURCE_BOT::buildCheckDuplicate(ABILITY_ID ability_to_build_structure) {
         }
     }
     return false;
+}
+
+std::vector<Spotted_Enemy> RESOURCE_BOT::last_seen_near(Point2D location, int radius, int since) {
+    // do nothing
 }

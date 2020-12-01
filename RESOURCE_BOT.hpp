@@ -8,6 +8,7 @@
 #include "TF_Bot.hpp"
 #include "Task.hpp"
 #include "BaseManager.hpp"
+#include <unordered_set>
 
 class RESOURCE_BOT final : public TF_Agent {
 public:
@@ -78,6 +79,8 @@ public:
 
     void setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* scoutb);
 
+    std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since) final;
+
 private:
     std::vector<Tag> units;
     typedef std::pair<SourceAgent, UNIT_TYPEID> order_unit;
@@ -87,11 +90,11 @@ private:
     TF_Agent *scout;
     BaseManager* baseManager;
 
-    void buildSupplyDepot();
+    void buildSupplyDepot(Units scvs);
 
-    bool buildStructure(ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
+    bool buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 
-    bool buildCheckDuplicate(ABILITY_ID ability_to_build_structure);
+    bool buildCheckDuplicate(Units scvs, ABILITY_ID ability_to_build_structure);
 };
 
 #endif //CPP_SC2_RESOURCE_BOT_HPP

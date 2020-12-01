@@ -29,6 +29,24 @@ class ATTACK_BOT;
 class SCOUT_BOT;
 class DEFENCE_BOT;
 
+/**
+ * A struct to record spotted enemy position and time of detection
+ */
+struct Spotted_Enemy {
+    Unit u;
+    Point2D location;
+    std::chrono::time_point<std::chrono::steady_clock> time;
+
+    Spotted_Enemy(Unit _u, Point2D _location, std::chrono::time_point<std::chrono::steady_clock> _time) :
+    u(std::move(_u)), location(_location), time(_time) {
+
+    }
+
+    int distance(Point2D p) const {
+        return static_cast<int>(sqrt(pow(p.x - location.x, 2) + pow(p.y - location.y, 2)));
+    }
+};
+
 class TF_Bot : public Agent 
 {
 public:
@@ -95,6 +113,8 @@ public:
      * @param u TF_unit
      */
     virtual void addUnit(TF_unit u) = 0;
+
+    virtual std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since) = 0;
 
     /**
      * Called when a building is completed

@@ -17,30 +17,37 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
-    auto now = std::chrono::steady_clock::now();
-    auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - game_epoch).count();
+    // order scv 120sec into game time
+    if (!ordered_scv) {
+        if (steps / 16 > 120) {
+            // order 20 scv
+            auto t = Task(TRAIN,
+                           SCOUT_AGENT,
+                           6,
+                           ABILITY_ID::TRAIN_SCV,
+                           UNIT_TYPEID::TERRAN_SCV,
+                           UNIT_TYPEID::TERRAN_COMMANDCENTER);
 
-    // at 2 minutes time point, request the rest of the required SCV at a higher priority
-    if (time_elapsed > 120 && time_elapsed < 500) {
-        auto t = Task(TRAIN,
-                      SCOUT_AGENT,
-                      6,
-                      ABILITY_ID::TRAIN_SCV,
-                      UNIT_TYPEID::TERRAN_SCV,
-                      UNIT_TYPEID::TERRAN_COMMANDCENTER);
-        for (int i = 0; i < MAX_SCOUT_COUNT/2; ++i) {
-            resource->addTask(t);
+            for (int i = 0; i < MAX_SCOUT_COUNT; ++i) {
+                resource->addTask(t);
+            }
+            ordered_scv = true;
+        } else {
+            steps += 1;
         }
     }
 
-    Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first%poi_close_to_enemy.second.size()));
-    poi_close_to_enemy.first += 1;
+    // if not busy
+    if (task_queue.size() < 5) {
+        Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first % poi_close_to_enemy.second.size()));
+        poi_close_to_enemy.first += 1;
 
-    Task t2(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_base.first%poi_close_to_base.second.size()));
-    poi_close_to_base.first += 1;
+        Task t2(BASIC_SCOUT, 5, poi_close_to_base.second.at(poi_close_to_base.first % poi_close_to_base.second.size()));
+        poi_close_to_base.first += 1;
 
-    addTask(t1);
-    addTask(t2);
+        addTask(t1);
+        addTask(t2);
+    }
 }
 
 void SCOUT_BOT::addTask(Task t) {
@@ -48,14 +55,23 @@ void SCOUT_BOT::addTask(Task t) {
 }
 
 void SCOUT_BOT::addUnit(TF_unit u) {
+    //std::cout << "scout unit added" << std::endl;
+
+    // add unit to units
     units.emplace_back(u.type, u.tag);
+
+    // give unit a task
+    while (task_queue.empty()) { std::this_thread::sleep_for(std::chrono::milliseconds(20)); }
+
+    auto t = task_queue.pop();
+    action->UnitCommand(observation->GetUnit(u.tag), ABILITY_ID::MOVE_MOVE, t.position);
 }
 
-void SCOUT_BOT::buildingConstructionComplete(const sc2::Unit* u) {
+void SCOUT_BOT::buildingConstructionComplete(const sc2::Unit * u) {
 
 }
 
-void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
+void SCOUT_BOT::unitDestroyed(const sc2::Unit * u) {
     // get unit identifiers
     auto tag = u->tag;
     auto type = u->unit_type;
@@ -63,30 +79,26 @@ void SCOUT_BOT::unitDestroyed(const sc2::Unit* u) {
     // remove unit from list
     auto val = TF_unit(type, tag);
     for (auto it = units.begin(); it != units.end(); ++it) {
-        if (*it == val){
+        if (*it == val) {
             units.erase(it);
             break;
         }
     }
 
-    // request new unit
-    switch ((int) type) {
-        case (int) UNIT_TYPEID::TERRAN_SCV:
-            resource->addTask(Task(TRAIN,
-                                   SCOUT_AGENT,
-                                   5,
-                                   ABILITY_ID::TRAIN_SCV,
-                                   UNIT_TYPEID::TERRAN_SCV,
-                                   UNIT_TYPEID::TERRAN_COMMANDCENTER));
-            break;
-    }
+    resource->addTask(Task(TRAIN,
+        SCOUT_AGENT,
+        6,
+        ABILITY_ID::TRAIN_SCV,
+        UNIT_TYPEID::TERRAN_SCV,
+        UNIT_TYPEID::TERRAN_COMMANDCENTER));
+    //std::cout << "scout destroyed, order new ones" << std::endl;
 }
 
-void SCOUT_BOT::unitCreated(const sc2::Unit* u) {
+void SCOUT_BOT::unitCreated(const sc2::Unit * u) {
 
 }
 
-void SCOUT_BOT::unitEnterVision(const sc2::Unit* u) {
+void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
     // if unit is enemy, record spotting
     if (u->alliance == Unit::Alliance::Enemy) {
         auto now = std::chrono::steady_clock::now();
@@ -94,19 +106,55 @@ void SCOUT_BOT::unitEnterVision(const sc2::Unit* u) {
     }
 }
 
-void SCOUT_BOT::unitIdle(const sc2::Unit* u) {
-    if (!task_queue.empty()){
-        auto task = task_queue.top();
+void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
+    auto ret = std::find(units.begin(), units.end(), TF_unit(u->unit_type, u->tag));
+    if (ret == units.end()) {
+        return;
+    }
 
-        switch (task.action) {
+    if (!task_queue.empty()) {
+        const auto task_queue_container(task_queue.get_container());
+        // Get highest priority task in queue
+        Task taskToDo = task_queue_container[0];
+        for (auto& task : task_queue_container) {
+            if (task.priority > taskToDo.priority) {
+                taskToDo = task;
+            }
+        }
+
+        if (taskToDo.priority != 11) {
+            // Determine closest highest priority task to the unit
+
+            // Calculate distances to each task
+            std::vector<std::pair<Task, float>> task_distances;
+            float furthest_distance = 0;
+            for (auto& task : task_queue_container) {
+                float distance = sc2::Distance2D(u->pos, task.position);
+                task_distances.push_back({task, distance});
+                furthest_distance = std::max(furthest_distance, distance);
+            }
+            // Find the task with the highest score (priority minus distance)
+            int highest_score = -11;
+            for (auto& task_distance : task_distances) {
+                auto task = task_distance.first;
+                auto distance = task_distance.second;
+                int normalized_distance = 10 * distance / furthest_distance;
+                int score = task.priority - normalized_distance;
+                if (score > highest_score) {
+                    highest_score = score;
+                    taskToDo = task;
+                }
+            }
+        }
+        
+        task_queue.remove(taskToDo);
+        switch (taskToDo.action) {
             case BASIC_SCOUT:
-                action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, task.position);
+                action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, taskToDo.position);
                 break;
             case ORBIT_SCOUT:
                 break;
         }
-
-        task_queue.pop();
     }
 }
 
@@ -114,21 +162,21 @@ void SCOUT_BOT::upgradeCompleted(sc2::UpgradeID uid) {
     // do nothing
 }
 
-void SCOUT_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* resourceb) {
+void SCOUT_BOT::setAgents(TF_Agent * defenceb, TF_Agent * attackb, TF_Agent * resourceb) {
     this->defence = defenceb;
     this->attack = attackb;
     this->resource = resourceb;
 }
 
-std::vector<Unit> SCOUT_BOT::last_seen_near(Point2D location, int radius, int since) {
-    std::vector<Unit> ret;
+std::vector<Spotted_Enemy> SCOUT_BOT::last_seen_near(Point2D location, int radius, int since) {
+    std::vector<Spotted_Enemy> ret;
 
     // run query
-    for (auto &record : detection_record) {
+    for (auto& record : detection_record) {
         if (record.distance(location) < radius) {
             auto now = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(now - record.time).count() < since) {
-                ret.push_back(record.u);
+                ret.push_back(record);
             }
         }
     }
@@ -137,25 +185,12 @@ std::vector<Unit> SCOUT_BOT::last_seen_near(Point2D location, int radius, int si
 }
 
 void SCOUT_BOT::init() {
-    game_epoch = std::chrono::steady_clock::now();
-
-    // order half of the max # of scv at lower priority
-    auto t = Task(TRAIN,
-                  SCOUT_AGENT,
-                  6,
-                  ABILITY_ID::TRAIN_SCV,
-                  UNIT_TYPEID::TERRAN_SCV,
-                  UNIT_TYPEID::TERRAN_COMMANDCENTER);
-    for (int i = 0; i < MAX_SCOUT_COUNT/2; ++i) {
-        resource->addTask(t);
-    }
-
     gi = observation->GetGameInfo();
     main_base = gi.start_locations.at(0);
     enemy_main_base = gi.start_locations.at(0);
 
     // base on map name, get all point of interest
-    try{
+    try {
         SQLITE3 scout_POI_db("TF_bot.db"); // open db
 
         // form query
@@ -170,28 +205,29 @@ void SCOUT_BOT::init() {
 
         // load query result to poi
         auto r = scout_POI_db.copy_result();
-        for (auto &xy_vec : *r) {
+        for (auto& xy_vec : *r) {
             auto x = std::stod(xy_vec.at(0));
             auto y = std::stod(xy_vec.at(1));
-            poi.emplace_back(x,y);
+            poi.emplace_back(x, y);
         }
-    } catch (std::runtime_error &err) {
+    }
+    catch (std::runtime_error& err) {
         std::cerr << "FATAL ERROR: " << err.what() << std::endl;
         exit(1);
     }
 
     std::copy(poi.begin(), poi.end(), std::back_inserter(poi_close_to_base.second));
-    std::sort(poi_close_to_base.second.begin(), poi_close_to_base.second.end(), [this](const Point2D &p1, const Point2D &p2){
+    std::sort(poi_close_to_base.second.begin(), poi_close_to_base.second.end(), [this](const Point2D& p1, const Point2D& p2) {
         return distance(this->main_base, p1) < distance(this->main_base, p2);
-    });
+        });
     poi_close_to_base.first = 0;
     std::copy(poi.begin(), poi.end(), std::back_inserter(poi_close_to_enemy.second));
-    std::sort(poi_close_to_enemy.second.begin(), poi_close_to_enemy.second.end(), [this](const Point2D &p1, const Point2D &p2){
+    std::sort(poi_close_to_enemy.second.begin(), poi_close_to_enemy.second.end(), [this](const Point2D& p1, const Point2D& p2) {
         return distance(this->enemy_main_base, p1) < distance(this->enemy_main_base, p2);
-    });
+        });
     poi_close_to_enemy.first = 0;
 }
 
-double SCOUT_BOT::distance(const Point2D &p1, const Point2D &p2) {
-    return sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2));
+double SCOUT_BOT::distance(const Point2D & p1, const Point2D & p2) {
+    return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }

@@ -19,62 +19,38 @@ ATTACK_BOT::~ATTACK_BOT() {
 
 void ATTACK_BOT::init() {
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
-    troopManager = new TroopManager(&task_queue, observation);
+    troopManager = new TroopManager(&task_queue, observation, scout);
 }
 
 void ATTACK_BOT::step() {
-
-    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
-    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
-    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
-    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
-    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
-    if (barracks_count < 1 + (2 * command_count)) {
-
-        buildBarracks();
-    }
-
-    if (factory_count < 2 * command_count) {
-        buildFactory();
-    }
-
-    if (starport_count < 1 * command_count) {
-        buildStarport();
-    }
-
+    // perform actions in the task queue
     while (!task_queue.empty()) {
-        Task t = task_queue.top();
+        Task t = task_queue.pop();
         // push resource tasks from TroopManager into resources
         // and perform other tasks as necessary (sometimes re-using code from resources)
         switch (t.action) {
             case BUILD: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case TRAIN: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case ATTACK: {
                 action->UnitCommand(t.unit, t.ability_id, t.position);
-                task_queue.pop();
                 break;
             }
             case REPAIR: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case UPGRADE: {
                 resource->addTask(t);
-                task_queue.pop();
                 break;
             }
             case MOVE: {
                 action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
-                task_queue.pop();
                 break;
             }
             case TRANSFER: {
@@ -93,7 +69,6 @@ void ATTACK_BOT::step() {
                         break;
                     default:
                         std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
-                        task_queue.pop();
                         return;
                 }
 
@@ -104,12 +79,10 @@ void ATTACK_BOT::step() {
                         break;
                     }
                 }
-                task_queue.pop();
                 break;
             }
             default: {
                 std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
-                task_queue.pop();
             }
         }
     }
@@ -146,7 +119,25 @@ void ATTACK_BOT::unitDestroyed(const sc2::Unit *u) {
 }
 
 void ATTACK_BOT::unitCreated(const sc2::Unit *u) {
+    // this is  where we want to check for building pre-requisites and try to build them.
 
+    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
+    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
+    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
+    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
+    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
+    if (barracks_count < 1 + (2 * command_count)) {
+
+        buildBarracks();
+    }
+
+    if (factory_count < 2 * command_count) {
+        buildFactory();
+    }
+
+    if (starport_count < 1 * command_count) {
+        buildStarport();
+    }
 }
 
 void ATTACK_BOT::unitEnterVision(const sc2::Unit *u) {
@@ -225,17 +216,21 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
 
     switch (u->unit_type.ToType()) {
         case UNIT_TYPEID::TERRAN_BARRACKS:
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
-                                   ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
+                                   ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
 
         case UNIT_TYPEID::TERRAN_FACTORY:
             resource->addTask(
-                    Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
+                    Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
                          u->tag));
 
         case UNIT_TYPEID::TERRAN_STARPORT:
             resource->addTask(
-                    Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
+                    Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
                          u->tag));
     }
+}
+
+std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since) {
+    // do nothing
 }

@@ -6,6 +6,7 @@
 #define TF_TASK_HPP
 
 #include <sc2api/sc2_api.h>
+#include <functional>
 
 /**
  * Possible action that can be taken
@@ -33,9 +34,9 @@ enum AgentActions
 enum SourceAgent
 {
     DEFENCE_AGENT,
-    ATTACK_AGENT,
     RESOURCE_AGENT,
-    SCOUT_AGENT
+    SCOUT_AGENT,
+    ATTACK_AGENT
 };
 
 /**
@@ -51,7 +52,8 @@ struct Task
      * @param target: The mineral field/refinery
      */
     Task(enum AgentActions action, int priority, sc2::Tag source, sc2::ABILITY_ID aid, sc2::Tag target)
-            : action(action), priority(priority), self(source), ability_id(aid), target(target) {
+            : action(action), priority(priority), self(source), ability_id(aid), target(target) 
+    {
         source = RESOURCE_AGENT;
     }
 
@@ -110,8 +112,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag target, sc2::ABILITY_ID aid, int count = 1)
         : action(action), source(source), priority(priority), target(target), ability_id(aid), count(count)
-    {
-    }
+    {}
 
     /** MOVE - RESOURCES; the type of movement (ABILITY_ID) must be specified
      * @param Action : MOVE
@@ -147,8 +148,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit, sc2::UPGRADE_ID uid, sc2::ABILITY_ID aid)
         : action(action), source(source), priority(priority), self(source_unit), upgrade_id(uid), ability_id(aid)
-    {
-    }
+    {}
 
     /** SCOUT - ask scout agent to scout a position
      * @param action : BASIC_SCOUT or ORBIT_SCOUT
@@ -157,8 +157,7 @@ struct Task
      */
     Task(enum AgentActions action, int priority, Point2D position)
         : action(action), priority(priority), position(position)
-    {
-    }
+    {}
 
     /** TRANSFER - RESOURCES, ATTACK
      * @param action : TRANSFER
@@ -168,8 +167,7 @@ struct Task
      */
     Task(enum AgentActions action, enum SourceAgent source, int priority, sc2::Tag source_unit)
         : action(action), source(source), priority(priority), self(source_unit)
-    {
-    }
+    {}
 
     enum AgentActions action;
     enum SourceAgent source;
@@ -201,64 +199,17 @@ struct Task
      * Compares the priority of tasks;
      * implemented for priority queue
      */
-    bool operator<(const Task &r) const
-    {
+    bool operator<(const Task &r) const {
+        if (priority == r.priority) { return source > r.source; } // reversed so prefer Defence->resource->scout->attack
         return priority < r.priority;
     }
 
     /**
-     * For when comparison is necessary
-     * Compares only used fields for each task
+     * Checks if two tasks are the same;
+     * Implemented for Scout tasks only
      */
-    bool operator==(const Task& r) const {
-        if (r.action != action) { return false; }
-        if (r.priority != priority) { return false; }
-        switch (r.action) {
-        case HARVEST:
-            return (self == r.self
-                && ability_id == r.ability_id
-                && target == r.target);
-        case BUILD:
-            return (source == r.source
-                && unit_typeid == r.unit_typeid
-                && ability_id == r.ability_id
-                && target == r.target
-                && position == r.position);
-        case TRAIN:
-            return (source == r.source
-                && ability_id == r.ability_id
-                && unit_typeid == r.unit_typeid
-                && source_unit == r.source_unit
-                && target == r.target);
-        case BASIC_SCOUT: // same as orbit_scout
-        case ORBIT_SCOUT:
-            return (source == r.source
-                && position == r.position);
-        case DEFEND:
-        case ATTACK:
-            return (source == r.source
-                && units == r.units
-                && ability_id == r.ability_id
-                && position == position);
-        case REPAIR:
-            return (source == r.source
-                && target == r.target
-                && ability_id == r.ability_id
-                && count == r.count);
-        case MOVE:
-            return (source == r.source
-                && ability_id == r.ability_id
-                && position == r.position);
-        case UPGRADE:
-            return (source == r.source
-                && self == r.self
-                && upgrade_id == r.upgrade_id
-                && ability_id == r.ability_id);
-        case TRANSFER:
-            return (source == r.source
-                && self == r.self);
-        default: return false;
-        }
+    bool operator==(const Task &r) const {
+        return action == r.action && priority == r.priority && position == r.position;
     }
 };
 

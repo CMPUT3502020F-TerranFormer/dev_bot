@@ -114,10 +114,14 @@ public:
 	 * in here instead of when a unit is added/idle/deleted
 	 * This automatically repairs all units close to the command center (10 units)
 	 */
-	void step() {
+	void step(Units scvs) {
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
-		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
+		if (!update) { return; } // this prevents us from running the following code when not necessary
+		// if things are happening the flag will be set again (eg. command center being damamged, too many scvs assigned)
+		// we don't know how many units were added/deleted before this was called
+
+		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
 			// smaller range than 15, should still include refineries and immediate units
 			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 100)); 
@@ -128,6 +132,7 @@ public:
 			// center is repaired, then it is probably safe
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
+				update = true;
 				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
@@ -151,12 +156,20 @@ public:
 			}
 
 			// we also deal with bases that have too many scvs mining (1 scv / base / step)
+			bool exit_loop = false;
 			if (command->assigned_harvesters > command->ideal_harvesters) {
 				for (auto& unit : units) {
 					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
-						assignSCV(unit);
-						break;
+						for (auto& order : unit->orders) {
+							if (order.ability_id == ABILITY_ID::HARVEST_GATHER) {
+								update = true;
+								assignSCV(unit);
+								exit_loop = true;
+								break;
+							}
+						}
 					}
+					if (exit_loop) { break; }
 				}
 			}
 
@@ -174,7 +187,7 @@ public:
 				}
 				else if (base.depleted()) {
 					isolated_bases.push_back(base.command);
-					for (auto& it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
+					for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 						if (base.command.tag == it->command.tag) {
 							active_bases.erase(it);
 							return;
@@ -222,10 +235,13 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		if (num_command_centers == 0) { build = true; }
+		auto command_build_priority = 6;
+		if (num_command_centers == 0) { 
+			build = true;
+			command_build_priority = 20;
+		}
 		else if (active_bases.size() < 2 && scv_count >= 20) { build = true; }
 		else if (active_bases.size() < 3 && scv_count >= 40) { build = true; }
-		else if (active_bases.size() < 4 && scv_count == scv_target_count) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
@@ -240,7 +256,7 @@ public:
 		if (build) {
 			Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
 			if (baseLocation != Point2D(0, 0)) {
-				task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+				task_queue->push(Task(BUILD, RESOURCE_AGENT, command_build_priority,
 					UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
 			}
 		}
@@ -253,6 +269,7 @@ public:
 					for (auto& order : s->orders) {
 						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
 							&& order.target_unit_tag == r->tag) {
+							update = true;
 							assignSCV(s);
 							return;
 						}
@@ -263,6 +280,7 @@ public:
 	}
 
 	void addUnit(const Unit* u) {
+		update = true;
 		// Add MULES?? -> should still work because they are included in unitIdle()
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
@@ -300,7 +318,8 @@ public:
 	 * This does not modify resource_units; that's for the resource agent
 	 */
 	void deleteUnit(const Unit* u) {
-		// if it's a COMMAND CENTER also have to reassign all scvs
+		if (u->alliance == Unit::Alliance::Self) { update = true; }
+		// if it's a COMMAND CENTER also have to reassign all scvs -> done in step
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
@@ -323,14 +342,16 @@ public:
 	 * (a random available scv is selected to minimize this chance)
 	 * It is recommended to call this method without a point when you know there is likely only 1 scv
 	 * nearby and you want to build multiple buildings
+	 * 
+	 * We pass in scvs because this may be called multiple times a step, and it is more efficient to call
+	 * it once in the caller
 	 */
-	TF_unit getSCV(Point2D point = Point2D(0, 0)) {
+	TF_unit getSCV(Units scvs, Point2D point = Point2D(0, 0)) {
 		// get's an scv that is idle or harvesting; should check the closest scv
 		// does not show a preference for idle scvs over harvesting; idle scvs will just take over harvesting
 		// If this is called multiple times during the same step
 		// the same scv can be returned each time -> randomness when choosing scvs
 
-		Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV());
 		if (scvs.empty()) { return Base().NoUnit; } // we have no scv's
 		Units possible_scvs;
 
@@ -366,7 +387,7 @@ public:
 		// then search from all harvesting scvs if none are available (if no point is specified
 		// this has already been done)
 		if (possible_scvs.empty() && point != Point2D(0, 0)) {
-			return getSCV();
+			return getSCV(scvs);
 		}
 
 		// if there are no scvs that can immediately be reassigned
@@ -421,12 +442,12 @@ public:
 
 	/**
 	 * Depending on how many command centers we have, we want to have so much extra supply
-	 * available; try to keep 3/4/6 supply ahead (1/2/3+ command centers)
+	 * available; try to keep 3/5/6 supply ahead (1/2/3+ command centers)
 	 */
 	int getSupplyFloat() {
 		int command_centers = isolated_bases.size() + active_bases.size();
 		if (command_centers <= 1) { return 3; }
-		else if (command_centers == 2) { return 4; }
+		else if (command_centers == 2) { return 5; }
 		else { return 6; }
 	}
 
@@ -436,6 +457,8 @@ private:
 	BuildingPlacementManager* buildingPlacementManager;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
+
+	bool update; // we set this when things happen/are happening so we don't execute step() when not needed
 	
 	int scv_count; // total active scv count
 	int scv_target_count; // aim for 70?
@@ -445,6 +468,7 @@ private:
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
+		Units vespene = observation->GetUnits(IsVespeneRefinery());
 		for (auto& p : active_bases) { // saturate bases with scv's
 			if (p.command.tag == -1) { return; }
 			const Unit* base = observation->GetUnit(p.command.tag);
@@ -452,15 +476,12 @@ private:
 				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
 				return;
 			}
-			// if minerals are saturated, check vespene
-			Units vespene = observation->GetUnits(IsVespeneRefinery());
-			for (auto& v : vespene) {
-				if (DistanceSquared2D(base->pos, v->pos) <= 225) { // 15**2
-					if (v->assigned_harvesters < v->ideal_harvesters) {
-						task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
-						return;
-					}
-				}
+		}
+		// if minerals are saturated, check vespene
+		for (auto& v : vespene) {
+			if (v->assigned_harvesters < v->ideal_harvesters) {
+				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
+				return;
 			}
 		}
 		// if all are saturated, do nothing -> change this later??
@@ -490,12 +511,10 @@ private:
 	 */
 	void buildRefineries(const Unit* command) {
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-			if (observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery()).size() 
-				>= 2 * (active_bases.size() + isolated_bases.size())) { return; }
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 5, UNIT_TYPEID::TERRAN_REFINERY,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
 			}

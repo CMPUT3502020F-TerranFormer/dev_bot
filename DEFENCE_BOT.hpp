@@ -8,6 +8,9 @@
 #include "TF_Bot.hpp"
 #include "Task.hpp"
 
+#include "SQLITE3.hpp"
+#include "SQLITE3_QUERY.hpp"
+
 class DEFENCE_BOT final : public TF_Agent {
 public:
     DEFENCE_BOT(TF_Bot* bot);
@@ -73,11 +76,56 @@ public:
 
     void setAgents(TF_Agent* attackb, TF_Agent* resourceb, TF_Agent* scoutb);
 
+    std::vector<Spotted_Enemy> last_seen_near(sc2::Point2D location, int radius, int since);
+
+    void init();
+
 private:
     std::vector<TF_unit> units;
     TF_Agent *attack;
     TF_Agent *resource;
     TF_Agent *scout;
+
+    std::vector<Point2D> poi;
+    std::vector<Point2D> bases;
+    std::vector<Point2D> base_needs_defence;
+
+    std::map<sc2::Tag, Unit *> All_Attack_Units;
+
+    bool hasBarracks = false;
+    bool hasEngineeringBay = false;
+    bool hasFactory = false;
+    bool hasArmoury = false;
+
+    bool orderedArmoury = false;
+    bool orderedEngBay = false;
+
+    bool infantryUpgradePhase1Complete = false;
+    bool infantryUpgradePhase2Complete = false;
+    bool infantryUpgradePhase3Complete = false;
+
+    bool sAndVUpgradePhase1Complete = false;
+    bool sAndVUpgradePhase2Complete = false;
+    bool sAndVUpgradePhase3Complete = false;
+
+    int stepsEng = 0;
+    int stepsArm = 0;
+
+    static double distance(const Point2D &p1, const Point2D &p2);
+
+    void buildMissileTurret(Point2D pos);
+
+    void buildEngineeringBay();
+
+    void buildArmory();
+
+    void check_for_engineering_bay();
+
+    void check_for_factory();
+
+    void check_for_armoury();
+
+    void check_for_barracks();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
