@@ -3,9 +3,8 @@
 //
 #include "DEFENCE_BOT.hpp"
 
-DEFENCE_BOT::DEFENCE_BOT(TF_Bot* bot)
-    : TF_Agent(bot)
-{
+DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
+        : TF_Agent(bot) {
     scout = nullptr;
     attack = nullptr;
     resource = nullptr;
@@ -38,7 +37,7 @@ void DEFENCE_BOT::step() {
 
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
-            std::sort(poi.begin(), poi.end(), [p](const Point2D& p1, const Point2D& p2) {
+            std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
                 return distance(p, p1) < distance(p, p2);
             });
             // build missile turret on the 2 nearest poi
@@ -51,8 +50,46 @@ void DEFENCE_BOT::step() {
     }
 
     auto mCount = observation->GetMinerals();
-    if (mCount > 1000 && hasFactory) {
+    if (mCount > 4000 && multiplierCounter < 4) {
+        tankMaxCount *= troopMaxCountMultiplier;
+        cycloneMaxCount *= troopMaxCountMultiplier;
+        marineMaxCount *= troopMaxCountMultiplier;
+        marauderMaxCount *= troopMaxCountMultiplier;
+        thorMaxCount *= troopMaxCountMultiplier;
+        bansheeMaxCount *= troopMaxCountMultiplier;
+        battleCruiserMaxCount *= troopMaxCountMultiplier;
+        multiplierCounter += 0.5;
+    } else if (mCount > 3000 && multiplierCounter < 2) {
+        tankMaxCount *= troopMaxCountMultiplier;
+        cycloneMaxCount *= troopMaxCountMultiplier;
+        marineMaxCount *= troopMaxCountMultiplier;
+        marauderMaxCount *= troopMaxCountMultiplier;
+        thorMaxCount *= troopMaxCountMultiplier;
+        bansheeMaxCount *= troopMaxCountMultiplier;
+        battleCruiserMaxCount *= troopMaxCountMultiplier;
+        multiplierCounter += 0.5;
+    } else if (mCount > 2000 && multiplierCounter < 1) {
+        tankMaxCount *= troopMaxCountMultiplier;
+        cycloneMaxCount *= troopMaxCountMultiplier;
+        marineMaxCount *= troopMaxCountMultiplier;
+        marauderMaxCount *= troopMaxCountMultiplier;
+        thorMaxCount *= troopMaxCountMultiplier;
+        bansheeMaxCount *= troopMaxCountMultiplier;
+        battleCruiserMaxCount *= troopMaxCountMultiplier;
+        multiplierCounter += 1;
+    }
+
+    if (mCount > 2000 && hasFactory) {
+        if (hasStarport) {
+            orderBattleCruiser(1);
+        }
+        orderSiegeTank(3);
+        orderCyclone(2);
+        orderMarine(10);
+        orderMarauder(5);
+    } else if (mCount > 1000 && hasFactory) {
         orderThor(1);
+        orderSiegeTank(1);
     } else if (mCount > 600 && hasFactory) {
         if (distribution(generator)) {
             orderSiegeTank(1);
@@ -67,7 +104,7 @@ void DEFENCE_BOT::step() {
         if (hasStarport) {
             orderBanshee(2);
         } else {
-            if (observation->GetGameLoop()/16 > 500 && !orderedStarport) {
+            if (observation->GetGameLoop() / 16 > 500 && !orderedStarport) {
                 buildStarport();
                 orderedStarport = true;
             }
@@ -87,28 +124,42 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 
 }
 
-void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
+void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
     if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && u->alliance == Unit::Self) { // new command center added
         base_needs_defence.emplace_back(u->pos);
         bases.emplace_back(u->pos);
 
+        auto mCount = observation->GetMinerals();
+        auto gCount = observation->GetVespene();
+        if (mCount > 1000) {
+            buildBarracks(u->pos);
+            buildFactory(u->pos);
+            buildStarport(u->pos);
+        } else {
+            if (distribution(generator)) {
+                buildBarracks(u->pos);
+            } else {
+                buildFactory(u->pos);
+            }
+        }
 
         // find the 2 closest defence points
-        std::sort(poi.begin(), poi.end(), [u](const Point2D& p1, const Point2D& p2) {
+        std::sort(poi.begin(), poi.end(), [u](const Point2D &p1, const Point2D &p2) {
             return distance(u->pos, p1) < distance(u->pos, p2);
         });
         defence_point.emplace_back(poi[0]);
         defence_point.emplace_back(poi[1]);
 
         for (auto unit : All_Attack_Units) {
-            if (distribution(generator)){
+            if (distribution(generator)) {
                 Point2D pos;
                 if (distribution(generator)) {
                     pos = poi[0];
                 } else {
                     pos = poi[1];
                 }
-                if (unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED || unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK) {
+                if (unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED ||
+                    unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK) {
                     action->UnitCommand(unit.second, ABILITY_ID::MORPH_UNSIEGE);
                     action->SendActions();
                 }
@@ -120,26 +171,26 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
         return;
     }
 
-    switch((int) u->unit_type) {
+    switch ((int) u->unit_type) {
         case (int) UNIT_TYPEID::TERRAN_SUPPLYDEPOT: // supply depot auto lower to save space
             action->UnitCommand(u, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
             break;
         case (int) UNIT_TYPEID::TERRAN_FACTORY:
             hasFactory = true;
-            factories.push_back(const_cast<Unit*>(u));
+            factories.push_back(const_cast<Unit *>(u));
             break;
         case (int) UNIT_TYPEID::TERRAN_BARRACKS:
             hasBarracks = true;
-            barracks.push_back(const_cast<Unit*>(u));
+            barracks.push_back(const_cast<Unit *>(u));
             break;
         case (int) UNIT_TYPEID::TERRAN_STARPORT:
             hasStarport = true;
-            starports.push_back(const_cast<Unit*>(u));
+            starports.push_back(const_cast<Unit *>(u));
             break;
     }
 }
 
-void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
+void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
     if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
         buildEngineeringBay();
         return;
@@ -181,26 +232,57 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
             break;
     }
 
+    switch ((int) u->unit_type) {
+        case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            tankCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_MARAUDER:
+            marauderCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+            bansheeCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
+            marineCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_CYCLONE:
+            cycloneCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_THOR:
+            thorCount -= 5*multiplierCounter;
+            break;
+        case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
+            battleCruiserCount -= 5*multiplierCounter;
+            break;
+    }
+
     All_Attack_Units.erase(u->tag);
 }
 
-void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
+void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
     // find the closes defence point
-    std::sort(defence_point.begin(), defence_point.end(), [u](const Point2D& p1, const Point2D& p2) {
+    std::sort(defence_point.begin(), defence_point.end(), [u](const Point2D &p1, const Point2D &p2) {
         return distance(u->pos, p1) < distance(u->pos, p2);
     });
 
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
+            All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
         case (int) UNIT_TYPEID::TERRAN_MARINE:
-            All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
+        case (int) UNIT_TYPEID::TERRAN_CYCLONE:
+        case (int) UNIT_TYPEID::TERRAN_THOR:
+        case (int) UNIT_TYPEID::TERRAN_VIKINGASSAULT:
+        case (int) UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+        case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
+        case (int) UNIT_TYPEID::TERRAN_RAVEN:
+        case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
+            All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
             break;
         default:
@@ -208,7 +290,7 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
     }
 }
 
-void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
+void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
     /*
     if (u->alliance != sc2::Unit::Self) {
         for (auto &b : bases) {
@@ -229,7 +311,7 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
      */
 }
 
-void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
+void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
     /**
      * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
      */
@@ -255,14 +337,14 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
     // armoury upgrade tree
     if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
         action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
-        if (infantryUpgradePhase1Complete){
+        if (infantryUpgradePhase1Complete) {
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
             if (infantryUpgradePhase2Complete) {
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
                 action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
-                if (infantryUpgradePhase3Complete){
+                if (infantryUpgradePhase3Complete) {
                     action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
                     action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
                     action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
@@ -277,7 +359,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
 }
 
 void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
-    switch((int) uid){
+    switch ((int) uid) {
         case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
             infantryUpgradePhase1Complete = true;
             break;
@@ -299,7 +381,7 @@ void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
     }
 }
 
-void DEFENCE_BOT::setAgents(TF_Agent* attackb, TF_Agent* resourceb, TF_Agent* scoutb) {
+void DEFENCE_BOT::setAgents(TF_Agent *attackb, TF_Agent *resourceb, TF_Agent *scoutb) {
     this->attack = attackb;
     this->resource = resourceb;
     this->scout = scoutb;
@@ -310,7 +392,7 @@ std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, in
 }
 
 void DEFENCE_BOT::init() {
-    distribution = std::uniform_int_distribution<int>(0,2);
+    distribution = std::uniform_int_distribution<int>(0, 1);
 
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
 
@@ -331,19 +413,20 @@ void DEFENCE_BOT::init() {
 
         // load query result to poi
         auto r = scout_POI_db.copy_result();
-        for (auto& xy_vec : *r) {
+        for (auto &xy_vec : *r) {
             auto x = std::stod(xy_vec.at(0));
             auto y = std::stod(xy_vec.at(1));
             poi.emplace_back(x, y);
         }
     }
-    catch (std::runtime_error& err) {
+    catch (std::runtime_error &err) {
         std::cerr << "FATAL ERROR: " << err.what() << std::endl;
         exit(1);
     }
 
-    auto ret = observation->GetUnits([](const Unit& unit){
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
             return true;
         } else {
             return false;
@@ -354,11 +437,14 @@ void DEFENCE_BOT::init() {
         base_needs_defence.emplace_back(cmd->pos);
 
         // find the closes defence point
-        std::sort(poi.begin(), poi.end(), [cmd](const Point2D& p1, const Point2D& p2) {
+        std::sort(poi.begin(), poi.end(), [cmd](const Point2D &p1, const Point2D &p2) {
             return distance(cmd->pos, p1) < distance(cmd->pos, p2);
         });
         defence_point.emplace_back(poi[0]);
     }
+
+    buildBarracks();
+    buildFactory();
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -387,17 +473,17 @@ void DEFENCE_BOT::buildArmory() {
 
 void DEFENCE_BOT::buildEngineeringBay() {
     Task buildEB(BUILD,
-            DEFENCE_AGENT,
-            10,
-            UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
-            ABILITY_ID::BUILD_ENGINEERINGBAY,
-            buildingPlacementManager->getNextEngineeringBayLocation());
+                 DEFENCE_AGENT,
+                 10,
+                 UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
+                 ABILITY_ID::BUILD_ENGINEERINGBAY,
+                 buildingPlacementManager->getNextEngineeringBayLocation());
     resource->addTask(buildEB);
 }
 
 void DEFENCE_BOT::buildStarport() {
     Task buildSP(BUILD,
-                 DEFENCE_AGENT,
+                 ATTACK_AGENT,
                  10,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT,
@@ -405,10 +491,20 @@ void DEFENCE_BOT::buildStarport() {
     resource->addTask(buildSP);
 }
 
+void DEFENCE_BOT::buildStarport(Point2D pos) {
+    Task buildSP(BUILD,
+                 ATTACK_AGENT,
+                 10,
+                 UNIT_TYPEID::TERRAN_STARPORT,
+                 ABILITY_ID::BUILD_STARPORT,
+                 buildingPlacementManager->getNextStarportLocation(pos));
+    resource->addTask(buildSP);
+}
+
 void DEFENCE_BOT::buildBarracks() {
     Task buildBR(BUILD,
-                 DEFENCE_AGENT,
-                 10,
+                 ATTACK_AGENT,
+                 5,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS,
                  buildingPlacementManager->getNextBarracksLocation());
@@ -417,31 +513,53 @@ void DEFENCE_BOT::buildBarracks() {
 
 void DEFENCE_BOT::buildFactory() {
     Task buildFT(BUILD,
-                 DEFENCE_AGENT,
-                 10,
+                 ATTACK_AGENT,
+                 5,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
                  buildingPlacementManager->getNextFactoryLocation());
     resource->addTask(buildFT);
 }
 
+void DEFENCE_BOT::buildBarracks(Point2D pos) {
+    Task buildBR(BUILD,
+                 ATTACK_AGENT,
+                 5,
+                 UNIT_TYPEID::TERRAN_BARRACKS,
+                 ABILITY_ID::BUILD_BARRACKS,
+                 buildingPlacementManager->getNextBarracksLocation(pos));
+    resource->addTask(buildBR);
+}
+
+void DEFENCE_BOT::buildFactory(Point2D pos) {
+    Task buildFT(BUILD,
+                 ATTACK_AGENT,
+                 5,
+                 UNIT_TYPEID::TERRAN_FACTORY,
+                 ABILITY_ID::BUILD_FACTORY,
+                 buildingPlacementManager->getNextFactoryLocation(pos));
+    resource->addTask(buildFT);
+}
+
 void DEFENCE_BOT::check_for_engineering_bay() {
-    auto ret = observation->GetUnits([](const Unit& unit){
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
             return true;
         } else {
             return false;
         }
     });
 
-    if(!ret.empty()) {
+    if (!ret.empty()) {
         hasEngineeringBay = true;
     }
 }
 
 void DEFENCE_BOT::check_for_factory() {
-    auto ret = observation->GetUnits([](const Unit& unit){
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORY && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORY && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
             return true;
         } else {
             return false;
@@ -449,47 +567,46 @@ void DEFENCE_BOT::check_for_factory() {
     });
 
     for (auto f : ret) {
-        factories.push_back(const_cast<Unit*>(f));
+        factories.push_back(const_cast<Unit *>(f));
     }
 
-    if(!ret.empty()) {
+    if (!ret.empty()) {
         hasFactory = true;
     }
 }
 
 void DEFENCE_BOT::check_for_armoury() {
-    auto ret = observation->GetUnits([](const Unit& unit){
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_ARMORY && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_ARMORY && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
             return true;
         } else {
             return false;
         }
     });
 
-    if(!ret.empty()) {
+    if (!ret.empty()) {
         hasArmoury = true;
     }
 }
 
 void DEFENCE_BOT::check_for_barracks() {
-    auto ret = observation->GetUnits([](const Unit& unit){
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self && unit.build_progress == 1.0){
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
             return true;
         } else {
             return false;
         }
     });
 
-    if(!ret.empty()) {
+    if (!ret.empty()) {
         hasBarracks = true;
     }
 }
 
 void DEFENCE_BOT::orderSiegeTank(int count) {
-    assert(count < 3);
-    assert(count > 0);
-
-    if (factories.empty()) {
+    if (factories.empty() || tankCount >= tankMaxCount) {
         return;
     }
 
@@ -503,32 +620,50 @@ void DEFENCE_BOT::orderSiegeTank(int count) {
                                factories[last_factory_used]->tag
         ));
     }
+    tankCount += 1;
     last_factory_used = (last_factory_used + 1) % factories.size();
 }
 
-void DEFENCE_BOT::orderThor(int count) {
-    assert(count < 3);
-    assert(count > 0);
-
-    if (factories.empty()) {
+void DEFENCE_BOT::orderBattleCruiser(int count) {
+    if (starports.empty() || battleCruiserCount >= battleCruiserMaxCount) {
         return;
     }
 
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
                                ATTACK_AGENT,
-                               7,
+                               10,
+                               ABILITY_ID::TRAIN_BATTLECRUISER,
+                               UNIT_TYPEID::TERRAN_BATTLECRUISER,
+                               UNIT_TYPEID::TERRAN_STARPORT,
+                               starports[last_factory_used]->tag
+        ));
+    }
+    battleCruiserCount += 1;
+    last_starport_used = (last_starport_used + 1) % starports.size();
+}
+
+void DEFENCE_BOT::orderThor(int count) {
+    if (factories.empty() || thorCount >= thorMaxCount) {
+        return;
+    }
+
+    for (int i = 0; i < count; ++i) {
+        resource->addTask(Task(TRAIN,
+                               ATTACK_AGENT,
+                               8,
                                ABILITY_ID::TRAIN_THOR,
                                UNIT_TYPEID::TERRAN_THOR,
                                UNIT_TYPEID::TERRAN_FACTORY,
                                factories[last_factory_used]->tag
         ));
     }
+    thorCount += 1;
     last_factory_used = (last_factory_used + 1) % factories.size();
 }
 
 void DEFENCE_BOT::orderMarine(int count) {
-    if (barracks.empty()) {
+    if (barracks.empty() || marineCount >= marineMaxCount) {
         return;
     }
     for (int i = 0; i < count; ++i) {
@@ -541,12 +676,12 @@ void DEFENCE_BOT::orderMarine(int count) {
                                barracks[last_barracks_used]->tag
         ));
     }
-
+    marineCount += 1;
     last_barracks_used = (last_barracks_used + 1) % barracks.size();
 }
 
 void DEFENCE_BOT::orderMarauder(int count) {
-    if (barracks.empty()) {
+    if (barracks.empty() || marauderCount >= marauderMaxCount) {
         return;
     }
     for (int i = 0; i < count; ++i) {
@@ -559,11 +694,12 @@ void DEFENCE_BOT::orderMarauder(int count) {
                                barracks[last_barracks_used]->tag
         ));
     }
+    marauderCount += 1;
     last_barracks_used = (last_barracks_used + 1) % barracks.size();
 }
 
 void DEFENCE_BOT::orderBanshee(int count) {
-    if (starports.empty()) {
+    if (starports.empty() || bansheeCount >= bansheeMaxCount) {
         return;
     }
     for (int i = 0; i < count; ++i) {
@@ -576,14 +712,12 @@ void DEFENCE_BOT::orderBanshee(int count) {
                                starports[last_starport_used]->tag
         ));
     }
+    bansheeCount += 1;
     last_starport_used = (last_starport_used + 1) % starports.size();
 }
 
 void DEFENCE_BOT::orderCyclone(int count) {
-    assert(count < 3);
-    assert(count > 0);
-
-    if (factories.empty()) {
+    if (factories.empty() || cycloneCount >= cycloneMaxCount) {
         return;
     }
 
@@ -597,6 +731,7 @@ void DEFENCE_BOT::orderCyclone(int count) {
                                factories[last_factory_used]->tag
         ));
     }
+    cycloneCount += 1;
     last_factory_used = (last_factory_used + 1) % factories.size();
 }
 

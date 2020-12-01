@@ -101,6 +101,25 @@ private:
     std::vector<Unit *> starports;
     int last_starport_used = 0;
 
+    int tankCount = 0;
+    int cycloneCount = 0;
+    int marineCount = 0;
+    int marauderCount = 0;
+    int thorCount = 0;
+    int bansheeCount = 0;
+    int battleCruiserCount = 0;
+
+    int tankMaxCount = 12;
+    int cycloneMaxCount = 12;
+    int marineMaxCount = 30;
+    int marauderMaxCount = 20;
+    int thorMaxCount = 2;
+    int bansheeMaxCount = 12;
+    int battleCruiserMaxCount = 1;
+
+    double troopMaxCountMultiplier = 1.5;
+    int multiplierCounter = 0;
+
     std::map<sc2::Tag, Unit *> All_Attack_Units;
 
     bool hasBarracks = false;
@@ -124,6 +143,8 @@ private:
     int stepsEng = 0;
     int stepsArm = 0;
 
+    std::vector<Point2D> refineryPendingBuild;
+
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution;
 
@@ -133,8 +154,11 @@ private:
     void buildEngineeringBay();
     void buildArmory();
     void buildStarport();
+    void buildStarport(Point2D pos);
     void buildBarracks();
+    void buildBarracks(Point2D pos);
     void buildFactory();
+    void buildFactory(Point2D pos);
 
     void orderSiegeTank(int count);
     void orderThor(int count);
@@ -142,6 +166,7 @@ private:
     void orderMarauder(int count);
     void orderBanshee(int count);
     void orderCyclone(int count);
+    void orderBattleCruiser(int count);
 
     void check_for_engineering_bay();
     void check_for_factory();
