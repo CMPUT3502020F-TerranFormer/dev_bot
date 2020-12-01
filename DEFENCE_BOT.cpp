@@ -265,6 +265,8 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
+            action->UnitCommand(u, ABILITY_ID::MORPH_UNSIEGE);
+            action->SendActions();
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
@@ -308,49 +310,50 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
 }
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
-    /**
-     * TODO WAITING FOR API FROM ATTACK TO GET TROOP COUNT
-     */
 
-    // TODO use behavior tree to replace the following logic
-    // engineering bay upgrade tree
-    if (u->unit_type == UNIT_TYPEID::TERRAN_ENGINEERINGBAY) {
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
-        if (sAndVUpgradePhase1Complete) {
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
-            if (sAndVUpgradePhase2Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
-            }
-        }
-    }
-
-    // TODO use behavior tree to replace the following logic
-    // armoury upgrade tree
-    if (u->unit_type == UNIT_TYPEID::TERRAN_ARMORY) {
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
-        if (infantryUpgradePhase1Complete) {
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
-            if (infantryUpgradePhase2Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
-                if (infantryUpgradePhase3Complete) {
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
+    switch ((int) u->unit_type) {
+        // TODO use behavior tree to replace the following logic
+        // engineering bay upgrade tree
+        case (int) UNIT_TYPEID::TERRAN_ENGINEERINGBAY:
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
+            if (sAndVUpgradePhase1Complete) {
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
+                if (sAndVUpgradePhase2Complete) {
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
                 }
             }
-        }
-    }
-
-    if (u->unit_type == UNIT_TYPEID::TERRAN_TECHLAB) {
-        action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
+            break;
+        // TODO use behavior tree to replace the following logic
+        // armoury upgrade tree
+        case (int) UNIT_TYPEID::TERRAN_ARMORY:
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
+            if (infantryUpgradePhase1Complete) {
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
+                if (infantryUpgradePhase2Complete) {
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
+                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
+                    if (infantryUpgradePhase3Complete) {
+                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
+                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
+                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
+                    }
+                }
+            }
+            break;
+        case (int) UNIT_TYPEID::TERRAN_TECHLAB:
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
+            break;
+        case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+            action->SendActions();
+            break;
     }
 }
 
@@ -474,6 +477,16 @@ void DEFENCE_BOT::buildEngineeringBay() {
     resource->addTask(buildEB);
 }
 
+void DEFENCE_BOT::buildFusion() {
+    Task buildEB(BUILD,
+                 DEFENCE_AGENT,
+                 8,
+                 UNIT_TYPEID::TERRAN_FUSIONCORE,
+                 ABILITY_ID::BUILD_FUSIONCORE,
+                 buildingPlacementManager->getNextFusionCoreLocation());
+    resource->addTask(buildEB);
+}
+
 void DEFENCE_BOT::buildStarport() {
     Task buildSP(BUILD,
                  ATTACK_AGENT,
@@ -556,6 +569,12 @@ void DEFENCE_BOT::check_for_factory() {
         if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORY && unit.alliance == sc2::Unit::Self &&
             unit.build_progress == 1.0) {
             return true;
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORYTECHLAB && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+            return true;
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORYREACTOR && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+            return true;
         } else {
             return false;
         }
@@ -566,6 +585,11 @@ void DEFENCE_BOT::check_for_factory() {
     } else {
         hasFactory = false;
         factories.clear();
+
+        if (observation->GetGameLoop() / 16 > 120 && !orderedFactory) {
+            buildFactory();
+            orderedFactory = true;
+        }
         return;
     }
 
@@ -577,10 +601,16 @@ void DEFENCE_BOT::check_for_factory() {
 
 void DEFENCE_BOT::check_for_starport() {
     auto ret = observation->GetUnits([](const Unit &unit) {
-        if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORY && unit.alliance == sc2::Unit::Self &&
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_STARPORTTECHLAB && unit.alliance == sc2::Unit::Self &&
             unit.build_progress == 1.0) {
             return true;
-        } else {
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_STARPORT && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+            return true;
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_STARPORTREACTOR && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+
+        }else {
             return false;
         }
     });
@@ -621,6 +651,12 @@ void DEFENCE_BOT::check_for_barracks() {
         if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit.alliance == sc2::Unit::Self &&
             unit.build_progress == 1.0) {
             return true;
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKSREACTOR && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+            return true;
+        } else if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKSTECHLAB && unit.alliance == sc2::Unit::Self &&
+                   unit.build_progress == 1.0) {
+            return true;
         } else {
             return false;
         }
@@ -631,12 +667,34 @@ void DEFENCE_BOT::check_for_barracks() {
     } else {
         barracks.clear();
         hasBarracks = false;
+
+        if (observation->GetGameLoop() / 16 > 120 && !orderedBarrack) {
+            buildBarracks();
+            orderedBarrack = true;
+        }
         return;
     }
 
     barracks.clear();
     for (auto f : ret) {
         barracks.push_back(const_cast<Unit *>(f));
+    }
+}
+
+void DEFENCE_BOT::check_for_fusion() {
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_FUSIONCORE && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+
+    if (!ret.empty()) {
+        hasFusion = true;
+    } else {
+        hasFusion = false;
     }
 }
 
@@ -651,7 +709,7 @@ void DEFENCE_BOT::orderSiegeTank(int count) {
                                7,
                                ABILITY_ID::TRAIN_SIEGETANK,
                                UNIT_TYPEID::TERRAN_SIEGETANK,
-                               UNIT_TYPEID::TERRAN_FACTORY,
+                               factories[last_factory_used]->unit_type,
                                factories[last_factory_used]->tag
         ));
     }
@@ -664,18 +722,29 @@ void DEFENCE_BOT::orderBattleCruiser(int count) {
         return;
     }
 
-    for (int i = 0; i < count; ++i) {
-        resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
-                               10,
-                               ABILITY_ID::TRAIN_BATTLECRUISER,
-                               UNIT_TYPEID::TERRAN_BATTLECRUISER,
-                               UNIT_TYPEID::TERRAN_STARPORT,
-                               starports[last_factory_used]->tag
-        ));
+    check_for_fusion();
+    if (!hasFusion) {
+        buildFusion();
     }
-    battleCruiserCount += 1;
-    last_starport_used = (last_starport_used + 1) % starports.size();
+
+    for (auto port : starports) {
+        if (port->unit_type == UNIT_TYPEID::TERRAN_STARPORTTECHLAB) {
+            for (int i = 0; i < count; ++i) {
+                resource->addTask(Task(TRAIN,
+                                       ATTACK_AGENT,
+                                       10,
+                                       ABILITY_ID::TRAIN_BATTLECRUISER,
+                                       UNIT_TYPEID::TERRAN_BATTLECRUISER,
+                                       starports[last_factory_used]->unit_type,
+                                       starports[last_factory_used]->tag
+                ));
+            }
+            battleCruiserCount += 1;
+            last_starport_used = (last_starport_used + 1) % starports.size();
+            return;
+        }
+    }
+
 }
 
 void DEFENCE_BOT::orderThor(int count) {
@@ -689,7 +758,7 @@ void DEFENCE_BOT::orderThor(int count) {
                                8,
                                ABILITY_ID::TRAIN_THOR,
                                UNIT_TYPEID::TERRAN_THOR,
-                               UNIT_TYPEID::TERRAN_FACTORY,
+                               factories[last_factory_used]->unit_type,
                                factories[last_factory_used]->tag
         ));
     }
@@ -707,7 +776,7 @@ void DEFENCE_BOT::orderMarine(int count) {
                                7,
                                ABILITY_ID::TRAIN_MARINE,
                                UNIT_TYPEID::TERRAN_MARINE,
-                               UNIT_TYPEID::TERRAN_BARRACKS,
+                               barracks[last_barracks_used]->unit_type,
                                barracks[last_barracks_used]->tag
         ));
     }
@@ -725,7 +794,7 @@ void DEFENCE_BOT::orderMarauder(int count) {
                                7,
                                ABILITY_ID::TRAIN_MARAUDER,
                                UNIT_TYPEID::TERRAN_MARAUDER,
-                               UNIT_TYPEID::TERRAN_BARRACKS,
+                               barracks[last_barracks_used]->unit_type,
                                barracks[last_barracks_used]->tag
         ));
     }
@@ -743,7 +812,7 @@ void DEFENCE_BOT::orderBanshee(int count) {
                                7,
                                ABILITY_ID::TRAIN_BANSHEE,
                                UNIT_TYPEID::TERRAN_BANSHEE,
-                               UNIT_TYPEID::TERRAN_STARPORT,
+                               starports[last_starport_used]->unit_type,
                                starports[last_starport_used]->tag
         ));
     }
@@ -762,7 +831,7 @@ void DEFENCE_BOT::orderCyclone(int count) {
                                7,
                                ABILITY_ID::TRAIN_CYCLONE,
                                UNIT_TYPEID::TERRAN_CYCLONE,
-                               UNIT_TYPEID::TERRAN_FACTORY,
+                               factories[last_factory_used]->unit_type,
                                factories[last_factory_used]->tag
         ));
     }

@@ -38,6 +38,10 @@ void ATTACK_BOT::step() {
                 break;
             }
             case ATTACK: {
+                if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
+                    action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
+                    action->SendActions();
+                }
                 action->UnitCommand(t.unit, t.ability_id, t.position);
                 break;
             }

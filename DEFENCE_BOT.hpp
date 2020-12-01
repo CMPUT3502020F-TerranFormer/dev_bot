@@ -127,10 +127,13 @@ private:
     bool hasFactory = false;
     bool hasArmoury = false;
     bool hasStarport = false;
+    bool hasFusion = false;
 
     bool orderedArmoury = false;
     bool orderedEngBay = false;
     bool orderedStarport = false;
+    bool orderedFactory = false;
+    bool orderedBarrack = false;
 
     bool infantryUpgradePhase1Complete = false;
     bool infantryUpgradePhase2Complete = false;
@@ -159,6 +162,7 @@ private:
     void buildBarracks(Point2D pos);
     void buildFactory();
     void buildFactory(Point2D pos);
+    void buildFusion();
 
     void orderSiegeTank(int count);
     void orderThor(int count);
@@ -173,6 +177,7 @@ private:
     void check_for_armoury();
     void check_for_barracks();
     void check_for_starport();
+    void check_for_fusion();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
