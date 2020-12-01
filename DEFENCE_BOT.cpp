@@ -16,6 +16,20 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 
 void DEFENCE_BOT::step() {
     check_for_engineering_bay();
+    check_for_factory();
+
+    auto gl = observation->GetGameLoop();
+
+    if (!orderedEngBay && !hasEngineeringBay && gl/16 > 400) {
+        buildEngineeringBay();
+        orderedEngBay = true;
+    }
+
+    if (!orderedArmoury && !hasArmoury && gl/16 > 400) {
+        buildArmory();
+        orderedArmoury = true;
+    }
+
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
             std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
@@ -24,7 +38,6 @@ void DEFENCE_BOT::step() {
             // build 2 missile turret on each base
             for (int i = 0; i < 2; ++i) {
                 buildMissileTurret(poi[i]);
-                buildBunker(poi[i]);
             }
         }
 
@@ -133,6 +146,8 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         defence_point.emplace_back(poi[0]);
         defence_point.emplace_back(poi[1]);
 
+        buildBunker(poi[0]);
+
         for (auto unit : All_Attack_Units) {
             if (distribution(generator)) {
                 Point2D pos;
@@ -159,24 +174,11 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             break;
         case (int) UNIT_TYPEID::TERRAN_FACTORY:
             hasFactory = true;
-
-            // build armoury if no armoury is built
-            if (!orderedArmoury) {
-                buildArmory();
-                orderedArmoury = true;
-            }
             factories.push_back(const_cast<Unit *>(u));
             orderSiegeTank(2);
             break;
         case (int) UNIT_TYPEID::TERRAN_BARRACKS:
             hasBarracks = true;
-
-            // build engineering bay if no engineering bay is built
-            if (!orderedEngBay) {
-                buildEngineeringBay();
-                orderedEngBay = true;
-                buildFactory(u->pos); // build a factory after we have a barrack
-            }
             barracks.push_back(const_cast<Unit *>(u));
             break;
         case (int) UNIT_TYPEID::TERRAN_STARPORT:
@@ -267,9 +269,7 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
-            action->UnitCommand(u, ABILITY_ID::MORPH_UNSIEGE);
-            action->SendActions();
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0], true);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
@@ -283,7 +283,7 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         case (int) UNIT_TYPEID::TERRAN_RAVEN:
         case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
             All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0], true);
             break;
         default:
             break;
@@ -333,10 +333,10 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         // TODO use behavior tree to replace the following logic
         // armoury upgrade tree
         case (int) UNIT_TYPEID::TERRAN_ARMORY:
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1, true);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
             if (infantryUpgradePhase1Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1, true);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1, true);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1);
+                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1);
                 if (infantryUpgradePhase2Complete) {
                     action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
                     action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
@@ -353,8 +353,12 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
             action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
             break;
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            //action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+            if (u->orders.empty()) {
+                action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+            }
             break;
+        case (int) UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+            action->UnitCommand(u, ABILITY_ID::MORPH_VIKINGASSAULTMODE, true);
         case (int) UNIT_TYPEID::TERRAN_MARINE:
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
             // load empty bunkers
@@ -480,6 +484,9 @@ void DEFENCE_BOT::buildArmory() {
 }
 
 void DEFENCE_BOT::buildEngineeringBay() {
+    if (observation->GetGameLoop() / 16 < 400) {
+        return;
+    }
     Task buildEB(BUILD,
                  DEFENCE_AGENT,
                  8,
