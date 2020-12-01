@@ -490,7 +490,8 @@ private:
 	 */
 	void buildRefineries(const Unit* command) {
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-			if (observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery()).size() >= 2) { return; }
+			if (observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery()).size() 
+				>= 2 * (active_bases.size() + isolated_bases.size())) { return; }
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225) {

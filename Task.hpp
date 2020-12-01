@@ -51,7 +51,9 @@ struct Task
      * @param target: The mineral field/refinery
      */
     Task(enum AgentActions action, int priority, sc2::Tag source, sc2::ABILITY_ID aid, sc2::Tag target)
-        : action(action), priority(priority), self(source), ability_id(aid), target(target) {}
+            : action(action), priority(priority), self(source), ability_id(aid), target(target) {
+        source = RESOURCE_AGENT;
+    }
 
     /** BUILD - RESOURCES;
      * @param Action : BUILD
@@ -170,7 +172,6 @@ struct Task
     }
 
     enum AgentActions action;
-
     enum SourceAgent source;
 
     /**
@@ -203,6 +204,61 @@ struct Task
     bool operator<(const Task &r) const
     {
         return priority < r.priority;
+    }
+
+    /**
+     * For when comparison is necessary
+     * Compares only used fields for each task
+     */
+    bool operator==(const Task& r) const {
+        if (r.action != action) { return false; }
+        if (r.priority != priority) { return false; }
+        switch (r.action) {
+        case HARVEST:
+            return (self == r.self
+                && ability_id == r.ability_id
+                && target == r.target);
+        case BUILD:
+            return (source == r.source
+                && unit_typeid == r.unit_typeid
+                && ability_id == r.ability_id
+                && target == r.target
+                && position == r.position);
+        case TRAIN:
+            return (source == r.source
+                && ability_id == r.ability_id
+                && unit_typeid == r.unit_typeid
+                && source_unit == r.source_unit
+                && target == r.target);
+        case BASIC_SCOUT: // same as orbit_scout
+        case ORBIT_SCOUT:
+            return (source == r.source
+                && position == r.position);
+        case DEFEND:
+        case ATTACK:
+            return (source == r.source
+                && units == r.units
+                && ability_id == r.ability_id
+                && position == position);
+        case REPAIR:
+            return (source == r.source
+                && target == r.target
+                && ability_id == r.ability_id
+                && count == r.count);
+        case MOVE:
+            return (source == r.source
+                && ability_id == r.ability_id
+                && position == r.position);
+        case UPGRADE:
+            return (source == r.source
+                && self == r.self
+                && upgrade_id == r.upgrade_id
+                && ability_id == r.ability_id);
+        case TRANSFER:
+            return (source == r.source
+                && self == r.self);
+        default: return false;
+        }
     }
 };
 
