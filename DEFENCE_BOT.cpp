@@ -15,26 +15,6 @@ DEFENCE_BOT::~DEFENCE_BOT() {
 }
 
 void DEFENCE_BOT::step() {
-    // build engineering bay once a barracks is built
-    if (!hasBarracks) {
-        check_for_barracks();
-    } else {
-        if (!orderedEngBay) {
-            buildEngineeringBay();
-            orderedEngBay = true;
-        }
-    }
-
-    // build armoury bay once a factory is built
-    if (!hasFactory) {
-        check_for_factory();
-    } else {
-        if (!orderedArmoury) {
-            buildArmory();
-            orderedArmoury = true;
-        }
-    }
-
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
             std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
@@ -48,6 +28,10 @@ void DEFENCE_BOT::step() {
 
         base_needs_defence.clear();
     }
+
+    check_for_factory();
+    check_for_starport();
+    check_for_barracks();
 
     auto mCount = observation->GetMinerals();
     if (mCount > 4000 && multiplierCounter < 4) {
@@ -130,7 +114,6 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         bases.emplace_back(u->pos);
 
         auto mCount = observation->GetMinerals();
-        auto gCount = observation->GetVespene();
         if (mCount > 1000) {
             buildBarracks(u->pos);
             buildFactory(u->pos);
@@ -167,7 +150,6 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
                 action->UnitCommand(unit.second, ABILITY_ID::MORPH_SIEGEMODE, true);
             }
         }
-
         return;
     }
 
@@ -177,10 +159,24 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             break;
         case (int) UNIT_TYPEID::TERRAN_FACTORY:
             hasFactory = true;
+
+            // build armoury if no armoury is built
+            if (!orderedArmoury) {
+                buildArmory();
+                orderedArmoury = true;
+            }
             factories.push_back(const_cast<Unit *>(u));
+            orderSiegeTank(2);
             break;
         case (int) UNIT_TYPEID::TERRAN_BARRACKS:
             hasBarracks = true;
+
+            // build engineering bay if no engineering bay is built
+            if (!orderedEngBay) {
+                buildEngineeringBay();
+                orderedEngBay = true;
+                buildFactory(u->pos); // build a factory after we have a barrack
+            }
             barracks.push_back(const_cast<Unit *>(u));
             break;
         case (int) UNIT_TYPEID::TERRAN_STARPORT:
@@ -442,8 +438,6 @@ void DEFENCE_BOT::init() {
         });
         defence_point.emplace_back(poi[0]);
     }
-
-    buildFactory();
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -463,7 +457,7 @@ void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
 void DEFENCE_BOT::buildArmory() {
     Task dp(BUILD,
             DEFENCE_AGENT,
-            8,
+            4,
             UNIT_TYPEID::TERRAN_ARMORY,
             ABILITY_ID::BUILD_ARMORY,
             buildingPlacementManager->getNextArmoryLocation());
@@ -473,7 +467,7 @@ void DEFENCE_BOT::buildArmory() {
 void DEFENCE_BOT::buildEngineeringBay() {
     Task buildEB(BUILD,
                  DEFENCE_AGENT,
-                 10,
+                 8,
                  UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
                  ABILITY_ID::BUILD_ENGINEERINGBAY,
                  buildingPlacementManager->getNextEngineeringBayLocation());
@@ -483,7 +477,7 @@ void DEFENCE_BOT::buildEngineeringBay() {
 void DEFENCE_BOT::buildStarport() {
     Task buildSP(BUILD,
                  ATTACK_AGENT,
-                 10,
+                 8,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT,
                  buildingPlacementManager->getNextStarportLocation());
@@ -493,7 +487,7 @@ void DEFENCE_BOT::buildStarport() {
 void DEFENCE_BOT::buildStarport(Point2D pos) {
     Task buildSP(BUILD,
                  ATTACK_AGENT,
-                 10,
+                 8,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT,
                  buildingPlacementManager->getNextStarportLocation(pos));
@@ -503,7 +497,7 @@ void DEFENCE_BOT::buildStarport(Point2D pos) {
 void DEFENCE_BOT::buildBarracks() {
     Task buildBR(BUILD,
                  ATTACK_AGENT,
-                 5,
+                 7,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS,
                  buildingPlacementManager->getNextBarracksLocation());
@@ -513,7 +507,7 @@ void DEFENCE_BOT::buildBarracks() {
 void DEFENCE_BOT::buildFactory() {
     Task buildFT(BUILD,
                  ATTACK_AGENT,
-                 6,
+                 8,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
                  buildingPlacementManager->getNextFactoryLocation());
@@ -523,7 +517,7 @@ void DEFENCE_BOT::buildFactory() {
 void DEFENCE_BOT::buildBarracks(Point2D pos) {
     Task buildBR(BUILD,
                  ATTACK_AGENT,
-                 5,
+                 6,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS,
                  buildingPlacementManager->getNextBarracksLocation(pos));
@@ -533,7 +527,7 @@ void DEFENCE_BOT::buildBarracks(Point2D pos) {
 void DEFENCE_BOT::buildFactory(Point2D pos) {
     Task buildFT(BUILD,
                  ATTACK_AGENT,
-                 5,
+                 8,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
                  buildingPlacementManager->getNextFactoryLocation(pos));
@@ -552,6 +546,8 @@ void DEFENCE_BOT::check_for_engineering_bay() {
 
     if (!ret.empty()) {
         hasEngineeringBay = true;
+    } else {
+        hasEngineeringBay = false;
     }
 }
 
@@ -565,12 +561,41 @@ void DEFENCE_BOT::check_for_factory() {
         }
     });
 
+    if (!ret.empty()) {
+        hasFactory = true;
+    } else {
+        hasFactory = false;
+        factories.clear();
+        return;
+    }
+
+    factories.clear();
     for (auto f : ret) {
         factories.push_back(const_cast<Unit *>(f));
     }
+}
+
+void DEFENCE_BOT::check_for_starport() {
+    auto ret = observation->GetUnits([](const Unit &unit) {
+        if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORY && unit.alliance == sc2::Unit::Self &&
+            unit.build_progress == 1.0) {
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     if (!ret.empty()) {
-        hasFactory = true;
+        hasStarport = true;
+    } else {
+        hasStarport = false;
+        starports.clear();
+        return;
+    }
+
+    starports.clear();
+    for (auto f : ret) {
+        starports.push_back(const_cast<Unit *>(f));
     }
 }
 
@@ -586,6 +611,8 @@ void DEFENCE_BOT::check_for_armoury() {
 
     if (!ret.empty()) {
         hasArmoury = true;
+    } else {
+        hasArmoury = false;
     }
 }
 
@@ -601,6 +628,15 @@ void DEFENCE_BOT::check_for_barracks() {
 
     if (!ret.empty()) {
         hasBarracks = true;
+    } else {
+        barracks.clear();
+        hasBarracks = false;
+        return;
+    }
+
+    barracks.clear();
+    for (auto f : ret) {
+        barracks.push_back(const_cast<Unit *>(f));
     }
 }
 

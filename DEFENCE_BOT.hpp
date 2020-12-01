@@ -172,6 +172,7 @@ private:
     void check_for_factory();
     void check_for_armoury();
     void check_for_barracks();
+    void check_for_starport();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
