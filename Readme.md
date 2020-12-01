@@ -16,6 +16,8 @@ cmake ../ -G "Visual Studio 16 2019"
 
 start TFBot.sln
 ```
+If there is a problem building civetweb.c open the file, go to Project -> civetweb-c library Properties -> Configuration Properties -> C/C++ -> General
+And set "Treat Warnings as Errors" to No
 
 **Make sure that TFBot.db exists in the same folder as the executable (and it is not 0kb)**
 
