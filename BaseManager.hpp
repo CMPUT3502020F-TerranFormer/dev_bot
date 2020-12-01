@@ -470,7 +470,7 @@ private:
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
-		if ((observation->GetVespene() / observation->GetMinerals()) < 0.3) {
+		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.3) {
 			if (!assign_vespene(u)) {
 				assign_minerals(u);
 			}

@@ -94,6 +94,8 @@ private:
 
     std::vector<Point2D> defence_point;
 
+    std::vector<Unit*> bunkers;
+
     std::vector<Unit *> factories;
     int last_factory_used = 0;
     std::vector<Unit *> barracks;
@@ -110,7 +112,7 @@ private:
     int battleCruiserCount = 0;
 
     int tankMaxCount = 12;
-    int cycloneMaxCount = 12;
+    int cycloneMaxCount = 8;
     int marineMaxCount = 30;
     int marauderMaxCount = 20;
     int thorMaxCount = 2;
@@ -146,8 +148,6 @@ private:
     int stepsEng = 0;
     int stepsArm = 0;
 
-    std::vector<Point2D> refineryPendingBuild;
-
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution;
 
@@ -163,6 +163,7 @@ private:
     void buildFactory();
     void buildFactory(Point2D pos);
     void buildFusion();
+    void buildBunker(Point2D pos);
 
     void orderSiegeTank(int count);
     void orderThor(int count);
