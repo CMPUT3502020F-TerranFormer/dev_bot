@@ -137,6 +137,24 @@ public:
         }
 	}
 
+    Point2D getNextFusionCoreLocation() {
+        // we'll just build it near a command center for now
+        // which is the same as the supply depots
+        // for now, get a random point with radius 15 around a command center
+        Point2D point(0, 0);
+        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+        // we don't want to build them all around the same command center so while this is not perfect
+        // as more buildings are built, it's more likely to build around a different command center
+        while (true) {
+            for (auto& c : command_centers) {
+                point = c->pos;
+                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                if (query->Placement(ABILITY_ID::BUILD_FUSIONCORE, point)) { return point; }
+            }
+        }
+    }
+
     Point2D getNextBarracksLocation(Point2D pos) {
         // we'll just build it near a command center for now
         // which is the same as the supply depots
