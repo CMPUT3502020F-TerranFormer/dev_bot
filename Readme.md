@@ -23,6 +23,8 @@ And set "Treat Warnings as Errors" to No
 
 Build the project, then it can be run like in the example, eg.
 
+**When running on Windows, the project must be launched from the command line. The "Local Windows Debugger" doesn't like sqlite.**
+
 
 ```
 TFBot.exe -c -a zerg -d hard -m CactusValleyLE.SC2Map
