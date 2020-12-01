@@ -424,7 +424,9 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				auto priority = 6;
+				if (scv_count < (active_bases.size() * 10)) { priority = 7; }
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, priority, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}
