@@ -11,6 +11,8 @@
 #include "SQLITE3.hpp"
 #include "SQLITE3_QUERY.hpp"
 
+#include <random>
+
 class DEFENCE_BOT final : public TF_Agent {
 public:
     DEFENCE_BOT(TF_Bot* bot);
@@ -90,6 +92,8 @@ private:
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
 
+    std::vector<Point2D> defence_point;
+
     std::map<sc2::Tag, Unit *> All_Attack_Units;
 
     bool hasBarracks = false;
@@ -110,6 +114,9 @@ private:
 
     int stepsEng = 0;
     int stepsArm = 0;
+
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution;
 
     static double distance(const Point2D &p1, const Point2D &p2);
 

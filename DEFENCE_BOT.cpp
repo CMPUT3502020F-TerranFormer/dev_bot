@@ -76,6 +76,32 @@ void DEFENCE_BOT::addUnit(TF_unit u) {
 void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
     if (u->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER && u->alliance == Unit::Self) { // new command center added
         base_needs_defence.emplace_back(u->pos);
+        bases.emplace_back(u->pos);
+
+
+        // find the 2 closest defence points
+        std::sort(poi.begin(), poi.end(), [u](const Point2D& p1, const Point2D& p2) {
+            return distance(u->pos, p1) < distance(u->pos, p2);
+        });
+        defence_point.emplace_back(poi[0]);
+        defence_point.emplace_back(poi[1]);
+
+        for (auto unit : All_Attack_Units) {
+            if (distribution(generator)){
+                Point2D pos;
+                if (distribution(generator)) {
+                    pos = poi[0];
+                } else {
+                    pos = poi[1];
+                }
+                if (unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED || unit.second->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK) {
+                    action->UnitCommand(unit.second, ABILITY_ID::MORPH_UNSIEGE);
+                    action->SendActions();
+                }
+                action->UnitCommand(unit.second, ABILITY_ID::MOVE_MOVE, pos, true);
+                action->UnitCommand(unit.second, ABILITY_ID::MORPH_SIEGEMODE, true);
+            }
+        }
     } else if (u->unit_type == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) { // supply depot auto lower to save space
         action->UnitCommand(u, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
     }
@@ -94,7 +120,8 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit* u) {
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
-    std::sort(poi.begin(), poi.end(), [u](const Point2D& p1, const Point2D& p2) {
+    // find the closes defence point
+    std::sort(defence_point.begin(), defence_point.end(), [u](const Point2D& p1, const Point2D& p2) {
         return distance(u->pos, p1) < distance(u->pos, p2);
     });
 
@@ -102,14 +129,14 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
         case (int) UNIT_TYPEID::TERRAN_MARINE:
             All_Attack_Units.emplace(u->tag,const_cast<Unit*>(u)); // add to a list of all attacking troops
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, poi[0]);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0]);
             break;
         default:
             break;
@@ -117,6 +144,7 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit* u) {
 }
 
 void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
+    /*
     if (u->alliance != sc2::Unit::Self) {
         for (auto &b : bases) {
             if (distance(u->pos, b) < 30) {
@@ -133,6 +161,7 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit* u) {
             }
         }
     }
+     */
 }
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit* u) {
@@ -216,6 +245,8 @@ std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, in
 }
 
 void DEFENCE_BOT::init() {
+    distribution = std::uniform_int_distribution<int>(0,1);
+
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
 
     // base on map name, get all point of interest
@@ -256,6 +287,12 @@ void DEFENCE_BOT::init() {
     for (auto cmd : ret) {
         bases.emplace_back(cmd->pos);
         base_needs_defence.emplace_back(cmd->pos);
+
+        // find the closes defence point
+        std::sort(poi.begin(), poi.end(), [cmd](const Point2D& p1, const Point2D& p2) {
+            return distance(cmd->pos, p1) < distance(cmd->pos, p2);
+        });
+        defence_point.emplace_back(poi[0]);
     }
 }
 

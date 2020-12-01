@@ -208,7 +208,7 @@ public:
         // as more buildings are built, it's more likely to build around a different command center
         while (true) {
             point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+            point = Point2D(point.x + GetRandomScalar() * 4.0f, point.y + GetRandomScalar() * 4.0f);
             if (query->Placement(ABILITY_ID::BUILD_MISSILETURRET, point)) {
                 return point;
             }
