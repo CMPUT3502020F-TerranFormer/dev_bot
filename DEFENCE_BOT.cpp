@@ -443,7 +443,6 @@ void DEFENCE_BOT::init() {
         defence_point.emplace_back(poi[0]);
     }
 
-    buildBarracks();
     buildFactory();
 }
 
@@ -514,7 +513,7 @@ void DEFENCE_BOT::buildBarracks() {
 void DEFENCE_BOT::buildFactory() {
     Task buildFT(BUILD,
                  ATTACK_AGENT,
-                 5,
+                 6,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
                  buildingPlacementManager->getNextFactoryLocation());
