@@ -321,7 +321,7 @@ void DEFENCE_BOT::init() {
 
         // form query
         SQLITE3_QUERY q("SELECT x, y FROM DEFENCE_POI WHERE map = ?;");
-        q.add_binding(gi.map_name);
+        q.add_binding(std::regex_replace(gi.map_name, std::regex("'"), "''"));
 
         // execute query
         int ret = scout_POI_db.execute(q); // execute query
