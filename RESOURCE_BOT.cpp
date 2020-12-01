@@ -111,10 +111,8 @@ void RESOURCE_BOT::step() {
 
             action->UnitCommand(worker, t.ability_id, true);
 
-            // update available resources -- don't worry about supply for queued units
-            // units can be queued without it, they just won't build
-            // units that overfill the queue will be discarded
-            if (worker->orders.size() == 0) { available_food -= ut.food_required; }
+            // update available resources 
+            available_food -= ut.food_required;
             available_minerals -= ut.mineral_cost;
             available_vespene -= ut.vespene_cost;
             break;
