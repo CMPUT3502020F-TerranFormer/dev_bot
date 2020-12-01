@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include <vector>
+#include <regex>
 #include "threadsafe_priority_queue.h"
 #include "TS_Queue.hpp"
 #include "TF_unit.hpp"

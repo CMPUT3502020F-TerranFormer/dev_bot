@@ -93,10 +93,14 @@ void RESOURCE_BOT::step() {
                 worker = workers.front();
             }
             else { worker = observation->GetUnit(t.target); }
-            if (worker == nullptr) { break; }
+
+            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            if (worker == nullptr) { 
+                std::cerr << "Invalid Worker, Tag: " << t.target << " Source Agent: " << t.source << " Tried to Train: " << ut.name << std::endl;
+                break; 
+            }
 
             // check that we have enough resources to do ability
-            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
             if (ut.food_required > available_food
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
@@ -111,10 +115,8 @@ void RESOURCE_BOT::step() {
 
             action->UnitCommand(worker, t.ability_id, true);
 
-            // update available resources -- don't worry about supply for queued units
-            // units can be queued without it, they just won't build
-            // units that overfill the queue will be discarded
-            if (worker->orders.size() == 0) { available_food -= ut.food_required; }
+            // update available resources 
+            available_food -= ut.food_required;
             available_minerals -= ut.mineral_cost;
             available_vespene -= ut.vespene_cost;
             break;
@@ -135,19 +137,18 @@ void RESOURCE_BOT::step() {
                 }
             }
             if (current_scvs < t.count) {
-                Tag scv_tag = baseManager->getSCV(scvs).tag;
-                if (scv_tag == -1) { continue; } // no scv exists
-                const Unit* scv = observation->GetUnit(scv_tag);
                 const Unit* u = observation->GetUnit(t.target);
-                if (u == nullptr) { // an error occurred somewhere
-                    task_queue.pop();
-                    return;
-                }
                 if (u != nullptr) {
+                    Tag scv_tag = baseManager->getSCV(scvs, u->pos).tag;
+                    if (scv_tag == -1) { continue; } // no scv exists
+                    const Unit* scv = observation->GetUnit(scv_tag);
                     action->UnitCommand(scv, t.ability_id, u, true);
 
                     // don't update resources as they have not been used yet
                     // and we want to flush out all extra repair tasks
+                }
+                else {
+                    std::cerr << "REPAIR: Invalid Unit from agent " << t.source << " Is the unit dead?" << std::endl;
                 }
             }
             break;
@@ -178,6 +179,7 @@ void RESOURCE_BOT::step() {
             if (t.self == -1) {
                 TF_unit scv = baseManager->getSCV(scvs);
                 if (scv.tag == -1) {
+                    std::cerr << "TRANSFER from " << t.source << " No scv available" << std::endl;
                     break;
                 }
                 unit = scv;
@@ -298,14 +300,23 @@ void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
 /* We pass in scvs because this may be called multiple times/step so it's more efficient */
 bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
     Tag scv_tag = baseManager->getSCV(scvs).tag;
-    if (scv_tag == -1) { return false; } // there are no scvs
+    if (scv_tag == -1) { 
+        std::cerr << "Error building: There are no scvs" << std::endl;
+        return false; 
+    } // there are no scvs
     const Unit* scv = observation->GetUnit(scv_tag);
-    if (scv == nullptr) { return false; }
+    if (scv == nullptr) { 
+        std::cerr << "Error building: invalid scv" << std::endl;
+        return false; 
+    }
 
     // commands are queued just in case the same scv is returned several times
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
-        if (building == nullptr) { return false; }
+        if (building == nullptr) { 
+            std::cerr << "Building Error: Invalid Target Unit" << std::endl;
+            return false; 
+        }
         if (query->Placement(ability_to_build_structure, building->pos, building)
             && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
