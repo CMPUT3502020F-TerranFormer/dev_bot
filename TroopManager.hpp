@@ -154,14 +154,7 @@ public:
     // note that it does not account for variations caused by add-ons
     int CountUnitType(UnitTypeID unit_type)
     {
-        int count = 0;
-        Units my_units = observation->GetUnits(Unit::Alliance::Self);
-        for (const auto unit : my_units)
-        {
-            if (unit->unit_type == unit_type)
-                ++count;
-        }
-        return count;
+        return observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
     }
 
 private:

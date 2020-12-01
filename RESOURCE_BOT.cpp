@@ -50,7 +50,8 @@ void RESOURCE_BOT::step() {
     // check if we need to build a supply depot
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
 
-    if (available_food <= baseManager->getSupplyFloat()) {
+    if (available_food <= baseManager->getSupplyFloat()
+        && observation->GetFoodCap() != 200) {
         buildSupplyDepot(scvs);
     }
 
@@ -64,6 +65,7 @@ void RESOURCE_BOT::step() {
         switch (t.action) {
         case HARVEST: {
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
+            action->SendActions();
             break;
         }
         case BUILD: {
@@ -81,6 +83,7 @@ void RESOURCE_BOT::step() {
                 break;
             }
             if (buildStructure(scvs, t.ability_id, t.position, t.target)) { // if building succeeded
+                action->SendActions();
                 // update available resources
                 available_food -= ut.food_required;
                 available_minerals -= ut.mineral_cost;
@@ -125,6 +128,7 @@ void RESOURCE_BOT::step() {
             ordered_units.push_back(order_unit(t.source, t.unit_typeid));
 
             action->UnitCommand(worker, t.ability_id, true);
+            action->SendActions();
 
             // update available resources 
             available_food -= ut.food_required;
@@ -154,6 +158,7 @@ void RESOURCE_BOT::step() {
                     if (scv_tag == -1) { continue; } // no scv exists
                     const Unit* scv = observation->GetUnit(scv_tag);
                     action->UnitCommand(scv, t.ability_id, u, true);
+                    action->SendActions();
 
                     // don't update resources as they have not been used yet
                     // and we want to flush out all extra repair tasks
@@ -175,10 +180,12 @@ void RESOURCE_BOT::step() {
                 break;
             }
             action->UnitCommand(observation->GetUnit(t.self), t.ability_id);
+            action->SendActions();
             break;
         }
         case MOVE: {
             action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
+            action->SendActions();
             break;
         }
         case TRANSFER: {
@@ -223,7 +230,6 @@ void RESOURCE_BOT::step() {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
         }
         }
-        action->SendActions();
     }
 }
 
