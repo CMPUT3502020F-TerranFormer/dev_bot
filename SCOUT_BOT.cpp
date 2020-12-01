@@ -79,18 +79,20 @@ void SCOUT_BOT::unitDestroyed(const sc2::Unit * u) {
     // remove unit from list
     auto val = TF_unit(type, tag);
     for (auto it = units.begin(); it != units.end(); ++it) {
-        if (*it == val) {
+        if (*it == val) { // unit belongs to scout
+            if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) {
+                resource->addTask(Task(TRAIN,
+                    SCOUT_AGENT,
+                    6,
+                    ABILITY_ID::TRAIN_SCV,
+                    UNIT_TYPEID::TERRAN_SCV,
+                    UNIT_TYPEID::TERRAN_COMMANDCENTER));
+            }
             units.erase(it);
             break;
         }
     }
 
-    resource->addTask(Task(TRAIN,
-        SCOUT_AGENT,
-        6,
-        ABILITY_ID::TRAIN_SCV,
-        UNIT_TYPEID::TERRAN_SCV,
-        UNIT_TYPEID::TERRAN_COMMANDCENTER));
     //std::cout << "scout destroyed, order new ones" << std::endl;
 }
 
