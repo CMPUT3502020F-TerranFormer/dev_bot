@@ -18,9 +18,13 @@ void DEFENCE_BOT::step() {
     check_for_engineering_bay();
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
+            std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
+                return distance(p, p1) < distance(p, p2);
+            });
             // build 2 missile turret on each base
             for (int i = 0; i < 2; ++i) {
-                buildMissileTurret(p);
+                buildMissileTurret(poi[i]);
+                buildBunker(poi[i]);
             }
         }
 
@@ -66,7 +70,6 @@ void DEFENCE_BOT::step() {
             orderBattleCruiser(1);
         }
         orderSiegeTank(2);
-        orderCyclone(1);
         orderMarine(8);
         orderMarauder(5);
     } else if (mCount > 1000 && hasFactory) {
@@ -180,6 +183,8 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             hasStarport = true;
             starports.push_back(const_cast<Unit *>(u));
             break;
+        case (int) UNIT_TYPEID::TERRAN_BUNKER:
+            bunkers.push_back(const_cast<Unit*>(u));
     }
 }
 
@@ -348,9 +353,19 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
             action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
             break;
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
-            action->SendActions();
+            //action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
+        case (int) UNIT_TYPEID::TERRAN_MARAUDER:
+            // load empty bunkers
+            if (!bunkers.empty()) {
+                action->UnitCommand(bunkers[0], ABILITY_ID::LOAD_BUNKER, u);
+                action->SendActions();
+                if (bunkers[0]->cargo_space_taken == bunkers[0]->cargo_space_max) {
+                    bunkers.erase(bunkers.begin());
+                }
+            }
+
     }
 }
 
@@ -541,6 +556,16 @@ void DEFENCE_BOT::buildFactory(Point2D pos) {
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
                  buildingPlacementManager->getNextFactoryLocation(pos));
+    resource->addTask(buildFT);
+}
+
+void DEFENCE_BOT::buildBunker(Point2D pos) {
+    Task buildFT(BUILD,
+                 ATTACK_AGENT,
+                 8,
+                 UNIT_TYPEID::TERRAN_BUNKER,
+                 ABILITY_ID::BUILD_BUNKER,
+                 buildingPlacementManager->getNextBunkerLocation(pos));
     resource->addTask(buildFT);
 }
 
