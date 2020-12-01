@@ -36,27 +36,8 @@ public:
             // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
             //
             // to train marauders, check for the presence of a tech lab first
-        case UNIT_TYPEID::TERRAN_BARRACKSREACTOR: {
-            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
-            {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
-                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
-            }
-            break;
-        }
-        case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB: {
-            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 25)
-            {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
-                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
-            }
-            if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 30)
-            {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
-                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
-            }
-            break;
-        }
+        case UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
+        case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
         case UNIT_TYPEID::TERRAN_BARRACKS:
         {
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 30)
