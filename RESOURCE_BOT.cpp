@@ -135,15 +135,11 @@ void RESOURCE_BOT::step() {
                 }
             }
             if (current_scvs < t.count) {
-                Tag scv_tag = baseManager->getSCV(scvs).tag;
-                if (scv_tag == -1) { continue; } // no scv exists
-                const Unit* scv = observation->GetUnit(scv_tag);
                 const Unit* u = observation->GetUnit(t.target);
-                if (u == nullptr) { // an error occurred somewhere
-                    task_queue.pop();
-                    return;
-                }
                 if (u != nullptr) {
+                    Tag scv_tag = baseManager->getSCV(scvs, u->pos).tag;
+                    if (scv_tag == -1) { continue; } // no scv exists
+                    const Unit* scv = observation->GetUnit(scv_tag);
                     action->UnitCommand(scv, t.ability_id, u, true);
 
                     // don't update resources as they have not been used yet
