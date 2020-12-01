@@ -1,5 +1,9 @@
 # TFBot
 To run the project (Windows):
+```
+run compil.bat
+```
+OR
 
 ```
 mkdir build
