@@ -11,6 +11,8 @@
 #include "SQLITE3.hpp"
 #include "SQLITE3_QUERY.hpp"
 
+#include <random>
+
 class DEFENCE_BOT final : public TF_Agent {
 public:
     DEFENCE_BOT(TF_Bot* bot);
@@ -90,15 +92,26 @@ private:
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
 
+    std::vector<Point2D> defence_point;
+
+    std::vector<Unit *> factories;
+    int last_factory_used = 0;
+    std::vector<Unit *> barracks;
+    int last_barracks_used = 0;
+    std::vector<Unit *> starports;
+    int last_starport_used = 0;
+
     std::map<sc2::Tag, Unit *> All_Attack_Units;
 
     bool hasBarracks = false;
     bool hasEngineeringBay = false;
     bool hasFactory = false;
     bool hasArmoury = false;
+    bool hasStarport = false;
 
     bool orderedArmoury = false;
     bool orderedEngBay = false;
+    bool orderedStarport = false;
 
     bool infantryUpgradePhase1Complete = false;
     bool infantryUpgradePhase2Complete = false;
@@ -111,20 +124,28 @@ private:
     int stepsEng = 0;
     int stepsArm = 0;
 
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution;
+
     static double distance(const Point2D &p1, const Point2D &p2);
 
     void buildMissileTurret(Point2D pos);
-
     void buildEngineeringBay();
-
     void buildArmory();
+    void buildStarport();
+    void buildBarracks();
+    void buildFactory();
+
+    void orderSiegeTank(int count);
+    void orderThor(int count);
+    void orderMarine(int count);
+    void orderMarauder(int count);
+    void orderBanshee(int count);
+    void orderCyclone(int count);
 
     void check_for_engineering_bay();
-
     void check_for_factory();
-
     void check_for_armoury();
-
     void check_for_barracks();
 };
 
