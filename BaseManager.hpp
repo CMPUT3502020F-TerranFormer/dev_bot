@@ -102,7 +102,7 @@ public:
 		active_bases.push_back(base);
 
 		scv_count = 0;
-		scv_target_count = 70;
+		scv_target_count = 66;
 
 		std::random_device r;
 		rand_gen = std::mt19937(r());
@@ -241,7 +241,7 @@ public:
 			command_build_priority = 20;
 		}
 		else if (active_bases.size() < 2 && scv_count >= 14) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 32) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
@@ -461,7 +461,7 @@ private:
 	bool update; // we set this when things happen/are happening so we don't execute step() when not needed
 	
 	int scv_count; // total active scv count
-	int scv_target_count; // aim for 70?
+	int scv_target_count; // aim for 66?
 
 	std::vector<Tag>* resource_units;
 

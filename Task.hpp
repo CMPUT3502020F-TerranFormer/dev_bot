@@ -33,8 +33,8 @@ enum AgentActions
  */
 enum SourceAgent
 {
-    DEFENCE_AGENT,
     RESOURCE_AGENT,
+    DEFENCE_AGENT,
     SCOUT_AGENT,
     ATTACK_AGENT
 };
@@ -200,7 +200,7 @@ struct Task
      * implemented for priority queue
      */
     bool operator<(const Task &r) const {
-        if (priority == r.priority) { return source > r.source; } // reversed so prefer Defence->resource->scout->attack
+        if (priority == r.priority) { return source > r.source; } // reversed so prefer resource->defence->scout->attack
         return priority < r.priority;
     }
 
