@@ -217,7 +217,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
     switch (u->unit_type.ToType()) {
         case UNIT_TYPEID::TERRAN_BARRACKS:
             resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
-                                   ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
+                                   ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
 
         case UNIT_TYPEID::TERRAN_FACTORY:
             resource->addTask(
@@ -232,5 +232,5 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
 }
 
 std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since) {
-    // do nothing
+    return scout->last_seen_near(location, radius, since);
 }
