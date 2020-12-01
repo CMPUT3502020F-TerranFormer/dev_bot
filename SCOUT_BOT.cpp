@@ -135,7 +135,9 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
             }
             // Find the task with the highest score (priority minus distance)
             int highest_score = -11;
-            for (auto& [task, distance] : task_distances) {
+            for (auto& task_distance : task_distances) {
+                auto task = task_distance.first;
+                auto distance = task_distance.second;
                 int normalized_distance = 10 * distance / furthest_distance;
                 int score = task.priority - normalized_distance;
                 if (score > highest_score) {
