@@ -240,8 +240,8 @@ public:
 			build = true;
 			command_build_priority = 20;
 		}
-		else if (active_bases.size() < 2 && scv_count >= 14) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 32) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 16) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
@@ -468,22 +468,14 @@ private:
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
-		// for early game (<5 min, prefer minerals), otherwise have a balance
-		if (observation->GetGameLoop() / 16 < 300) {
-			if (!assign_minerals(u)) {
-				assign_vespene(u);
+		if (observation->GetVespene() / observation->GetMinerals() < 0.3) {
+			if (!assign_vespene(u)) {
+				assign_minerals(u);
 			}
 		}
 		else {
-			if (observation->GetVespene() / observation->GetMinerals() < 0.2) {
-				if (!assign_vespene(u)) {
-					assign_minerals(u);
-				}
-			}
-			else {
-				if (!assign_minerals(u)) {
-					assign_vespene(u);
-				}
+			if (!assign_minerals(u)) {
+				assign_vespene(u);
 			}
 		}
 	}
