@@ -240,8 +240,8 @@ public:
 			build = true;
 			command_build_priority = 20;
 		}
-		else if (active_bases.size() < 2 && scv_count >= 14) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 32) { build = true; }
+		else if (active_bases.size() < 2 && scv_count >= 16) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
@@ -468,26 +468,40 @@ private:
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
-		Units vespene = observation->GetUnits(IsVespeneRefinery());
+		if (observation->GetVespene() / observation->GetMinerals() < 0.3) {
+			if (!assign_vespene(u)) {
+				assign_minerals(u);
+			}
+		}
+		else {
+			if (!assign_minerals(u)) {
+				assign_vespene(u);
+			}
+		}
+	}
+	bool assign_minerals(const Unit* u) {
 		for (auto& p : active_bases) { // saturate bases with scv's
-			if (p.command.tag == -1) { return; }
+			if (p.command.tag == -1) { return false; }
 			const Unit* base = observation->GetUnit(p.command.tag);
 			if (base->assigned_harvesters < base->ideal_harvesters) {
 				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
-				return;
+				return true;
 			}
 		}
-		// if minerals are saturated, check vespene
+		return false;
+	}
+	bool assign_vespene(const Unit* u) {
+		Units vespene = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
 		for (auto& v : vespene) {
 			if (v->assigned_harvesters < v->ideal_harvesters) {
 				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
-				return;
+				return true;
 			}
 		}
-		// if all are saturated, do nothing -> change this later??
+		return false;
 	}
 
-	void assignMULE(const Unit* u) {
+	bool assignMULE(const Unit* u) {
 		// similar to assign SCV -> get the nearest base with minerals
 		// and make it harvest them
 		Base closest_base;
@@ -500,8 +514,9 @@ private:
 			}
 		}
 		// make sure it doesn't fail if there are no bases with minerals
-		if (closest_base.minerals.size() == 0) { return; }
+		if (closest_base.minerals.size() == 0) { return false; }
 		task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, closest_base.minerals.front().tag));
+		return true;
 	}
 
 	/**
