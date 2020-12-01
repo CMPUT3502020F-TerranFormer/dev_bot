@@ -31,6 +31,17 @@ void RESOURCE_BOT::gameStart() {
  */
 void RESOURCE_BOT::step() {
     // actions for bases
+
+    //Throttle some behavior that can wait to avoid duplicate orders.
+    int frames_to_skip = 4;
+    if (observation->GetFoodUsed() >= observation->GetFoodCap()) {
+        frames_to_skip = 6;
+    }
+
+    if (observation->GetGameLoop() % frames_to_skip != 0) {
+        return;
+    }
+
     Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
 
     baseManager->step(scvs);
