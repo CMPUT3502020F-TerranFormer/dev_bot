@@ -131,7 +131,7 @@ public:
         while (true) {
             for (auto& c : command_centers) {
                 point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
                 if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
             }
         }
@@ -166,7 +166,7 @@ public:
         // as more buildings are built, it's more likely to build around a different command center
         while (true) {
             point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
             if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
 
         }
@@ -182,7 +182,7 @@ public:
         while (true) {
             for (auto& c : command_centers) {
                 point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
                 if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
 
             }
@@ -198,7 +198,7 @@ public:
         // as more buildings are built, it's more likely to build around a different command center
         while (true) {
             point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
             if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
         }
     }
@@ -227,7 +227,7 @@ public:
         while (true) {
             for (auto& c : command_centers) {
                 point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
                 if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
             }
         }
@@ -242,7 +242,7 @@ public:
         // as more buildings are built, it's more likely to build around a different command center
         while (true) {
             point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);\
+            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
             if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
         }
     }
@@ -256,7 +256,7 @@ public:
         while (true) {
             for (auto& c : command_centers) {
                 point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
                 if (query->Placement(ABILITY_ID::BUILD_ENGINEERINGBAY, point)) { return point; }
             }
         }
@@ -271,7 +271,7 @@ public:
         while (true) {
             for (auto& c : command_centers) {
                 point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
                 if (query->Placement(ABILITY_ID::BUILD_ARMORY, point)) { return point; }
             }
         }

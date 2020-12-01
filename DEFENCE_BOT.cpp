@@ -562,7 +562,7 @@ void DEFENCE_BOT::buildFactory(Point2D pos) {
 void DEFENCE_BOT::buildBunker(Point2D pos) {
     Task buildFT(BUILD,
                  ATTACK_AGENT,
-                 8,
+                 10,
                  UNIT_TYPEID::TERRAN_BUNKER,
                  ABILITY_ID::BUILD_BUNKER,
                  buildingPlacementManager->getNextBunkerLocation(pos));
