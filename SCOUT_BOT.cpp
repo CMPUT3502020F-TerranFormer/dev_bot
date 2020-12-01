@@ -19,7 +19,7 @@ SCOUT_BOT::~SCOUT_BOT() = default;
 void SCOUT_BOT::step() {
     // order scv 120sec into game time
     if (!ordered_scv) {
-        if (steps / 16 > 120) {
+        if (steps / 16 > 280) {
             // order 20 scv
             auto t = Task(TRAIN,
                            SCOUT_AGENT,
