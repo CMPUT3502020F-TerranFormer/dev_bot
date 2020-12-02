@@ -20,14 +20,19 @@ void DEFENCE_BOT::step() {
 
     auto gl = observation->GetGameLoop();
 
-    if (!orderedEngBay && !hasEngineeringBay && gl/16 > 400) {
+    if (!orderedEngBay && !hasEngineeringBay && gl/16 > 500) {
         buildEngineeringBay();
         orderedEngBay = true;
     }
 
-    if (!orderedArmoury && !hasArmoury && gl/16 > 400) {
+    if (!orderedArmoury && !hasArmoury && gl/16 > 500) {
         buildArmory();
         orderedArmoury = true;
+    }
+
+    if (!orderedStarport && !hasStarport && gl/16 > 600) {
+        buildStarport();
+        orderedStarport = true;
     }
 
     if (hasEngineeringBay) {
@@ -99,11 +104,6 @@ void DEFENCE_BOT::step() {
         }
         if (hasStarport) {
             orderBanshee(2);
-        } else {
-            if (observation->GetGameLoop() / 16 > 500 && !orderedStarport) {
-                buildStarport();
-                orderedStarport = true;
-            }
         }
     } else if (mCount > 400) {
         orderMarauder(1);
@@ -146,6 +146,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         defence_point.emplace_back(poi[0]);
         defence_point.emplace_back(poi[1]);
 
+        buildBunker(poi[0]);
         buildBunker(poi[0]);
 
         for (auto unit : All_Attack_Units) {
@@ -269,7 +270,7 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0], true);
+            action->UnitCommand(u, ABILITY_ID::MOVE_ACQUIREMOVE, defence_point[0], true);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
@@ -764,8 +765,8 @@ void DEFENCE_BOT::orderBattleCruiser(int count) {
                                        10,
                                        ABILITY_ID::TRAIN_BATTLECRUISER,
                                        UNIT_TYPEID::TERRAN_BATTLECRUISER,
-                                       starports[last_factory_used]->unit_type,
-                                       starports[last_factory_used]->tag
+                                       starports[last_starport_used]->unit_type,
+                                       starports[last_starport_used]->tag
                 ));
             }
             battleCruiserCount += 1;
