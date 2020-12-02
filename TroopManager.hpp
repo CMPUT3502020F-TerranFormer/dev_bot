@@ -31,10 +31,6 @@ public:
         // if unit is idle,
         switch (unit->unit_type.ToType())
         {
-            // barracks train marine
-            // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
-            //
-            // to train marauders, check for the presence of a tech lab first
         case UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
         case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
         case UNIT_TYPEID::TERRAN_BARRACKS:
@@ -106,21 +102,6 @@ public:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
         {
-            // If there are more than 4 sieged tanks,
-            // unsiege some of them for attacks
-            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
-            {
-                if (CountUnitType(unit->unit_type) < 4)
-                {
-                    return;
-                }
-
-                else
-                {
-                    task_queue->push(Task(ATTACK, ATTACK_AGENT, 7, unit, ABILITY_ID::MORPH_UNSIEGE, Point2D(0, 0)));
-                }
-            }
-
             if (squadron_units.size() > squadron_size)
             {
                 if (possible_enemy_locations.size() == 0)
@@ -147,7 +128,7 @@ public:
                 }
 
                 all_alive(squadron_units);
-                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, squadron_units, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+                task_queue->push(Task(ATTACK, ATTACK_AGENT, 7, squadron_units, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
                 std::cout << "Mass Attack Order sent" << std::endl;
 
                 // Tried to limit choke points by designing an area as accepted rather than a point
@@ -158,8 +139,22 @@ public:
                 }
             }
 
-            squadron_units.push_back(unit);
+            // If there are more than 4 sieged tanks,
+            // unsiege some of them for attacks
+            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
+            {
+                if (CountUnitType(unit->unit_type) < 4)
+                {
+                    return;
+                }
 
+                else
+                {
+                    task_queue->push(Task(ATTACK, ATTACK_AGENT, 7, unit, ABILITY_ID::MORPH_UNSIEGE, enemy_locations.back()));
+                }
+            }
+
+            squadron_units.push_back(unit);
             break;
         }
 

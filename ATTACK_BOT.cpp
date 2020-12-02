@@ -46,7 +46,7 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
-            if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
+            if (t.unit != nullptr && t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
                 action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
                 // attack_units.push_back(t.unit);
