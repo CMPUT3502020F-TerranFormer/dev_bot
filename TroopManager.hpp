@@ -143,11 +143,7 @@ public:
                 Point2D enemy_loc = enemy_locations.back();
                 if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
                 {
-
-                    if (unit->unit_type != UNIT_TYPEID::TERRAN_VIKINGFIGHTER)
-                    {
-                        enemy_locations.pop_back();
-                    }
+                    enemy_locations.pop_back();
                 }
             }
             break;
