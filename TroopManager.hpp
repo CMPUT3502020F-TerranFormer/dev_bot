@@ -23,7 +23,7 @@ public:
     TroopManager(threadsafe_priority_queue<Task> *t_queue, const ObservationInterface *obs, TF_Agent *scout)
         : task_queue(t_queue), observation(obs), scout(scout)
     {
-        enemy_locations = observation->GetGameInfo().enemy_start_locations; // positions of possible enemy starting locations
+        possible_enemy_locations = observation->GetGameInfo().enemy_start_locations; // positions of possible enemy starting locations
     }
 
     void unitIdle(const Unit *unit)
@@ -66,21 +66,21 @@ public:
             // Anti air units
             if (CountUnitType(UNIT_TYPEID::TERRAN_VIKINGFIGHTER) < 4)
             {
-               task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
-            
+
             // Detector troops
             if (CountUnitType(UNIT_TYPEID::TERRAN_RAVEN) < 2)
             {
-                 task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
             // Healer
             if (CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC) < 2)
             {
-                 task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -100,30 +100,47 @@ public:
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
         case UNIT_TYPEID::TERRAN_BANSHEE:
-        case UNIT_TYPEID::TERRAN_RAVEN:
         case UNIT_TYPEID::TERRAN_MARAUDER:
-        case UNIT_TYPEID::TERRAN_MEDIVAC:
-        case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
-        case UNIT_TYPEID::TERRAN_CYCLONE:
         case UNIT_TYPEID::TERRAN_THOR:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
-            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 20 && CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) > 5)
+            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK)
             {
+                if (CountUnitType(unit->unit_type) < 4)
+                {
+                    return;
+                }
+            }
+            if (observation->GetArmyCount() > 20)
+            {
+                if (possible_enemy_locations.size() == 0)
+                {
+                    possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
+                }
+
                 if (enemy_locations.size() == 0)
                 {
-                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 10 seconds
-                    for (auto &record : scout->last_seen_near(sc2::Point2D(0, 0), std::numeric_limits<int>::max(), 10))
+                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 120).size() > 0)
                     {
-                        enemy_locations.push_back(record.location);
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 120))
+                        {
+                            enemy_locations.push_back(record.location);
+                        }
+                        possible_enemy_locations.pop_back();
+                    }
+                    else
+                    {
+                        enemy_locations.push_back(possible_enemy_locations.back());
+                        possible_enemy_locations.pop_back();
                     }
                 }
-                Point2D enemy_loc = enemy_locations.back();
-                task_queue->push(
-                    Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+
+                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
 
                 // Tried to limit choke points by designing an area as accepted rather than a point
+                Point2D enemy_loc = enemy_locations.back();
                 if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
                 {
                     enemy_locations.pop_back();
@@ -132,21 +149,46 @@ public:
             break;
         }
 
-            // Support Units don't attack, so gotta give them a differnt ABILITY_ID
-            // case UNIT_TYPEID::TERRAN_MEDIVAC:
-            // {
-            //     if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 20)
-            //     {
-            //         Point2D enemy_loc = enemy_locations.back();
-            //         task_queue->push(
-            //             Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::EFFECT_HEAL, enemy_locations.back()));
-            //         if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
-            //         {
-            //             enemy_locations.pop_back();
-            //         }
-            //     }
-            //     break;
-            // }
+        // Support Units don't attack, so gotta give them a differnt ABILITY_ID
+        case UNIT_TYPEID::TERRAN_MEDIVAC:
+        case UNIT_TYPEID::TERRAN_RAVEN:
+        {
+            if (observation->GetArmyCount() > 20)
+            {
+                if (possible_enemy_locations.size() == 0)
+                {
+                    possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
+                }
+
+                if (enemy_locations.size() == 0)
+                {
+                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
+                    {
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
+                        {
+                            enemy_locations.push_back(record.location);
+                        }
+                        possible_enemy_locations.pop_back();
+                    }
+                    else
+                    {
+                        enemy_locations.push_back(possible_enemy_locations.back());
+                        possible_enemy_locations.pop_back();
+                    }
+                }
+
+                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
+
+                // Tried to limit choke points by designing an area as accepted rather than a point
+                Point2D enemy_loc = enemy_locations.back();
+                if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+                {
+                    enemy_locations.pop_back();
+                }
+            }
+            break;
+        }
         }
     }
 
@@ -161,6 +203,7 @@ private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
     TF_Agent *scout;
+    std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
 };
 

@@ -36,9 +36,9 @@ class DEFENCE_BOT;
 struct Spotted_Enemy {
     Unit u;
     Point2D location;
-    std::chrono::time_point<std::chrono::steady_clock> time;
+    float time;
 
-    Spotted_Enemy(Unit _u, Point2D _location, std::chrono::time_point<std::chrono::steady_clock> _time) :
+    Spotted_Enemy(Unit _u, Point2D _location, float _time) :
     u(std::move(_u)), location(_location), time(_time) {
 
     }

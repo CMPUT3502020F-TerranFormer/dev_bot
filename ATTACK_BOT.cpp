@@ -39,13 +39,16 @@ void ATTACK_BOT::step() {
             case ATTACK: {
                 if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
                     action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
-                    action->UnitCommand(t.unit, ABILITY_ID::MOVE_MOVE, t.position, true);
-                    action->UnitCommand(t.unit, ABILITY_ID::MORPH_SIEGEMODE, true);
                     action->UnitCommand(t.unit, ABILITY_ID::ATTACK_ATTACK, t.position, true);
                     action->SendActions();
                     return;
                 }
                 action->UnitCommand(t.unit, t.ability_id, t.position, true);
+                attack_units.push_back(t.unit);
+                if (attack_units.size() >= 20)
+                {
+                    action->SendActions();
+                }
                 break;
             }
             case REPAIR: {
@@ -220,7 +223,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
 
     switch (u->unit_type.ToType()) {
         case UNIT_TYPEID::TERRAN_BARRACKS:
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 6, UNIT_TYPEID::TERRAN_BARRACKS,
                                    ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
 
         case UNIT_TYPEID::TERRAN_FACTORY:
@@ -230,7 +233,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u) {
 
         case UNIT_TYPEID::TERRAN_STARPORT:
             resource->addTask(
-                    Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
+                    Task(TRAIN, ATTACK_AGENT, 5, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
                          u->tag));
     }
 }
