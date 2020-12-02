@@ -163,7 +163,6 @@ protected:
     const ObservationInterface* observation;
     ActionInterface* action;
     QueryInterface* query;
-    BuildingPlacementManager* buildingPlacementManager;
 };
 
 #endif

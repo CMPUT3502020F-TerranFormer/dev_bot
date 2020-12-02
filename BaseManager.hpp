@@ -92,8 +92,8 @@ struct Base {
 class BaseManager {
 public:
 	BaseManager(threadsafe_priority_queue<Task>* t_queue, const ObservationInterface* obs,
-		std::vector<Tag>* units, BuildingPlacementManager* bpm)
-		: task_queue(t_queue), observation(obs), resource_units(units), buildingPlacementManager(bpm)
+		std::vector<Tag>* units)
+		: task_queue(t_queue), observation(obs), resource_units(units)
 	{
 		Base base; // to account for if scv's are added before first command center
 		Point3D start = observation->GetStartLocation();
@@ -182,11 +182,8 @@ public:
 			if (command->build_progress == 1) {
 				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
 				if (base.startTransfer() && command->ideal_harvesters <= 8) {
-					Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
-					if (baseLocation != Point2D(0, 0)) {
-						task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
-							UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
-					}
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
 				}
 				else if (base.depleted()) {
 					isolated_bases.push_back(base.command);
@@ -256,11 +253,8 @@ public:
 		}
 
 		if (build) {
-			Point2D baseLocation = buildingPlacementManager->getNextCommandCenterLocation();
-			if (baseLocation != Point2D(0, 0)) {
-				task_queue->push(Task(BUILD, RESOURCE_AGENT, command_build_priority,
-					UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER, baseLocation));
-			}
+			task_queue->push(Task(BUILD, RESOURCE_AGENT, command_build_priority,
+				UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
 		}
 
 		// we must also deal with vespene refineries that have excess workers
@@ -460,7 +454,6 @@ public:
 private:
 	threadsafe_priority_queue<Task>* task_queue;
 	const ObservationInterface* observation;
-	BuildingPlacementManager* buildingPlacementManager;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
 

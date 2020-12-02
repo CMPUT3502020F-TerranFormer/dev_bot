@@ -51,246 +51,44 @@ public:
 		}
 	}
 
+	Point2D getNextLocation(UNIT_TYPEID unit_type, Point2D point) {
+		switch (unit_type) {
+		case UNIT_TYPEID::TERRAN_COMMANDCENTER: return getNextCommandCenterLocation();
+		case UNIT_TYPEID::TERRAN_SUPPLYDEPOT: return getNextSupplyDepotLocation();
+		case UNIT_TYPEID::TERRAN_BARRACKS: 
+			if (point == Point2D(0, 0)) {
+				return getNextBarracksLocation();
+			}
+			else {
+				return getNextBarracksLocation(point);
+			}
+		case UNIT_TYPEID::TERRAN_FUSIONCORE: return getNextFusionCoreLocation();
+		case UNIT_TYPEID::TERRAN_FACTORY:
+			if (point == Point2D(0, 0)) {
+				return getNextFactoryLocation();
+			}
+			else {
+				return getNextFactoryLocation(point);
+			}
+		case UNIT_TYPEID::TERRAN_BUNKER: return getNextBunkerLocation(point);
+		case UNIT_TYPEID::TERRAN_STARPORT:
+			if (point == Point2D(0, 0)) {
+				return getNextStarportLocation();
+			}
+			else {
+				return getNextStarportLocation(point);
+			}
+		case UNIT_TYPEID::TERRAN_ENGINEERINGBAY: return getNextEngineeringBayLocation();
+		case UNIT_TYPEID::TERRAN_ARMORY: return getNextArmoryLocation();
+		case UNIT_TYPEID::TERRAN_MISSILETURRET: return getNextMissileTurretLocation(point);
+		default: std::cerr << "BUILDING_PLACEMENT: Unrecognized unit_type: " << (int) unit_type << std::endl;
+		}
+	}
+
 	void setEnemyRace(Race race) {
 		enemyRace = race;
 	}
 
-	Point2D getNextCommandCenterLocation() {
-		// for now, build by clusters, in the future a more advanced build policy is needed
-		switch (map) {
-		case Map::CactusValleyLE: {
-			// get the index of the starting base location, then increment it until a suitable location
-			// has been found
-			int base_index;
-			if (start_location == CactusValleyLEBaseLocations[0]) { base_index = 0; }
-			else if (start_location == CactusValleyLEBaseLocations[4]) { base_index = 4; }
-			else if (start_location == CactusValleyLEBaseLocations[8]) { base_index = 8; }
-			else { base_index = 12; }
-			for (int i = 0; i < 16; ++i) {
-				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, CactusValleyLEBaseLocations[(base_index + i) % 16]))
-				{
-					return CactusValleyLEBaseLocations[(base_index + i) % 16];
-				}
-			}
-			break;
-		}
-		case Map::BelShirVestigeLE:{
-			// get the index of the starting base location, then increment it until a suitable location
-			// has been found
-			int base_index;
-			if (start_location == BelShirVestigeLEBaseLocations[0]) { base_index = 0; }
-			else { base_index = 5; }
-			for (int i = 0; i < 10; ++i) {
-				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, BelShirVestigeLEBaseLocations[(base_index + i) % 10]))
-				{
-					return BelShirVestigeLEBaseLocations[(base_index + i) % 10];
-				}
-			}
-			break; }
-		case Map::ProximaStationLE: {
-			int base_index;
-			if (start_location == ProximaStationLEBaseLocations[0]) { base_index = 0; }
-			else { base_index = 8; }
-			for (int i = 0; i < 16; ++i) {
-				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, ProximaStationLEBaseLocations[(base_index + i) % 16]))
-				{
-					return ProximaStationLEBaseLocations[(base_index + i) % 16];
-				}
-			}
-			break; }
-		default: std::cerr << "Invalid Map! Cannot get command center location" << std::endl;
-		}
-		return Point2D(0, 0);
-	}
-
-	Point2D getNextSupplyDepotLocation() {
-		// for now, get a random point with radius 15 around a command center
-		Point2D point(0, 0);
-		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-		// we don't want to build them all around the same command center so while this is not perfect
-		// as more buildings are built, it's more likely to build around a different command center
-		while (true) {
-			for (auto& c : command_centers) {
-				point = c->pos;
-				point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
-				if (query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) { return point; }
-			}
-		}
-	}
-
-	Point2D getNextBarracksLocation() {
-		// we'll just build it near a command center for now
-		// which is the same as the supply depots
-        // for now, get a random point with radius 15 around a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-                if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
-            }
-        }
-	}
-
-    Point2D getNextFusionCoreLocation() {
-        // we'll just build it near a command center for now
-        // which is the same as the supply depots
-        // for now, get a random point with radius 15 around a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
-                if (query->Placement(ABILITY_ID::BUILD_FUSIONCORE, point)) { return point; }
-            }
-        }
-    }
-
-    Point2D getNextBarracksLocation(Point2D pos) {
-        // we'll just build it near a command center for now
-        // which is the same as the supply depots
-        // for now, get a random point with radius 15 around a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-            if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
-
-        }
-    }
-
-	Point2D getNextFactoryLocation() {
-		// same thing, build near a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-                if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
-
-            }
-        }
-	}
-
-    Point2D getNextFactoryLocation(Point2D pos) {
-        // same thing, build near a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-            if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
-        }
-    }
-
-    Point2D getNextBunkerLocation(Point2D pos) {
-        // same thing, build near a command center
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 3.0f, point.y + GetRandomScalar() * 3.0f);
-            if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
-        }
-    }
-
-	Point2D getNextStarportLocation() {
-		// same thing
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-                if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
-            }
-        }
-	}
-
-    Point2D getNextStarportLocation(Point2D pos) {
-        // same thing
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-            if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
-        }
-    }
-
-	Point2D getNextEngineeringBayLocation() {
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-                if (query->Placement(ABILITY_ID::BUILD_ENGINEERINGBAY, point)) { return point; }
-            }
-        }
-	}
-
-    Point2D getNextArmoryLocation() {
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            for (auto& c : command_centers) {
-                point = c->pos;
-                point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
-                if (query->Placement(ABILITY_ID::BUILD_ARMORY, point)) { return point; }
-            }
-        }
-    }
-
-    Point2D getNextMissileTurretLocation(Point2D pos) {
-        Point2D point(0, 0);
-        Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
-
-        // we don't want to build them all around the same command center so while this is not perfect
-        // as more buildings are built, it's more likely to build around a different command center
-        while (true) {
-            point = pos;
-            point = Point2D(point.x + GetRandomScalar() * 4.0f, point.y + GetRandomScalar() * 4.0f);
-            if (query->Placement(ABILITY_ID::BUILD_MISSILETURRET, point)) {
-                return point;
-            }
-        }
-    }
 
 private:
 	Map map;
@@ -339,6 +137,244 @@ private:
 	const Point2D BelShirVestigeLEBaseLocations[16] =
 	{ Point2D(29.5, 134.5), Point2D(61.5, 136.5), Point2D(28.5, 96.5), Point2D(98.5, 138.5), Point2D(23.5, 55.5), // Top Locations
 	Point2D(114.5, 25.5), Point2D(82.5, 23.5), Point2D(115.5, 63.5), Point2D(45.5, 20.5), Point2D(120.5, 104.5) }; // Bottom Locations
+
+
+	Point2D getNextCommandCenterLocation() {
+		// for now, build by clusters, in the future a more advanced build policy is needed
+		switch (map) {
+		case Map::CactusValleyLE: {
+			// get the index of the starting base location, then increment it until a suitable location
+			// has been found
+			int base_index;
+			if (start_location == CactusValleyLEBaseLocations[0]) { base_index = 0; }
+			else if (start_location == CactusValleyLEBaseLocations[4]) { base_index = 4; }
+			else if (start_location == CactusValleyLEBaseLocations[8]) { base_index = 8; }
+			else { base_index = 12; }
+			for (int i = 0; i < 16; ++i) {
+				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, CactusValleyLEBaseLocations[(base_index + i) % 16]))
+				{
+					return CactusValleyLEBaseLocations[(base_index + i) % 16];
+				}
+			}
+			break;
+		}
+		case Map::BelShirVestigeLE: {
+			// get the index of the starting base location, then increment it until a suitable location
+			// has been found
+			int base_index;
+			if (start_location == BelShirVestigeLEBaseLocations[0]) { base_index = 0; }
+			else { base_index = 5; }
+			for (int i = 0; i < 10; ++i) {
+				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, BelShirVestigeLEBaseLocations[(base_index + i) % 10]))
+				{
+					return BelShirVestigeLEBaseLocations[(base_index + i) % 10];
+				}
+			}
+			break; }
+		case Map::ProximaStationLE: {
+			int base_index;
+			if (start_location == ProximaStationLEBaseLocations[0]) { base_index = 0; }
+			else { base_index = 8; }
+			for (int i = 0; i < 16; ++i) {
+				if (query->Placement(ABILITY_ID::BUILD_COMMANDCENTER, ProximaStationLEBaseLocations[(base_index + i) % 16]))
+				{
+					return ProximaStationLEBaseLocations[(base_index + i) % 16];
+				}
+			}
+			break; }
+		default: std::cerr << "Invalid Map! Cannot get command center location" << std::endl;
+		}
+		return Point2D(0, 0);
+	}
+
+	Point2D getNextSupplyDepotLocation() {
+		// for now, get a random point with radius 15 around a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+				if (query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextBarracksLocation() {
+		// we'll just build it near a command center for now
+		// which is the same as the supply depots
+		// for now, get a random point with radius 15 around a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+				if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextFusionCoreLocation() {
+		// we'll just build it near a command center for now
+		// which is the same as the supply depots
+		// for now, get a random point with radius 15 around a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
+				if (query->Placement(ABILITY_ID::BUILD_FUSIONCORE, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextBarracksLocation(Point2D pos) {
+		// we'll just build it near a command center for now
+		// which is the same as the supply depots
+		// for now, get a random point with radius 15 around a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			point = pos;
+			point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+			if (query->Placement(ABILITY_ID::BUILD_BARRACKS, point)) { return point; }
+
+		}
+	}
+
+	Point2D getNextFactoryLocation() {
+		// same thing, build near a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+				if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
+
+			}
+		}
+	}
+
+	Point2D getNextFactoryLocation(Point2D pos) {
+		// same thing, build near a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			point = pos;
+			point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+			if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
+		}
+	}
+
+	Point2D getNextBunkerLocation(Point2D pos) {
+		// same thing, build near a command center
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			point = pos;
+			point = Point2D(point.x + GetRandomScalar() * 3.0f, point.y + GetRandomScalar() * 3.0f);
+			if (query->Placement(ABILITY_ID::BUILD_FACTORY, point)) { return point; }
+		}
+	}
+
+	Point2D getNextStarportLocation() {
+		// same thing
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+				if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextStarportLocation(Point2D pos) {
+		// same thing
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			point = pos;
+			point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+			if (query->Placement(ABILITY_ID::BUILD_STARPORT, point)) { return point; }
+		}
+	}
+
+	Point2D getNextEngineeringBayLocation() {
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+				if (query->Placement(ABILITY_ID::BUILD_ENGINEERINGBAY, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextArmoryLocation() {
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			for (auto& c : command_centers) {
+				point = c->pos;
+				point = Point2D(point.x + GetRandomScalar() * 10.0f, point.y + GetRandomScalar() * 10.0f);
+				if (query->Placement(ABILITY_ID::BUILD_ARMORY, point)) { return point; }
+			}
+		}
+	}
+
+	Point2D getNextMissileTurretLocation(Point2D pos) {
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+
+		// we don't want to build them all around the same command center so while this is not perfect
+		// as more buildings are built, it's more likely to build around a different command center
+		while (true) {
+			point = pos;
+			point = Point2D(point.x + GetRandomScalar() * 4.0f, point.y + GetRandomScalar() * 4.0f);
+			if (query->Placement(ABILITY_ID::BUILD_MISSILETURRET, point)) {
+				return point;
+			}
+		}
+	}
 };	
 
 #endif

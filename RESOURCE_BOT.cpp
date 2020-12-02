@@ -22,7 +22,7 @@ void RESOURCE_BOT::gameStart() {
     std::cout << "Map: " << observation->GetGameInfo().map_name << std::endl;
 
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
-    baseManager = new BaseManager(&task_queue, observation, &units, buildingPlacementManager);
+    baseManager = new BaseManager(&task_queue, observation, &units);
 }
 
 /**
@@ -72,7 +72,7 @@ void RESOURCE_BOT::step() {
         case BUILD: {
             /* This will prevent multiple identical building from being produced at the same time
              * unless specifically allowed. Identical units will be removed from the queue
-             * check that we have enough resources to do build unit
+             * and check that we have enough resources to build unit
              */
             UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
             if (ut.food_required > available_food
@@ -83,7 +83,7 @@ void RESOURCE_BOT::step() {
                 task_success = false;
                 break;
             }
-            if (buildStructure(scvs, t.ability_id, t.position, t.target)) { // if building succeeded
+            if (buildStructure(scvs, t.unit_typeid, t.ability_id, t.position, t.target)) { // if building succeeded
                 action->SendActions();
                 // update available resources
                 available_food -= ut.food_required;
@@ -309,12 +309,13 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
     // gets a location to build the supply depot then buildStructure
     // which will prevent 2 from being built at the same time
-    Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
-    buildStructure(scvs, ABILITY_ID::BUILD_SUPPLYDEPOT, point);
+    buildStructure(scvs, UNIT_TYPEID::TERRAN_SUPPLYDEPOT, ABILITY_ID::BUILD_SUPPLYDEPOT, Point2D(0, 0));
 }
 
 /* We pass in scvs because this may be called multiple times/step so it's more efficient */
-bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type, 
+    ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+
     Tag scv_tag = baseManager->getSCV(scvs).tag;
     if (scv_tag == -1) { 
         std::cerr << "Error building: There are no scvs" << std::endl;
@@ -340,6 +341,7 @@ bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_struct
         }
     }
     else { // build at a location
+        Point2D point = buildingPlacementManager->getNextLocation(unit_type, point);
         if (query->Placement(ability_to_build_structure, point)
             && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, point, true);

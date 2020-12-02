@@ -89,10 +89,11 @@ private:
     TF_Agent *attack;
     TF_Agent *scout;
     BaseManager* baseManager;
+    BuildingPlacementManager* buildingPlacementManager;
 
     void buildSupplyDepot(Units scvs);
 
-    bool buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
+    bool buildStructure(Units scvs, UNIT_TYPEID unit_type, ABILITY_ID ability_to_build_structure, Point2D point, Tag target = -1);
 
     bool buildCheckDuplicate(Units scvs, ABILITY_ID ability_to_build_structure);
 };
