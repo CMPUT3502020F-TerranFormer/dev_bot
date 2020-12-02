@@ -71,6 +71,7 @@ void ATTACK_BOT::step()
             if (t.units.size() >= troopManager->getSquadronSize())
             {
                 action->UnitCommand(t.units, t.ability_id, t.position);
+                std::cout << "Mass Attack received" << std::endl;
             }
             break;
         }

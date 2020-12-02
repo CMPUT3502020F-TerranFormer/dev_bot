@@ -144,9 +144,11 @@ public:
                         enemy_locations.push_back(possible_enemy_locations.back());
                         possible_enemy_locations.pop_back();
                     }
-
-                    task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, squadron_units, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
                 }
+
+                all_alive(squadron_units);
+                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, squadron_units, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+                std::cout << "Mass Attack Order sent" << std::endl;
 
                 // Tried to limit choke points by designing an area as accepted rather than a point
                 Point2D enemy_loc = enemy_locations.back();
@@ -224,6 +226,30 @@ public:
         squadron_size += 5;
     }
 
+    void all_alive(Units army)
+    {
+        for (int i = 0; i < army.size(); ++i)
+        {
+            if (!army[i]->is_alive)
+            {
+                if (i > 1)
+                {
+                    army.erase(army.begin() + i - 1);
+                }
+
+                else if (i = 1)
+                {
+                    army.erase(army.begin() + i);
+                }
+
+                else
+                {
+                    army.erase(army.begin());
+                }
+            }
+        }
+    }
+
 private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
@@ -231,7 +257,7 @@ private:
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
     Units squadron_units;
-    Units squardon_supp_units;
+    Units squadron_supp_units;
     int squadron_size = 20;
 };
 
