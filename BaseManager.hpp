@@ -27,8 +27,9 @@
 
 using namespace sc2;
 
+static const TF_unit NoUnit = TF_unit((UNIT_TYPEID) 0, (Tag) -1);
+
 struct Base {
-	TF_unit NoUnit = TF_unit((UNIT_TYPEID)0, (Tag)-1);
 
 	Base() {
 		transfer = false;
@@ -66,10 +67,10 @@ struct Base {
 		return false;
 	}
 
-	/* Returns if all the resources are depleted;
+	/* Returns if the minerals are depleted;
 	 */
 	bool depleted() {
-		return (minerals.empty() && vespene.empty());
+		return (minerals.empty());
 	}
 
 	/** By waiting until all resources are gone we often lose scv efficiency
@@ -98,11 +99,11 @@ public:
 		Point3D start = observation->GetStartLocation();
 		base.location = Point2D(start.x, start.y);
 		base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
-		base.command = base.NoUnit;
+		base.command = NoUnit;
 		active_bases.push_back(base);
 
 		scv_count = 0;
-		scv_target_count = 66;
+		scv_target_count = 60;
 
 		std::random_device r;
 		rand_gen = std::mt19937(r());
@@ -156,8 +157,10 @@ public:
 			}
 
 			// we also deal with bases that have too many scvs mining (1 scv / base / step)
+			// and try to maintain a ratio of minerals to scvs
 			bool exit_loop = false;
-			if (command->assigned_harvesters > command->ideal_harvesters) {
+			if (command->assigned_harvesters > command->ideal_harvesters
+				|| observation->GetMinerals() / (observation->GetVespene() + 1) > 4) {
 				for (auto& unit : units) {
 					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
 						for (auto& order : unit->orders) {
@@ -229,8 +232,7 @@ public:
 
 		// Build a new command center if necessary, right now, we use preset conditions
 		// remember that a unit is added when it starts being build
-		// build command centers at 20/40 scv's, or when a planetary fortress is running out of resources
-		// ISSUE: Sometimes builds another command center when it shouldn't be
+		// build command centers at 16/40 scv's, or when a planetary fortress is running out of resources
 		int num_command_centers = active_bases.size() + isolated_bases.size();
 		bool build = false;
 
@@ -262,9 +264,11 @@ public:
 		}
 
 		// we must also deal with vespene refineries that have excess workers
+		// and try to maintain a ration of vespene/minerals
 		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
 		for (auto& r : refineries) {
-			if (r->assigned_harvesters > r->ideal_harvesters) {
+			if (r->assigned_harvesters > r->ideal_harvesters
+				|| observation->GetVespene() / (observation->GetMinerals() + 1) > 2) {
 				for (auto& s : scvs) {
 					for (auto& order : s->orders) {
 						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
@@ -352,7 +356,7 @@ public:
 		// If this is called multiple times during the same step
 		// the same scv can be returned each time -> randomness when choosing scvs
 
-		if (scvs.empty()) { return Base().NoUnit; } // we have no scv's
+		if (scvs.empty()) { return NoUnit; } // we have no scv's
 		Units possible_scvs;
 
 		// first get all harvesting/idle (or close, if ia point is given) scv's
@@ -481,25 +485,42 @@ private:
 			}
 		}
 	}
-	bool assign_minerals(const Unit* u) {
+	bool assign_minerals(const Unit* u, bool close = true) {
+		// first try to assign it to the closest base, if that fails go through them all
 		for (auto& p : active_bases) { // saturate bases with scv's
 			if (p.command.tag == -1) { return false; }
 			const Unit* base = observation->GetUnit(p.command.tag);
-			if (base->assigned_harvesters < base->ideal_harvesters) {
-				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
-				return true;
+			if (base == nullptr) {
+				return false;
+			}
+			if (close && !IsClose(p.location, 25)(*u)) {
+				continue;
+			}
+			else {
+				if (base->assigned_harvesters < base->ideal_harvesters) {
+					if (p.minerals.empty()) { return false; }
+					task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, p.minerals.back().tag));
+					return true;
+				}
 			}
 		}
+		if (close) { assign_minerals(u, false); }
 		return false;
 	}
-	bool assign_vespene(const Unit* u) {
+	bool assign_vespene(const Unit* u, bool close = true) {
 		Units vespene = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
 		for (auto& v : vespene) {
-			if (v->assigned_harvesters < v->ideal_harvesters) {
-				task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
-				return true;
+			if (close && !IsClose(v->pos, 100)(*v)) {
+				continue;
+			}
+			else {
+				if (v->assigned_harvesters < v->ideal_harvesters) {
+					task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, v->tag));
+					return true;
+				}
 			}
 		}
+		if (close) { assign_vespene(u, false); }
 		return false;
 	}
 

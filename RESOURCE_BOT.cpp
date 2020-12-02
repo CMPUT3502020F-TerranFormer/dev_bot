@@ -33,9 +33,10 @@ void RESOURCE_BOT::step() {
     // actions for bases
 
     //Throttle some behavior that can wait to avoid duplicate orders.
-    int frames_to_skip = 4;
+    int frames_to_skip = 8;
+
     if (observation->GetFoodUsed() >= observation->GetFoodCap()) {
-        frames_to_skip = 6;
+        frames_to_skip = 16;
     }
 
     if (observation->GetGameLoop() % frames_to_skip != 0) {
@@ -162,9 +163,6 @@ void RESOURCE_BOT::step() {
 
                     // don't update resources as they have not been used yet
                     // and we want to flush out all extra repair tasks
-                }
-                else {
-                    std::cerr << "REPAIR: Invalid Unit from agent " << t.source << " Is the unit dead?" << std::endl;
                 }
             }
             break;
