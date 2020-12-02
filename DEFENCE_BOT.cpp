@@ -10,9 +10,7 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
     resource = nullptr;
 }
 
-DEFENCE_BOT::~DEFENCE_BOT() {
-
-}
+DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
     check_for_engineering_bay();
@@ -20,17 +18,17 @@ void DEFENCE_BOT::step() {
 
     auto gl = observation->GetGameLoop();
 
-    if (!orderedEngBay && !hasEngineeringBay && gl/16 > 500) {
+    if (!orderedEngBay && !hasEngineeringBay && gl / 16 > 500) {
         buildEngineeringBay();
         orderedEngBay = true;
     }
 
-    if (!orderedArmoury && !hasArmoury && gl/16 > 500) {
+    if (!orderedArmoury && !hasArmoury && gl / 16 > 500) {
         buildArmory();
         orderedArmoury = true;
     }
 
-    if (!orderedStarport && !hasStarport && gl/16 > 600) {
+    if (!orderedStarport && !hasStarport && gl / 16 > 600) {
         buildStarport();
         orderedStarport = true;
     }
@@ -94,9 +92,7 @@ void DEFENCE_BOT::step() {
         orderThor(1);
         orderSiegeTank(1);
     } else if (mCount > 600 && hasFactory) {
-        if (distribution(generator)) {
-            orderSiegeTank(1);
-        }
+        orderSiegeTank(1);
 
         if (hasBarracks) {
             orderMarine(2);
@@ -108,7 +104,7 @@ void DEFENCE_BOT::step() {
     } else if (mCount > 400) {
         orderMarauder(1);
         orderMarine(1);
-    } else if (mCount > 200 && hasBarracks && All_Attack_Units.size() < 30) {
+    } else if (mCount > 200 && hasBarracks) {
         orderMarine(1);
     }
 }
@@ -132,10 +128,10 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             buildFactory(u->pos);
             buildStarport(u->pos);
         } else {
-            if (distribution(generator)) {
-                buildBarracks(u->pos);
+            if (barracks.size() > factories.size()) {
+                buildFactory();
             } else {
-                buildFactory(u->pos);
+                buildBarracks();
             }
         }
 
@@ -149,6 +145,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         buildBunker(poi[0]);
         buildBunker(poi[0]);
 
+        /** TODO to be replaced with the new defence balancing system
         for (auto unit : All_Attack_Units) {
             if (distribution(generator)) {
                 Point2D pos;
@@ -166,6 +163,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
                 action->UnitCommand(unit.second, ABILITY_ID::MORPH_SIEGEMODE, true);
             }
         }
+         */
         return;
     }
 
@@ -187,7 +185,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             starports.push_back(const_cast<Unit *>(u));
             break;
         case (int) UNIT_TYPEID::TERRAN_BUNKER:
-            bunkers.push_back(const_cast<Unit*>(u));
+            bunkers.push_back(const_cast<Unit *>(u));
     }
 }
 
@@ -235,29 +233,27 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
 
     switch ((int) u->unit_type) {
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            tankCount -= 5*multiplierCounter;
+            tankCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
-            marauderCount -= 5*multiplierCounter;
+            marauderCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_BANSHEE:
-            bansheeCount -= 5*multiplierCounter;
+            bansheeCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_MARINE:
-            marineCount -= 5*multiplierCounter;
+            marineCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_CYCLONE:
-            cycloneCount -= 5*multiplierCounter;
+            cycloneCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_THOR:
-            thorCount -= 5*multiplierCounter;
+            thorCount -= 5 * multiplierCounter;
             break;
         case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            battleCruiserCount -= 5*multiplierCounter;
+            battleCruiserCount -= 5 * multiplierCounter;
             break;
     }
-
-    All_Attack_Units.erase(u->tag);
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
@@ -269,7 +265,6 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_ACQUIREMOVE, defence_point[0], true);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
@@ -283,7 +278,6 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
         case (int) UNIT_TYPEID::TERRAN_RAVEN:
         case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            All_Attack_Units.emplace(u->tag, const_cast<Unit *>(u)); // add to a list of all attacking troops
             action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0], true);
             break;
         default:
@@ -331,8 +325,8 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                 }
             }
             break;
-        // TODO use behavior tree to replace the following logic
-        // armoury upgrade tree
+            // TODO use behavior tree to replace the following logic
+            // armoury upgrade tree
         case (int) UNIT_TYPEID::TERRAN_ARMORY:
             action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
             if (infantryUpgradePhase1Complete) {
@@ -358,8 +352,6 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                 action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             }
             break;
-        case (int) UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
-            action->UnitCommand(u, ABILITY_ID::MORPH_VIKINGASSAULTMODE, true);
         case (int) UNIT_TYPEID::TERRAN_MARINE:
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
             // load empty bunkers
@@ -408,8 +400,6 @@ std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, in
 }
 
 void DEFENCE_BOT::init() {
-    distribution = std::uniform_int_distribution<int>(0, 1);
-
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
 
     // base on map name, get all point of interest
@@ -605,9 +595,8 @@ void DEFENCE_BOT::check_for_factory() {
         } else if (unit.unit_type == UNIT_TYPEID::TERRAN_FACTORYREACTOR && unit.alliance == sc2::Unit::Self &&
                    unit.build_progress == 1.0) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     });
 
     if (!ret.empty()) {
@@ -639,10 +628,9 @@ void DEFENCE_BOT::check_for_starport() {
             return true;
         } else if (unit.unit_type == UNIT_TYPEID::TERRAN_STARPORTREACTOR && unit.alliance == sc2::Unit::Self &&
                    unit.build_progress == 1.0) {
-
-        }else {
-            return false;
+            return true;
         }
+        return false;
     });
 
     if (!ret.empty()) {
@@ -687,9 +675,8 @@ void DEFENCE_BOT::check_for_barracks() {
         } else if (unit.unit_type == UNIT_TYPEID::TERRAN_BARRACKSTECHLAB && unit.alliance == sc2::Unit::Self &&
                    unit.build_progress == 1.0) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     });
 
     if (!ret.empty()) {
@@ -744,7 +731,7 @@ void DEFENCE_BOT::orderSiegeTank(int count) {
         ));
     }
     tankCount += 1;
-    last_factory_used = (last_factory_used + 1) % factories.size();
+    last_factory_used = (last_factory_used + 1) % (int) factories.size();
 }
 
 void DEFENCE_BOT::orderBattleCruiser(int count) {
@@ -754,7 +741,11 @@ void DEFENCE_BOT::orderBattleCruiser(int count) {
 
     check_for_fusion();
     if (!hasFusion) {
-        buildFusion();
+        if (!orderedFusion) {
+            buildFusion();
+            orderedFusion = true;
+        }
+        return;
     }
 
     for (auto port : starports) {
@@ -770,7 +761,7 @@ void DEFENCE_BOT::orderBattleCruiser(int count) {
                 ));
             }
             battleCruiserCount += 1;
-            last_starport_used = (last_starport_used + 1) % starports.size();
+            last_starport_used = (last_starport_used + 1) % (int) starports.size();
             return;
         }
     }
@@ -793,7 +784,7 @@ void DEFENCE_BOT::orderThor(int count) {
         ));
     }
     thorCount += 1;
-    last_factory_used = (last_factory_used + 1) % factories.size();
+    last_factory_used = (last_factory_used + 1) % (int) factories.size();
 }
 
 void DEFENCE_BOT::orderMarine(int count) {
@@ -811,7 +802,7 @@ void DEFENCE_BOT::orderMarine(int count) {
         ));
     }
     marineCount += 1;
-    last_barracks_used = (last_barracks_used + 1) % barracks.size();
+    last_barracks_used = (last_barracks_used + 1) % (int) barracks.size();
 }
 
 void DEFENCE_BOT::orderMarauder(int count) {
@@ -829,7 +820,7 @@ void DEFENCE_BOT::orderMarauder(int count) {
         ));
     }
     marauderCount += 1;
-    last_barracks_used = (last_barracks_used + 1) % barracks.size();
+    last_barracks_used = (last_barracks_used + 1) % (int) barracks.size();
 }
 
 void DEFENCE_BOT::orderBanshee(int count) {
@@ -847,7 +838,7 @@ void DEFENCE_BOT::orderBanshee(int count) {
         ));
     }
     bansheeCount += 1;
-    last_starport_used = (last_starport_used + 1) % starports.size();
+    last_starport_used = (last_starport_used + 1) % (int) starports.size();
 }
 
 void DEFENCE_BOT::orderCyclone(int count) {
@@ -866,7 +857,71 @@ void DEFENCE_BOT::orderCyclone(int count) {
         ));
     }
     cycloneCount += 1;
-    last_factory_used = (last_factory_used + 1) % factories.size();
+    last_factory_used = (last_factory_used + 1) % (int) factories.size();
+}
+
+std::tuple<std::vector<const Unit *>, int> DEFENCE_BOT::troops_at_point(Point2D pos) {
+    int defence_score = 0;
+
+    auto all_troops_at_point = observation->GetUnits([pos, &defence_score](const Unit &unit) {
+        if (unit.alliance == sc2::Unit::Self) {
+            switch ((int) unit.unit_type) {
+                case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+                case (int) UNIT_TYPEID::TERRAN_MARAUDER:
+                case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+                case (int) UNIT_TYPEID::TERRAN_MARINE:
+                case (int) UNIT_TYPEID::TERRAN_CYCLONE:
+                case (int) UNIT_TYPEID::TERRAN_THOR:
+                case (int) UNIT_TYPEID::TERRAN_VIKINGASSAULT:
+                case (int) UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+                case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
+                case (int) UNIT_TYPEID::TERRAN_RAVEN:
+                case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
+                case (int) UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
+                case (int) UNIT_TYPEID::TERRAN_HELLION:
+                case (int) UNIT_TYPEID::TERRAN_HELLIONTANK:
+                case (int) UNIT_TYPEID::TERRAN_REAPER:
+                    if (distance(pos, unit.pos) <= 5) {
+                        defence_score += get_defence_score(unit.unit_type);
+                        return true;
+                    } else {
+                        return false;
+                    }
+            }
+        }
+        return false;
+    });
+
+    return std::make_tuple(all_troops_at_point, defence_score);
+}
+
+int DEFENCE_BOT::get_defence_score(UNIT_TYPEID id) {
+    switch ((int) id) {
+        case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
+        case (int) UNIT_TYPEID::TERRAN_RAVEN:
+            return 0;
+        case (int) UNIT_TYPEID::TERRAN_HELLION:
+        case (int) UNIT_TYPEID::TERRAN_REAPER:
+        case (int) UNIT_TYPEID::TERRAN_MARINE:
+            return 1;
+        case (int) UNIT_TYPEID::TERRAN_CYCLONE:
+        case (int) UNIT_TYPEID::TERRAN_HELLIONTANK:
+            return 2;
+        case (int) UNIT_TYPEID::TERRAN_VIKINGASSAULT:
+        case (int) UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+        case (int) UNIT_TYPEID::TERRAN_MARAUDER:
+        case (int) UNIT_TYPEID::TERRAN_BANSHEE:
+            return 3;
+        case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            return 5;
+        case (int) UNIT_TYPEID::TERRAN_THOR:
+            return 6;
+        case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
+        case (int) UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
+            return 7;
+        default:
+            return 0;
+    }
 }
 
 
