@@ -92,6 +92,7 @@ public:
 
 private:
     std::vector<TF_unit> units;
+    std::vector<const Unit*> attack_units;
     TF_Agent* defence;
     TF_Agent* resource;
     TF_Agent* scout;
