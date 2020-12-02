@@ -100,11 +100,7 @@ public:
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
         case UNIT_TYPEID::TERRAN_BANSHEE:
-        case UNIT_TYPEID::TERRAN_RAVEN:
         case UNIT_TYPEID::TERRAN_MARAUDER:
-        case UNIT_TYPEID::TERRAN_MEDIVAC:
-        case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
-        case UNIT_TYPEID::TERRAN_CYCLONE:
         case UNIT_TYPEID::TERRAN_THOR:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
@@ -119,16 +115,18 @@ public:
                 if (enemy_locations.size() == 0)
                 {
                     // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 10000000).size() > 0)
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
                     {
-                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 10000000))
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
                         {
                             enemy_locations.push_back(record.location);
                         }
                         possible_enemy_locations.pop_back();
                     }
-                    else {
+                    else
+                    {
                         enemy_locations.push_back(possible_enemy_locations.back());
+                        possible_enemy_locations.pop_back();
                     }
                 }
 
@@ -144,21 +142,46 @@ public:
             break;
         }
 
-            // Support Units don't attack, so gotta give them a differnt ABILITY_ID
-            // case UNIT_TYPEID::TERRAN_MEDIVAC:
-            // {
-            //     if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 20)
-            //     {
-            //         Point2D enemy_loc = enemy_locations.back();
-            //         task_queue->push(
-            //             Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::EFFECT_HEAL, enemy_locations.back()));
-            //         if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
-            //         {
-            //             enemy_locations.pop_back();
-            //         }
-            //     }
-            //     break;
-            // }
+        // Support Units don't attack, so gotta give them a differnt ABILITY_ID
+        case UNIT_TYPEID::TERRAN_MEDIVAC:
+        case UNIT_TYPEID::TERRAN_RAVEN:
+        {
+            if (observation->GetArmyCount() > 20)
+            {
+                if (possible_enemy_locations.size() == 0)
+                {
+                    possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
+                }
+
+                if (enemy_locations.size() == 0)
+                {
+                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
+                    {
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
+                        {
+                            enemy_locations.push_back(record.location);
+                        }
+                        possible_enemy_locations.pop_back();
+                    }
+                    else
+                    {
+                        enemy_locations.push_back(possible_enemy_locations.back());
+                        possible_enemy_locations.pop_back();
+                    }
+                }
+
+                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
+
+                // Tried to limit choke points by designing an area as accepted rather than a point
+                Point2D enemy_loc = enemy_locations.back();
+                if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+                {
+                    enemy_locations.pop_back();
+                }
+            }
+            break;
+        }
         }
     }
 
