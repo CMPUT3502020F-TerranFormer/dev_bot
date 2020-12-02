@@ -370,13 +370,16 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                 }
             }
             break;
-        case (int) UNIT_TYPEID::TERRAN_FACTORY:
-            action->UnitCommand(u, ABILITY_ID::BUILD_TECHLAB);
+        case (int) UNIT_TYPEID::TERRAN_TECHLAB:
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS);
+            break;
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
+            /*
             if (u->orders.empty()) {
-                //TODO doesnt work
-                //action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+                action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             }
+             */
             break;
         case (int) UNIT_TYPEID::TERRAN_MARINE:
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
