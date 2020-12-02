@@ -40,8 +40,6 @@ void ATTACK_BOT::step() {
             case ATTACK: {
                 if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
                     action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
-                    action->UnitCommand(t.unit, ABILITY_ID::MOVE_MOVE, t.position, true);
-                    action->UnitCommand(t.unit, ABILITY_ID::MORPH_SIEGEMODE, true);
                     action->UnitCommand(t.unit, ABILITY_ID::ATTACK_ATTACK, t.position, true);
                     action->SendActions();
                     return;

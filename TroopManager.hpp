@@ -105,6 +105,13 @@ public:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
+            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK)
+            {
+                if (CountUnitType(unit->unit_type) < 4)
+                {
+                    return;
+                }
+            }
             if (observation->GetArmyCount() > 20)
             {
                 if (possible_enemy_locations.size() == 0)
@@ -115,9 +122,9 @@ public:
                 if (enemy_locations.size() == 0)
                 {
                     // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 120).size() > 0)
                     {
-                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 120))
                         {
                             enemy_locations.push_back(record.location);
                         }
@@ -134,9 +141,13 @@ public:
 
                 // Tried to limit choke points by designing an area as accepted rather than a point
                 Point2D enemy_loc = enemy_locations.back();
-                if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+                if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
                 {
-                    enemy_locations.pop_back();
+
+                    if (unit->unit_type != UNIT_TYPEID::TERRAN_VIKINGFIGHTER)
+                    {
+                        enemy_locations.pop_back();
+                    }
                 }
             }
             break;
