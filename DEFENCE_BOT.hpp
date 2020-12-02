@@ -14,6 +14,17 @@
 #include <thread>
 #include <atomic>
 
+struct DEFENCE_POI {
+    Point2D pos;
+    int major;
+
+    bool operator==(const DEFENCE_POI &rhs) const {
+        return pos == rhs.pos;
+    }
+
+    DEFENCE_POI(float x, float y, int major) : pos(Point2D(x, y)), major(major) {}
+};
+
 class DEFENCE_BOT final : public TF_Agent {
 public:
     DEFENCE_BOT(TF_Bot* bot);
@@ -89,11 +100,11 @@ private:
     TF_Agent *resource;
     TF_Agent *scout;
 
-    std::vector<Point2D> poi;
+    std::vector<DEFENCE_POI> poi;
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
 
-    std::vector<Point2D> defence_points;
+    std::vector<DEFENCE_POI> defence_points;
 
     std::vector<Unit*> bunkers;
 

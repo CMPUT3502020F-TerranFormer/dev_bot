@@ -13,6 +13,7 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
 DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
+    std::cout << defence_points.size() << std::endl;
     if (balance_step / 16 > 20) {
         defence_balance();
         balance_step = 0;
@@ -42,12 +43,12 @@ void DEFENCE_BOT::step() {
 
     if (hasEngineeringBay) {
         for (auto &p : base_needs_defence) {
-            std::sort(poi.begin(), poi.end(), [p](const Point2D &p1, const Point2D &p2) {
-                return distance(p, p1) < distance(p, p2);
+            std::sort(poi.begin(), poi.end(), [p](const DEFENCE_POI &p1, const DEFENCE_POI &p2) {
+                return distance(p, p1.pos) < distance(p, p2.pos);
             });
             // build 2 missile turret on each base
             for (int i = 0; i < 2; ++i) {
-                buildMissileTurret(poi[i]);
+                buildMissileTurret(poi[i].pos);
             }
         }
 
@@ -99,16 +100,15 @@ void DEFENCE_BOT::step() {
         }
     } else if (mCount > 1000 && hasFactory) {
         orderThor(1);
-        orderSiegeTank(1);
         if (hasStarport) {
             orderBanshee(2);
         }
     } else if (mCount > 600 && hasFactory) {
-        orderSiegeTank(1);
+        //orderSiegeTank(1);
 
         if (hasBarracks) {
             orderMarine(2);
-            orderMarauder(1);
+            orderMarauder(5);
         }
         if (hasStarport) {
             orderBanshee(2);
@@ -116,8 +116,14 @@ void DEFENCE_BOT::step() {
     } else if (mCount > 400) {
         orderMarauder(1);
         orderMarine(1);
+        if (hasStarport) {
+            orderBanshee(2);
+        }
     } else if (mCount > 200 && hasBarracks) {
         orderMarine(1);
+        if (hasStarport) {
+            orderBanshee(1);
+        }
     }
 }
 
@@ -148,13 +154,20 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         }
 
         // find the 2 closest defence points
-        std::sort(poi.begin(), poi.end(), [u](const Point2D &p1, const Point2D &p2) {
-            return distance(u->pos, p1) < distance(u->pos, p2);
+        std::sort(poi.begin(), poi.end(), [u](const DEFENCE_POI &p1, const DEFENCE_POI &p2) {
+            return distance(u->pos, p1.pos) < distance(u->pos, p2.pos);
         });
-        defence_points.emplace_back(poi[0]);
 
-        buildBunker(poi[0]);
-        buildBunker(poi[0]);
+        for (auto & i : poi) {
+            if (std::find(defence_points.begin(), defence_points.end(), i) == defence_points.end()) {
+                if (distance(u->pos, i.pos) < 20) {
+                    defence_points.push_back(i);
+                    buildBunker(i.pos);
+                    buildBunker(i.pos);
+                    break;
+                }
+            }
+        }
 
         /** TODO to be replaced with the new defence balancing system
         for (auto unit : All_Attack_Units) {
@@ -270,14 +283,14 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
     // find the closes defence point
-    std::sort(defence_points.begin(), defence_points.end(), [u](const Point2D &p1, const Point2D &p2) {
-        return distance(u->pos, p1) < distance(u->pos, p2);
+    std::sort(defence_points.begin(), defence_points.end(), [u](const DEFENCE_POI &p1, const DEFENCE_POI &p2) {
+        return distance(u->pos, p1.pos) < distance(u->pos, p2.pos);
     });
 
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0], true);
+            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0].pos, true);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
@@ -290,8 +303,8 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
         case (int) UNIT_TYPEID::TERRAN_RAVEN:
         case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0], true);
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_points[0], true);
+            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0].pos, true);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_points[0].pos, true);
             break;
         default:
             break;
@@ -375,7 +388,8 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                     bunkers.erase(bunkers.begin());
                 }
             }
-
+        case (int) UNIT_TYPEID::TERRAN_RAVEN:
+            action->UnitCommand(u, ABILITY_ID::EFFECT_AUTOTURRET);
     }
 }
 
@@ -421,7 +435,7 @@ void DEFENCE_BOT::init() {
         SQLITE3 scout_POI_db("TF_bot.db"); // open db
 
         // form query
-        SQLITE3_QUERY q("SELECT x, y FROM DEFENCE_POI WHERE map = ?;");
+        SQLITE3_QUERY q("SELECT x, y, major FROM DEFENCE_POI WHERE map = ?;");
         q.add_binding(std::regex_replace(gi.map_name, std::regex("'"), "''"));
 
         // execute query
@@ -435,7 +449,8 @@ void DEFENCE_BOT::init() {
         for (auto &xy_vec : *r) {
             auto x = std::stod(xy_vec.at(0));
             auto y = std::stod(xy_vec.at(1));
-            poi.emplace_back(x, y);
+            auto major = std::stoi(xy_vec.at(2));
+            poi.emplace_back(x, y, major);
         }
     }
     catch (std::runtime_error &err) {
@@ -456,11 +471,19 @@ void DEFENCE_BOT::init() {
         base_needs_defence.emplace_back(cmd->pos);
 
         // find the closes defence point
-        std::sort(poi.begin(), poi.end(), [cmd](const Point2D &p1, const Point2D &p2) {
-            return distance(cmd->pos, p1) < distance(cmd->pos, p2);
+        std::sort(poi.begin(), poi.end(), [cmd](const DEFENCE_POI &p1, const DEFENCE_POI &p2) {
+            return distance(cmd->pos, p1.pos) < distance(cmd->pos, p2.pos);
         });
-        defence_points.emplace_back(poi[0]);
+
+        for (auto & i : poi) {
+            if (i.major) {
+                defence_points.emplace_back(i);
+                break;
+            }
+        }
     }
+
+    buildBunker(defence_points[0].pos);
 }
 
 double DEFENCE_BOT::distance(const Point2D &p1, const Point2D &p2) {
@@ -843,7 +866,7 @@ void DEFENCE_BOT::orderBanshee(int count) {
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
                                ATTACK_AGENT,
-                               8,
+                               10,
                                ABILITY_ID::TRAIN_BANSHEE,
                                UNIT_TYPEID::TERRAN_BANSHEE,
                                starports[last_starport_used]->unit_type,
@@ -944,7 +967,7 @@ void DEFENCE_BOT::defence_balance() {
     // get defence score on all current defence points
     std::vector<std::tuple<std::vector<const Unit *>, int, Point2D>> defence_point_scores;
     for (auto &d_point : defence_points) {
-        auto ret = assess_defence_point(d_point);
+        auto ret = assess_defence_point(d_point.pos);
         defence_point_scores.push_back(ret);
     }
 

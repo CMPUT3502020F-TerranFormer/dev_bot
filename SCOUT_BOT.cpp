@@ -42,11 +42,7 @@ void SCOUT_BOT::step() {
         Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first % poi_close_to_enemy.second.size()));
         poi_close_to_enemy.first += 1;
 
-        Task t2(BASIC_SCOUT, 5, poi_close_to_base.second.at(poi_close_to_base.first % poi_close_to_base.second.size()));
-        poi_close_to_base.first += 1;
-
         addTask(t1);
-        addTask(t2);
     }
 }
 
@@ -132,7 +128,7 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
             float furthest_distance = 0;
             for (auto& task : task_queue_container) {
                 float distance = sc2::Distance2D(u->pos, task.position);
-                task_distances.push_back({task, distance});
+                task_distances.emplace_back(task, distance);
                 furthest_distance = std::max(furthest_distance, distance);
             }
             // Find the task with the highest score (priority minus distance)
@@ -152,7 +148,7 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
         task_queue.remove(taskToDo);
         switch (taskToDo.action) {
             case BASIC_SCOUT:
-                action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, taskToDo.position);
+                action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, taskToDo.position, true);
                 break;
             case ORBIT_SCOUT:
                 break;
