@@ -47,6 +47,11 @@ void ATTACK_BOT::step() {
                     return;
                 }
                 action->UnitCommand(t.unit, t.ability_id, t.position, true);
+                attack_units.push_back(t.unit);
+                if (attack_units.size() >= 20)
+                {
+                    action->SendActions();
+                }
                 break;
             }
             case REPAIR: {
