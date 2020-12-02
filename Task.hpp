@@ -126,7 +126,7 @@ struct Task
          sc2::Point2D position)
         : action(action), source(source), priority(priority), ability_id(aid), position(position) {}
 
-    /** ATTACK - ATTACK_AGENT; Sending troops to attack a given location
+    /** ATTACK - ATTACK_AGENT; Sending a single unit to attack a given location
      * @param action : ATTACK
      * @param source : Source agent
      * @param priority : The priority
@@ -137,6 +137,18 @@ struct Task
     Task(enum AgentActions action, enum SourceAgent source, int priority, const sc2::Unit *unit,
          sc2::ABILITY_ID aid, sc2::Point2D position)
         : action(action), source(source), priority(priority), unit(unit), ability_id(aid), position(position) {}
+
+    /** ATTACK - ATTACK_AGENT; Sending troops to attack a given location
+     * @param action : ATTACK
+     * @param source : Source agent
+     * @param priority : The priority
+     * @param units : The units to move
+     * @param aid : The ABILITY_ID of the type of attack
+     * @param position : The position to move to (will be enemy location for now)
+     */
+    Task(enum AgentActions action, enum SourceAgent source, int priority, Units& units,
+         sc2::ABILITY_ID aid, sc2::Point2D position)
+        : action(action), source(source), priority(priority), units(units), ability_id(aid), position(position) {}
 
     /** UPGRADE - RESOURCES This is for the upgrade task
      * @param action : UPGRADE
@@ -192,6 +204,7 @@ struct Task
     sc2::UPGRADE_ID upgrade_id;
 
     const sc2::Unit *unit;
+    Units units;
 
     int count;
 
