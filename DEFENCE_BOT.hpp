@@ -11,7 +11,7 @@
 #include "SQLITE3.hpp"
 #include "SQLITE3_QUERY.hpp"
 
-#include <random>
+#include <thread>
 
 class DEFENCE_BOT final : public TF_Agent {
 public:
@@ -122,8 +122,6 @@ private:
     double troopMaxCountMultiplier = 1.5;
     int multiplierCounter = 0;
 
-    std::map<sc2::Tag, Unit *> All_Attack_Units;
-
     bool hasBarracks = false;
     bool hasEngineeringBay = false;
     bool hasFactory = false;
@@ -136,6 +134,7 @@ private:
     bool orderedStarport = false;
     bool orderedFactory = false;
     bool orderedBarrack = false;
+    bool orderedFusion = false;
 
     bool infantryUpgradePhase1Complete = false;
     bool infantryUpgradePhase2Complete = false;
@@ -147,9 +146,6 @@ private:
 
     int stepsEng = 0;
     int stepsArm = 0;
-
-    std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution;
 
     static double distance(const Point2D &p1, const Point2D &p2);
 
@@ -179,6 +175,10 @@ private:
     void check_for_barracks();
     void check_for_starport();
     void check_for_fusion();
+
+    std::tuple<std::vector<const Unit *>, int> troops_at_point(Point2D pos);
+
+    static int get_defence_score(UNIT_TYPEID id);
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
