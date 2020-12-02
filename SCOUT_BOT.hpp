@@ -111,7 +111,7 @@ private:
     int steps = 0;
     bool ordered_scv = false;
 
-    enum {MAX_SCOUT_COUNT = 5};
+    enum {MAX_SCOUT_COUNT = 8};
 
     Point2D enemy_main_base;
     Point2D main_base;

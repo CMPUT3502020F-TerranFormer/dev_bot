@@ -13,6 +13,13 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
 DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
+    if (balance_step / 16 > 20) {
+        defence_balance();
+        balance_step = 0;
+    } else {
+        ++balance_step;
+    }
+
     check_for_engineering_bay();
     check_for_factory();
 
@@ -85,12 +92,17 @@ void DEFENCE_BOT::step() {
         if (hasStarport) {
             orderBattleCruiser(1);
         }
-        orderSiegeTank(2);
         orderMarine(8);
         orderMarauder(5);
+        if (hasStarport) {
+            orderBanshee(2);
+        }
     } else if (mCount > 1000 && hasFactory) {
         orderThor(1);
         orderSiegeTank(1);
+        if (hasStarport) {
+            orderBanshee(2);
+        }
     } else if (mCount > 600 && hasFactory) {
         orderSiegeTank(1);
 
@@ -139,8 +151,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
         std::sort(poi.begin(), poi.end(), [u](const Point2D &p1, const Point2D &p2) {
             return distance(u->pos, p1) < distance(u->pos, p2);
         });
-        defence_point.emplace_back(poi[0]);
-        defence_point.emplace_back(poi[1]);
+        defence_points.emplace_back(poi[0]);
 
         buildBunker(poi[0]);
         buildBunker(poi[0]);
@@ -173,6 +184,7 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             break;
         case (int) UNIT_TYPEID::TERRAN_FACTORY:
             hasFactory = true;
+            action->UnitCommand(u, ABILITY_ID::BUILD_TECHLAB);
             factories.push_back(const_cast<Unit *>(u));
             orderSiegeTank(2);
             break;
@@ -258,14 +270,14 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
     // find the closes defence point
-    std::sort(defence_point.begin(), defence_point.end(), [u](const Point2D &p1, const Point2D &p2) {
+    std::sort(defence_points.begin(), defence_points.end(), [u](const Point2D &p1, const Point2D &p2) {
         return distance(u->pos, p1) < distance(u->pos, p2);
     });
 
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            action->UnitCommand(u, ABILITY_ID::MOVE_ACQUIREMOVE, defence_point[0], true);
+            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0], true);
             action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             break;
         case (int) UNIT_TYPEID::TERRAN_MARAUDER:
@@ -278,7 +290,8 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         case (int) UNIT_TYPEID::TERRAN_MEDIVAC:
         case (int) UNIT_TYPEID::TERRAN_RAVEN:
         case (int) UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_point[0], true);
+            action->UnitCommand(u, ABILITY_ID::ATTACK_ATTACK, defence_points[0], true);
+            action->UnitCommand(u, ABILITY_ID::MOVE_MOVE, defence_points[0], true);
             break;
         default:
             break;
@@ -344,12 +357,12 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                 }
             }
             break;
-        case (int) UNIT_TYPEID::TERRAN_TECHLAB:
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
-            break;
+        case (int) UNIT_TYPEID::TERRAN_FACTORY:
+            action->UnitCommand(u, ABILITY_ID::BUILD_TECHLAB);
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             if (u->orders.empty()) {
-                action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+                //TODO doesnt work
+                //action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
             }
             break;
         case (int) UNIT_TYPEID::TERRAN_MARINE:
@@ -446,7 +459,7 @@ void DEFENCE_BOT::init() {
         std::sort(poi.begin(), poi.end(), [cmd](const Point2D &p1, const Point2D &p2) {
             return distance(cmd->pos, p1) < distance(cmd->pos, p2);
         });
-        defence_point.emplace_back(poi[0]);
+        defence_points.emplace_back(poi[0]);
     }
 }
 
@@ -830,7 +843,7 @@ void DEFENCE_BOT::orderBanshee(int count) {
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
                                ATTACK_AGENT,
-                               7,
+                               8,
                                ABILITY_ID::TRAIN_BANSHEE,
                                UNIT_TYPEID::TERRAN_BANSHEE,
                                starports[last_starport_used]->unit_type,
@@ -860,7 +873,7 @@ void DEFENCE_BOT::orderCyclone(int count) {
     last_factory_used = (last_factory_used + 1) % (int) factories.size();
 }
 
-std::tuple<std::vector<const Unit *>, int> DEFENCE_BOT::troops_at_point(Point2D pos) {
+std::tuple<std::vector<const Unit *>, int, Point2D> DEFENCE_BOT::assess_defence_point(Point2D pos) {
     int defence_score = 0;
 
     auto all_troops_at_point = observation->GetUnits([pos, &defence_score](const Unit &unit) {
@@ -892,7 +905,7 @@ std::tuple<std::vector<const Unit *>, int> DEFENCE_BOT::troops_at_point(Point2D 
         return false;
     });
 
-    return std::make_tuple(all_troops_at_point, defence_score);
+    return std::make_tuple(all_troops_at_point, defence_score, pos);
 }
 
 int DEFENCE_BOT::get_defence_score(UNIT_TYPEID id) {
@@ -922,6 +935,49 @@ int DEFENCE_BOT::get_defence_score(UNIT_TYPEID id) {
         default:
             return 0;
     }
+}
+
+void DEFENCE_BOT::defence_balance() {
+    // minimum_defence_score a defence point should have, sqrt of game look so it doesn't grow to fast
+    int minimum_defence_score = sqrt(observation->GetGameLoop());
+
+    // get defence score on all current defence points
+    std::vector<std::tuple<std::vector<const Unit *>, int, Point2D>> defence_point_scores;
+    for (auto &d_point : defence_points) {
+        auto ret = assess_defence_point(d_point);
+        defence_point_scores.push_back(ret);
+    }
+
+    // assess and re-balance defence points
+    for (auto r1 : defence_point_scores) {
+        if (std::get<1>(r1) < minimum_defence_score) { // point is low on defence
+            // find the points with the highest defence score
+            auto max = std::max_element(defence_point_scores.begin(), defence_point_scores.end(), [](const auto p1, const auto p2){
+                return std::get<1>(p1) < std::get<1>(p2);
+            });
+
+            if (max != defence_point_scores.end() && std::get<1>(*max) > minimum_defence_score) {
+                // get all the tanks in the most defended point
+                std::vector<const Unit*> tanks_at_max_point;
+                for (const Unit* unit : std::get<0>(*max)) {
+                    if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED ||
+                            unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK) {
+                        tanks_at_max_point.push_back(unit);
+                    }
+                }
+
+                if (tanks_at_max_point.size() > 3) {
+                    action->UnitCommand(tanks_at_max_point[0], ABILITY_ID::MORPH_UNSIEGE);
+                    action->UnitCommand(tanks_at_max_point[0], ABILITY_ID::ATTACK_ATTACK, std::get<2>(r1), true);
+                    action->UnitCommand(tanks_at_max_point[0], ABILITY_ID::MORPH_SIEGEMODE, std::get<2>(r1), true);
+                }
+            } else { // all points under defenced, exit
+                break;
+            }
+        }
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 
