@@ -70,7 +70,7 @@ struct Base {
 	/* Returns if the minerals are depleted;
 	 */
 	bool depleted() {
-		return (minerals.empty());
+		return (minerals.empty() && vespene.empty());
 	}
 
 	/** By waiting until all resources are gone we often lose scv efficiency
@@ -134,7 +134,7 @@ public:
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
 				update = true;
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -151,7 +151,7 @@ public:
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 5, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
@@ -237,7 +237,7 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		auto command_build_priority = 6;
+		auto command_build_priority = 7;
 		if (num_command_centers == 0) { 
 			build = true;
 			command_build_priority = 20;
@@ -293,17 +293,9 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-			if (active_bases.size() == 1) { // check for initial case where scv's were added before command center
-				if (active_bases.front().command.tag == -1) {
-					active_bases.front().command = TF_unit(u->unit_type, u->tag);
-				}
-				else {
-					Base base = Base();
-					base.command = TF_unit(u->unit_type, u->tag);
-					base.location = u->pos;
-					base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
-					active_bases.push_back(base);
-				}
+			if (active_bases.size() == 1
+				&& active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
+				active_bases.front().command = TF_unit(u->unit_type, u->tag);
 			}
 			else {
 				Base base = Base();
