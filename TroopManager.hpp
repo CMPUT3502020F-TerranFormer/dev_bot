@@ -119,11 +119,17 @@ public:
                 if (enemy_locations.size() == 0)
                 {
                     // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 10000000))
+                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 10000000).size() > 0)
                     {
-                        enemy_locations.push_back(record.location);
+                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 10000000))
+                        {
+                            enemy_locations.push_back(record.location);
+                        }
+                        possible_enemy_locations.pop_back();
                     }
-                    possible_enemy_locations.pop_back();
+                    else {
+                        enemy_locations.push_back(possible_enemy_locations.back());
+                    }
                 }
 
                 task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
