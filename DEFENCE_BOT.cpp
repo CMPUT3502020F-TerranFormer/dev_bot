@@ -13,7 +13,6 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
 DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
-    std::cout << defence_points.size() << std::endl;
     if (balance_step / 16 > 20) {
         defence_balance();
         balance_step = 0;
