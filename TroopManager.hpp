@@ -59,7 +59,7 @@ public:
             // Anti Marines and Tanks
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 4)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -90,10 +90,10 @@ public:
         case UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
         case UNIT_TYPEID::TERRAN_FACTORYREACTOR:
         {
-            if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
-            {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_FACTORY, unit->tag));
-            }
+            // if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
+            // {
+            //     task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_FACTORY, unit->tag));
+            // }
             break;
         }
 
@@ -112,7 +112,7 @@ public:
                     return;
                 }
             }
-            if (observation->GetArmyCount() > 20)
+            if (observation->GetArmyCount() > squadron_size)
             {
                 if (possible_enemy_locations.size() == 0)
                 {
@@ -199,12 +199,18 @@ public:
         return observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
     }
 
+    int getSquadronSize()
+    {
+        return squadron_size;
+    }
+
 private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
+    int squadron_size =  20;
 };
 
 #endif
