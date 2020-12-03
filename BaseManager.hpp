@@ -155,8 +155,6 @@ public:
 			}
 
 			// we also deal with bases that have too many scvs mining (1 scv / base / step)
-			// and try to make sure we always have enough minerals and vespene
-			bool exit_loop = false;
 			if (command->assigned_harvesters > command->ideal_harvesters) {
 				for (auto& unit : units) {
 					if (IsCarryingMinerals(*unit)) {
@@ -183,7 +181,7 @@ public:
 					for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 						if (base.command.tag == it->command.tag) {
 							active_bases.erase(it);
-							return;
+							break;
 						}
 					}
 				}
@@ -314,13 +312,20 @@ public:
 	 * and it does not try to build replacement unit (step())
 	 */
 	void deleteUnit(const Unit* u) {
-		if (u->alliance == Unit::Alliance::Self) { update = true; }
+		if (u->alliance != Unit::Alliance::Self) { return; }
+		update = true;
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
 			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 				if (it->command.tag == u->tag) {
 					active_bases.erase(it);
+					return;
+				}
+			}
+			for (auto it = isolated_bases.cbegin(); it != isolated_bases.cend(); ++it) {
+				if (it->tag == u->tag) {
+					isolated_bases.erase(it);
 					return;
 				}
 			}
@@ -379,8 +384,9 @@ public:
 			return getSCV(scvs);
 		}
 
-		// if there are no scvs that can immediately be reassigned get any scv
-		if (possible_scvs.empty()) { return TF_unit(scvs.front()->unit_type, scvs.front()->tag); }
+		// if there are no scvs that can immediately be reassigned don't return one so orders aren't cancelled
+		// because the work queue is too big
+		if (possible_scvs.empty()) { return NoUnit; }
 
 		// otherwise return a random scv
 		std::uniform_int_distribution<> distrib(0, possible_scvs.size() - 1);
@@ -519,7 +525,7 @@ private:
 			}
 		}
 		// make sure it doesn't fail if there are no bases with minerals
-		if (closest_base.minerals.size() == 0) { return false; }
+		if (closest_base.minerals.empty()) { return false; }
 		task_queue->push(Task(HARVEST, 11, u->tag, ABILITY_ID::HARVEST_GATHER, closest_base.minerals.front().tag));
 		return true;
 	}

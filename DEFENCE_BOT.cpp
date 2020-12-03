@@ -286,6 +286,10 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         return distance(u->pos, p1.pos) < distance(u->pos, p2.pos);
     });
 
+    if (defence_points.empty()) { 
+        std::cout << "No Defence Points" << std::endl;
+        return; 
+    }
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:

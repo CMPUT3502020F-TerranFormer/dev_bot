@@ -52,7 +52,7 @@ void RESOURCE_BOT::step() {
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
 
     if (available_food <= baseManager->getSupplyFloat()
-        && observation->GetFoodCap() != 200) {
+        && observation->GetFoodCap() < 200) {
         buildSupplyDepot(scvs);
     }
 
@@ -111,7 +111,7 @@ void RESOURCE_BOT::step() {
             }
             else { worker = observation->GetUnit(t.target); }
 
-            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (worker == nullptr) { 
                 std::cerr << "Invalid Worker, Tag: " << t.target << " Source Agent: " << t.source << " Tried to Train: " << ut.name << std::endl;
                 break; 
@@ -160,7 +160,7 @@ void RESOURCE_BOT::step() {
                     Tag scv_tag = baseManager->getSCV(scvs, u->pos).tag;
                     if (scv_tag == -1) { continue; } // no scv exists
                     const Unit* scv = observation->GetUnit(scv_tag);
-                    action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN);
+                    action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN, true);
                     action->UnitCommand(scv, t.ability_id, u, true);
                     action->SendActions();
 
@@ -202,7 +202,7 @@ void RESOURCE_BOT::step() {
                     break;
                 }
                 unit = scv;
-                action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN);
+                action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN, true);
             }
             else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
 
