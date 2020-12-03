@@ -110,6 +110,7 @@ public:
 		case UNIT_TYPEID::TERRAN_MISSILETURRET: return getNextMissileTurretLocation(point);
 		default: std::cerr << "BUILDING_PLACEMENT: Unrecognized unit_type: " << (int) unit_type << std::endl;
 		}
+		return Point2D(0, 0);
 	}
 
 	void setEnemyRace(Race race) {
