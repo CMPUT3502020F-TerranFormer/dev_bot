@@ -18,7 +18,6 @@ ATTACK_BOT::~ATTACK_BOT() {
 }
 
 void ATTACK_BOT::init() {
-    buildingPlacementManager = new BuildingPlacementManager(observation, query);
     troopManager = new TroopManager(&task_queue, observation, scout);
 }
 
@@ -179,8 +178,7 @@ void ATTACK_BOT::buildBarracks() {
                 ATTACK_AGENT, 
                 5, // we want to prioritize building units over buildings 
                 UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_BARRACKS, 
-                buildingPlacementManager->getNextBarracksLocation()));
+                ABILITY_ID::BUILD_BARRACKS));
     }
 }
 
@@ -195,8 +193,7 @@ void ATTACK_BOT::buildFactory() {
                 ATTACK_AGENT,
                 5,
                 UNIT_TYPEID::TERRAN_FACTORY,
-                ABILITY_ID::BUILD_FACTORY,
-                buildingPlacementManager->getNextFactoryLocation())
+                ABILITY_ID::BUILD_FACTORY)
         );
     }
 }
@@ -212,8 +209,7 @@ void ATTACK_BOT::buildStarport() {
                 ATTACK_AGENT,
                 5,
                 UNIT_TYPEID::TERRAN_STARPORT,
-                ABILITY_ID::BUILD_STARPORT,
-                buildingPlacementManager->getNextStarportLocation())
+                ABILITY_ID::BUILD_STARPORT)
         );
     }
 }

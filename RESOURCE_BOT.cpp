@@ -22,7 +22,7 @@ void RESOURCE_BOT::gameStart() {
     std::cout << "Map: " << observation->GetGameInfo().map_name << std::endl;
 
     buildingPlacementManager = new BuildingPlacementManager(observation, query);
-    baseManager = new BaseManager(&task_queue, observation, &units, buildingPlacementManager);
+    baseManager = new BaseManager(&task_queue, observation, &units);
 }
 
 /**
@@ -52,7 +52,7 @@ void RESOURCE_BOT::step() {
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
 
     if (available_food <= baseManager->getSupplyFloat()
-        && observation->GetFoodCap() != 200) {
+        && observation->GetFoodCap() < 200) {
         buildSupplyDepot(scvs);
     }
 
@@ -65,14 +65,16 @@ void RESOURCE_BOT::step() {
         Task t = task_queue.pop();
         switch (t.action) {
         case HARVEST: {
-            action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
+            const Unit* unit = observation->GetUnit(t.self);
+            action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN); // important because we do a lot of reassigning
+            action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
             action->SendActions();
             break;
         }
         case BUILD: {
             /* This will prevent multiple identical building from being produced at the same time
              * unless specifically allowed. Identical units will be removed from the queue
-             * check that we have enough resources to do build unit
+             * and check that we have enough resources to build unit
              */
             UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
             if (ut.food_required > available_food
@@ -83,7 +85,7 @@ void RESOURCE_BOT::step() {
                 task_success = false;
                 break;
             }
-            if (buildStructure(scvs, t.ability_id, t.position, t.target)) { // if building succeeded
+            if (buildStructure(scvs, t.unit_typeid, t.ability_id, t.position, t.target)) { // if building succeeded
                 action->SendActions();
                 // update available resources
                 available_food -= ut.food_required;
@@ -109,7 +111,7 @@ void RESOURCE_BOT::step() {
             }
             else { worker = observation->GetUnit(t.target); }
 
-            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (worker == nullptr) { 
                 std::cerr << "Invalid Worker, Tag: " << t.target << " Source Agent: " << t.source << " Tried to Train: " << ut.name << std::endl;
                 break; 
@@ -158,6 +160,7 @@ void RESOURCE_BOT::step() {
                     Tag scv_tag = baseManager->getSCV(scvs, u->pos).tag;
                     if (scv_tag == -1) { continue; } // no scv exists
                     const Unit* scv = observation->GetUnit(scv_tag);
+                    action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN, true);
                     action->UnitCommand(scv, t.ability_id, u, true);
                     action->SendActions();
 
@@ -199,6 +202,7 @@ void RESOURCE_BOT::step() {
                     break;
                 }
                 unit = scv;
+                action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN, true);
             }
             else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
 
@@ -309,12 +313,13 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
     // gets a location to build the supply depot then buildStructure
     // which will prevent 2 from being built at the same time
-    Point2D point = buildingPlacementManager->getNextSupplyDepotLocation();
-    buildStructure(scvs, ABILITY_ID::BUILD_SUPPLYDEPOT, point);
+    buildStructure(scvs, UNIT_TYPEID::TERRAN_SUPPLYDEPOT, ABILITY_ID::BUILD_SUPPLYDEPOT, Point2D(0, 0));
 }
 
 /* We pass in scvs because this may be called multiple times/step so it's more efficient */
-bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type, 
+    ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
+
     Tag scv_tag = baseManager->getSCV(scvs).tag;
     if (scv_tag == -1) { 
         std::cerr << "Error building: There are no scvs" << std::endl;
@@ -340,9 +345,10 @@ bool RESOURCE_BOT::buildStructure(Units scvs, ABILITY_ID ability_to_build_struct
         }
     }
     else { // build at a location
-        if (query->Placement(ability_to_build_structure, point)
-            && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
-            action->UnitCommand(scv, ability_to_build_structure, point, true);
+        if (!buildCheckDuplicate(scvs, ability_to_build_structure)) {
+            Point2D new_point = buildingPlacementManager->getNextLocation(unit_type, point);
+            if (new_point == Point2D(0, 0)) { return false; }
+            action->UnitCommand(scv, ability_to_build_structure, new_point, true);
             return true;
         }
     }

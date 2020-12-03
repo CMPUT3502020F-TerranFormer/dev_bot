@@ -286,6 +286,10 @@ void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
         return distance(u->pos, p1.pos) < distance(u->pos, p2.pos);
     });
 
+    if (defence_points.empty()) { 
+        std::cout << "No Defence Points" << std::endl;
+        return; 
+    }
     switch ((int) u->unit_type) {
         // Siege tank when created, will move to a choke point and morph to siege mode
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
@@ -429,8 +433,6 @@ std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, in
 }
 
 void DEFENCE_BOT::init() {
-    buildingPlacementManager = new BuildingPlacementManager(observation, query);
-
     // base on map name, get all point of interest
     auto gi = observation->GetGameInfo();
     try {
@@ -498,7 +500,7 @@ void DEFENCE_BOT::buildMissileTurret(Point2D pos) {
             6,
             UNIT_TYPEID::TERRAN_MISSILETURRET,
             ABILITY_ID::BUILD_MISSILETURRET,
-            buildingPlacementManager->getNextMissileTurretLocation(pos));
+            pos);
     resource->addTask(dp);
 }
 
@@ -507,8 +509,7 @@ void DEFENCE_BOT::buildArmory() {
             DEFENCE_AGENT,
             4,
             UNIT_TYPEID::TERRAN_ARMORY,
-            ABILITY_ID::BUILD_ARMORY,
-            buildingPlacementManager->getNextArmoryLocation());
+            ABILITY_ID::BUILD_ARMORY);
     resource->addTask(dp);
 }
 
@@ -520,8 +521,7 @@ void DEFENCE_BOT::buildEngineeringBay() {
                  DEFENCE_AGENT,
                  8,
                  UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
-                 ABILITY_ID::BUILD_ENGINEERINGBAY,
-                 buildingPlacementManager->getNextEngineeringBayLocation());
+                 ABILITY_ID::BUILD_ENGINEERINGBAY);
     resource->addTask(buildEB);
 }
 
@@ -530,8 +530,7 @@ void DEFENCE_BOT::buildFusion() {
                  DEFENCE_AGENT,
                  8,
                  UNIT_TYPEID::TERRAN_FUSIONCORE,
-                 ABILITY_ID::BUILD_FUSIONCORE,
-                 buildingPlacementManager->getNextFusionCoreLocation());
+                 ABILITY_ID::BUILD_FUSIONCORE);
     resource->addTask(buildEB);
 }
 
@@ -540,8 +539,7 @@ void DEFENCE_BOT::buildStarport() {
                  ATTACK_AGENT,
                  8,
                  UNIT_TYPEID::TERRAN_STARPORT,
-                 ABILITY_ID::BUILD_STARPORT,
-                 buildingPlacementManager->getNextStarportLocation());
+                 ABILITY_ID::BUILD_STARPORT);
     resource->addTask(buildSP);
 }
 
@@ -551,7 +549,7 @@ void DEFENCE_BOT::buildStarport(Point2D pos) {
                  8,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT,
-                 buildingPlacementManager->getNextStarportLocation(pos));
+                 pos);
     resource->addTask(buildSP);
 }
 
@@ -560,8 +558,7 @@ void DEFENCE_BOT::buildBarracks() {
                  ATTACK_AGENT,
                  7,
                  UNIT_TYPEID::TERRAN_BARRACKS,
-                 ABILITY_ID::BUILD_BARRACKS,
-                 buildingPlacementManager->getNextBarracksLocation());
+                 ABILITY_ID::BUILD_BARRACKS);
     resource->addTask(buildBR);
 }
 
@@ -570,8 +567,7 @@ void DEFENCE_BOT::buildFactory() {
                  ATTACK_AGENT,
                  8,
                  UNIT_TYPEID::TERRAN_FACTORY,
-                 ABILITY_ID::BUILD_FACTORY,
-                 buildingPlacementManager->getNextFactoryLocation());
+                 ABILITY_ID::BUILD_FACTORY);
     resource->addTask(buildFT);
 }
 
@@ -581,7 +577,7 @@ void DEFENCE_BOT::buildBarracks(Point2D pos) {
                  6,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS,
-                 buildingPlacementManager->getNextBarracksLocation(pos));
+                 pos);
     resource->addTask(buildBR);
 }
 
@@ -591,7 +587,7 @@ void DEFENCE_BOT::buildFactory(Point2D pos) {
                  8,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY,
-                 buildingPlacementManager->getNextFactoryLocation(pos));
+                 pos);
     resource->addTask(buildFT);
 }
 
@@ -601,7 +597,7 @@ void DEFENCE_BOT::buildBunker(Point2D pos) {
                  10,
                  UNIT_TYPEID::TERRAN_BUNKER,
                  ABILITY_ID::BUILD_BUNKER,
-                 buildingPlacementManager->getNextBunkerLocation(pos));
+                 pos);
     resource->addTask(buildFT);
 }
 
