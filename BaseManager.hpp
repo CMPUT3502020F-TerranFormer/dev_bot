@@ -157,20 +157,13 @@ public:
 			// we also deal with bases that have too many scvs mining (1 scv / base / step)
 			// and try to make sure we always have enough minerals and vespene
 			bool exit_loop = false;
-			if (command->assigned_harvesters > command->ideal_harvesters
-				|| observation->GetMinerals() / (observation->GetVespene() + 1) > 4) {
+			if (command->assigned_harvesters > command->ideal_harvesters) {
 				for (auto& unit : units) {
-					if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV) {
-						for (auto& order : unit->orders) {
-							if (order.ability_id == ABILITY_ID::HARVEST_GATHER) {
-								update = true;
-								assign_vespene(unit);
-								exit_loop = true;
-								break;
-							}
-						}
+					if (IsCarryingMinerals(*unit)) {
+						update = true;
+						assignSCV(unit);
+						break;
 					}
-					if (exit_loop) { break; }
 				}
 			}
 
@@ -254,18 +247,36 @@ public:
 		// we must also deal with vespene refineries that have excess workers
 		// (or we have too much vespene compared to minerals)
 		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
-		for (auto& r : refineries) {
-			if (r->assigned_harvesters > r->ideal_harvesters
-				|| observation->GetVespene() / (observation->GetMinerals() + 1) > 2) {
+		for (auto& r : refineries) { // focus oversaturated refineries first
+			if (r->assigned_harvesters > r->ideal_harvesters) {
 				for (auto& s : scvs) {
-					for (auto& order : s->orders) {
-						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
-							&& order.target_unit_tag == r->tag) {
-							update = true;
-							assign_minerals(s);
-							return;
-						}
+					if (IsCarryingVespene(*s)) {
+						update = true;
+						assignSCV(s);
+						return;
 					}
+				}
+			}
+		}
+		// the following is here so that we only reassign 1 scv/step which prevents putting
+		// to many to any one building
+		// then switch scvs to minerals if we have too much gas compared to vespene
+		for (auto& r : refineries) { // focus oversaturated refineries first
+			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
+				for (auto& s : scvs) {
+					if (IsCarryingVespene(*s)) {
+						assignSCV(s);
+						return;
+					}
+				}
+			}
+		}
+		// and do the same if we don't have enough vespene
+		if (observation->GetVespene() / (observation->GetMinerals() + 1) < 0.4) {
+			for (auto& s : scvs) {
+				if (IsCarryingMinerals(*s)) {
+					assignSCV(s);
+					return;
 				}
 			}
 		}
@@ -444,7 +455,8 @@ private:
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	void assignSCV(const Unit* u) {
-		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.3) {
+		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
+			&& observation->GetGameLoop() / 16 > 30) {
 			if (!assign_vespene(u)) {
 				assign_minerals(u);
 			}

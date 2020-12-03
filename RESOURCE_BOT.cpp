@@ -65,7 +65,9 @@ void RESOURCE_BOT::step() {
         Task t = task_queue.pop();
         switch (t.action) {
         case HARVEST: {
-            action->UnitCommand(observation->GetUnit(t.self), t.ability_id, observation->GetUnit(t.target));
+            const Unit* unit = observation->GetUnit(t.self);
+            action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN); // important because we do a lot of reassigning
+            action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
             action->SendActions();
             break;
         }
@@ -158,6 +160,7 @@ void RESOURCE_BOT::step() {
                     Tag scv_tag = baseManager->getSCV(scvs, u->pos).tag;
                     if (scv_tag == -1) { continue; } // no scv exists
                     const Unit* scv = observation->GetUnit(scv_tag);
+                    action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN);
                     action->UnitCommand(scv, t.ability_id, u, true);
                     action->SendActions();
 
@@ -199,6 +202,7 @@ void RESOURCE_BOT::step() {
                     break;
                 }
                 unit = scv;
+                action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN);
             }
             else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
 
