@@ -128,22 +128,27 @@ public:
                         {
                             enemy_locations.push_back(record.location);
                         }
-                        possible_enemy_locations.pop_back();
+                        if (!possible_enemy_locations.empty()) {
+                            possible_enemy_locations.pop_back();
+                        }
                     }
                     else
                     {
-                        enemy_locations.push_back(possible_enemy_locations.back());
-                        possible_enemy_locations.pop_back();
+                        if (!possible_enemy_locations.empty()) {
+                            enemy_locations.push_back(possible_enemy_locations.back());
+                            possible_enemy_locations.pop_back();
+                        }
                     }
                 }
-
-                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
-
                 // Tried to limit choke points by designing an area as accepted rather than a point
-                Point2D enemy_loc = enemy_locations.back();
-                if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
-                {
-                    enemy_locations.pop_back();
+                if (!enemy_locations.empty()) {
+                    task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+
+                    Point2D enemy_loc = enemy_locations.back();
+                    if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
+                    {
+                        enemy_locations.pop_back();
+                    }
                 }
             }
             break;
@@ -169,22 +174,28 @@ public:
                         {
                             enemy_locations.push_back(record.location);
                         }
-                        possible_enemy_locations.pop_back();
+                        if (!possible_enemy_locations.empty()) {
+                            possible_enemy_locations.pop_back();
+                        }
                     }
                     else
                     {
-                        enemy_locations.push_back(possible_enemy_locations.back());
-                        possible_enemy_locations.pop_back();
+                        if (!possible_enemy_locations.empty()) {
+                            enemy_locations.push_back(possible_enemy_locations.back());
+                            possible_enemy_locations.pop_back();
+                        }
                     }
                 }
 
-                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
+                if (!enemy_locations.empty()) {
+                    task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
 
-                // Tried to limit choke points by designing an area as accepted rather than a point
-                Point2D enemy_loc = enemy_locations.back();
-                if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
-                {
-                    enemy_locations.pop_back();
+                    // Tried to limit choke points by designing an area as accepted rather than a point
+                    Point2D enemy_loc = enemy_locations.back();
+                    if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+                    {
+                        enemy_locations.pop_back();
+                    }
                 }
             }
             break;
