@@ -46,11 +46,7 @@ void SCOUT_BOT::step() {
         Task t1(BASIC_SCOUT, 5, poi_close_to_enemy.second.at(poi_close_to_enemy.first % poi_close_to_enemy.second.size()));
         poi_close_to_enemy.first += 1;
 
-        Task t2(BASIC_SCOUT, 5, poi_close_to_base.second.at(poi_close_to_base.first % poi_close_to_base.second.size()));
-        poi_close_to_base.first += 1;
-
         addTask(t1);
-        addTask(t2);
     }
 }
 
@@ -153,7 +149,7 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
         //         }
         //     }
         // }
-        
+
         // task_queue.remove(taskToDo);
         Task taskToDo = task_queue.pop();
         switch (taskToDo.action) {
