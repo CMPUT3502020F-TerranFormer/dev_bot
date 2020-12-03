@@ -12,6 +12,18 @@
 #include "SQLITE3_QUERY.hpp"
 
 #include <thread>
+#include <atomic>
+
+struct DEFENCE_POI {
+    Point2D pos;
+    int major;
+
+    bool operator==(const DEFENCE_POI &rhs) const {
+        return pos == rhs.pos;
+    }
+
+    DEFENCE_POI(float x, float y, int major) : pos(Point2D(x, y)), major(major) {}
+};
 
 class DEFENCE_BOT final : public TF_Agent {
 public:
@@ -88,11 +100,11 @@ private:
     TF_Agent *resource;
     TF_Agent *scout;
 
-    std::vector<Point2D> poi;
+    std::vector<DEFENCE_POI> poi;
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
 
-    std::vector<Point2D> defence_point;
+    std::vector<DEFENCE_POI> defence_points;
 
     std::vector<Unit*> bunkers;
 
@@ -111,12 +123,12 @@ private:
     int bansheeCount = 0;
     int battleCruiserCount = 0;
 
-    int tankMaxCount = 12;
-    int cycloneMaxCount = 8;
+    int tankMaxCount = 5;
+    int cycloneMaxCount = 5;
     int marineMaxCount = 30;
     int marauderMaxCount = 20;
     int thorMaxCount = 2;
-    int bansheeMaxCount = 12;
+    int bansheeMaxCount = 20;
     int battleCruiserMaxCount = 1;
 
     double troopMaxCountMultiplier = 1.5;
@@ -144,8 +156,7 @@ private:
     bool sAndVUpgradePhase2Complete = false;
     bool sAndVUpgradePhase3Complete = false;
 
-    int stepsEng = 0;
-    int stepsArm = 0;
+    int balance_step = 0;
 
     static double distance(const Point2D &p1, const Point2D &p2);
 
@@ -176,9 +187,11 @@ private:
     void check_for_starport();
     void check_for_fusion();
 
-    std::tuple<std::vector<const Unit *>, int> troops_at_point(Point2D pos);
+    std::tuple<std::vector<const Unit *>, int, Point2D> assess_defence_point(Point2D pos);
 
     static int get_defence_score(UNIT_TYPEID id);
+
+    void defence_balance();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP
