@@ -21,13 +21,12 @@
  * Currently this will build 3 command centers and mine all resources
  * And it heals all damaged units around an undamaged command center with radius 10
  * Issue: MULE functionality is incomplete and may not work (at all?)
- * Issue: The command center transfer (when resources are depleted) has
- * to be implemented (we are currently stuck at 3 command centers)
+ *		We are not currently using mules
  */
 
 using namespace sc2;
 
-static const TF_unit NoUnit = TF_unit((UNIT_TYPEID) 0, (Tag) -1);
+static const TF_unit NoUnit = TF_unit(UNIT_TYPEID::INVALID, (Tag) -1);
 
 struct Base {
 
@@ -113,12 +112,13 @@ public:
 	 * This handles the actions that will be made during a step
 	 * It's easier (and more clear) to handle stuff like building refineries
 	 * in here instead of when a unit is added/idle/deleted
-	 * This automatically repairs all units close to the command center (10 units)
+	 * This automatically attempts to repair all units close to the command center (10 units)
 	 */
 	void step(Units scvs) {
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
-		if (!update) { return; } // this prevents us from running the following code when not necessary
+
+		if (!update) { return; }
 		// if things are happening the flag will be set again (eg. command center being damamged, too many scvs assigned)
 		// we don't know how many units were added/deleted before this was called
 
@@ -129,8 +129,8 @@ public:
 			const Unit* command = observation->GetUnit(base.command.tag);
 			if (command == nullptr) { return; }
 
-			// do not build refineries while the command center is damaged -> wait until the command
-			// center is repaired, then it is probably safe
+			// do not build refineries or repair other units while the command center is damaged
+			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
 				update = true;
@@ -138,16 +138,14 @@ public:
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
-				// to just try than to check if they are not built
-
-				// must be finished so we are guaranteed to have vision of the geysers
+				// to just try than to check if they are not built, as we don't have complete vision
+				// the turn that a command center is completed (trying to build on a snapshot doesn't appear to work
+				// because we have to get the unit
 				if (command->build_progress >= 1) {
 					buildRefineries(command);
 				}
 
 				// repair all units that are close to the command center
-				// if it's not being attacked, it is probably safe for the scv
-				// I'm unsure if this works for units inside a bunker/medi-vac
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
@@ -157,7 +155,7 @@ public:
 			}
 
 			// we also deal with bases that have too many scvs mining (1 scv / base / step)
-			// and try to maintain a ratio of minerals to scvs
+			// and try to make sure we always have enough minerals and vespene
 			bool exit_loop = false;
 			if (command->assigned_harvesters > command->ideal_harvesters
 				|| observation->GetMinerals() / (observation->GetVespene() + 1) > 4) {
@@ -166,7 +164,7 @@ public:
 						for (auto& order : unit->orders) {
 							if (order.ability_id == ABILITY_ID::HARVEST_GATHER) {
 								update = true;
-								assignSCV(unit);
+								assign_vespene(unit);
 								exit_loop = true;
 								break;
 							}
@@ -179,6 +177,8 @@ public:
 			// we must also make sure the base still has resources, if not move it to isolated_bases
 			// or start the transfer process --> implement later
 			base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+
+			// deal with bases that are running out of resources
 			if (command->build_progress == 1) {
 				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
 				if (base.startTransfer() && command->ideal_harvesters <= 8) {
@@ -206,30 +206,24 @@ public:
 			if (command == nullptr) { return; }
 			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(command->pos, 100));
 
-			// do not build refineries while the command center is damaged -> wait until the command
 			// center is repaired, then it is probably safe
-			if (command->health < command->health_max
-				&& command->build_progress >= 1) {
+			if (command->health < command->health_max) {
 				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
 				// repair all units that are close to the command center
-				// if it's not being attacked, it is probably safe for the scv
-				// I'm unsure if this works for units inside a bunker/medi-vac
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 4, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 5, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
-			// if it turns out that when there are no resources left scvs
-			// continue working at a command center, then reassign all scvs
 		}
 
 		// Build a new command center if necessary, right now, we use preset conditions
 		// remember that a unit is added when it starts being build
-		// build command centers at 16/40 scv's, or when a planetary fortress is running out of resources
+		// build command centers at 16/36 scv's, or when a planetary fortress is running out of resources
 		int num_command_centers = active_bases.size() + isolated_bases.size();
 		bool build = false;
 
@@ -258,7 +252,7 @@ public:
 		}
 
 		// we must also deal with vespene refineries that have excess workers
-		// and try to maintain a ration of vespene/minerals
+		// (or we have too much vespene compared to minerals)
 		Units refineries = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
 		for (auto& r : refineries) {
 			if (r->assigned_harvesters > r->ideal_harvesters
@@ -306,14 +300,13 @@ public:
 	/**
 	 * Takes appropriate actions for the type of deleted unit
 	 * This does not modify resource_units; that's for the resource agent
+	 * and it does not try to build replacement unit (step())
 	 */
 	void deleteUnit(const Unit* u) {
 		if (u->alliance == Unit::Alliance::Self) { update = true; }
-		// if it's a COMMAND CENTER also have to reassign all scvs -> done in step
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 		IsCommandCenter f;
 		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
-					 // building command centers is handled in step()
 			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 				if (it->command.tag == u->tag) {
 					active_bases.erase(it);
@@ -331,18 +324,13 @@ public:
 	 * This may return the same scv if called multiple times during the same step
 	 * (a random available scv is selected to minimize this chance)
 	 * It is recommended to call this method without a point when you know there is likely only 1 scv
-	 * nearby and you want to build multiple buildings
+	 * nearby and you want to build multiple buildings (they will all queue to the same scv
+	 *	we don't know the scv queue size)
 	 * 
-	 * We pass in scvs because this may be called multiple times a step, and it is more efficient to call
-	 * it once in the caller
+	 * We pass in scvs because this may be called multiple times a step
 	 */
 	TF_unit getSCV(Units scvs, Point2D point = Point2D(0, 0)) {
-		// get's an scv that is idle or harvesting; should check the closest scv
-		// does not show a preference for idle scvs over harvesting; idle scvs will just take over harvesting
-		// If this is called multiple times during the same step
-		// the same scv can be returned each time -> randomness when choosing scvs
-
-		if (scvs.empty()) { return NoUnit; } // we have no scv's
+		if (scvs.empty()) { return NoUnit; }
 		Units possible_scvs;
 
 		// first get all harvesting/idle (or close, if ia point is given) scv's
@@ -380,8 +368,7 @@ public:
 			return getSCV(scvs);
 		}
 
-		// if there are no scvs that can immediately be reassigned
-		// just get a random scv
+		// if there are no scvs that can immediately be reassigned get any scv
 		if (possible_scvs.empty()) { return TF_unit(scvs.front()->unit_type, scvs.front()->tag); }
 
 		// otherwise return a random scv
@@ -392,8 +379,6 @@ public:
 
 	/**
 	 * Handles idle units
-	 * **Command centers ignore the default priority limitations
-	 * and produce scvs with priority 8
 	 */
 	void unitIdle(const Unit* u) {
 		// make scv's if not enough; (do orbital_scan if requested)
@@ -415,7 +400,7 @@ public:
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
 				auto priority = 6;
-				if (scv_count < (active_bases.size() * 10)) { priority = 7; }
+				if (scv_count < (active_bases.size() * 10)) { priority = 7; } // prioritize scvs when we are missing many workers
 				task_queue->push(Task(TRAIN, RESOURCE_AGENT, priority, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
@@ -536,7 +521,8 @@ private:
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
-				if (DistanceSquared2D(command->pos, p->pos) < 225) {
+				if (DistanceSquared2D(command->pos, p->pos) < 225
+					&& p->vespene_contents > 0) {
 					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
