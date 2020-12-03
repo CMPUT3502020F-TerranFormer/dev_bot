@@ -341,9 +341,9 @@ bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type,
         }
     }
     else { // build at a location
-        Point2D new_point = buildingPlacementManager->getNextLocation(unit_type, point);
-        if (query->Placement(ability_to_build_structure, point)
-            && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
+        if (!buildCheckDuplicate(scvs, ability_to_build_structure)) {
+            Point2D new_point = buildingPlacementManager->getNextLocation(unit_type, point);
+            if (new_point == Point2D(0, 0)) { return false; }
             action->UnitCommand(scv, ability_to_build_structure, new_point, true);
             return true;
         }

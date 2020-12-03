@@ -268,7 +268,7 @@ public:
 						if (order.ability_id == ABILITY_ID::HARVEST_GATHER
 							&& order.target_unit_tag == r->tag) {
 							update = true;
-							assignSCV(s);
+							assign_minerals(s);
 							return;
 						}
 					}

@@ -192,7 +192,8 @@ private:
 					}
 				}
 			}
-			if (mineral_count >= 3) { // include rich mineral patches
+			if (mineral_count >= 4) { 
+				// this is less likely for rich minerals, but as those patches have fewer minerals total...
 				return true;
 			}
 		}
@@ -225,8 +226,8 @@ private:
 			// as more buildings are built, it's more likely to build around a different command center
 			for (auto& c : command_centers) {
 				point = c->pos;
-				point = Point2D(point.x + GetRandomScalar() * 15.0f, point.y + GetRandomScalar() * 15.0f);
-				if (query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point)) { return point; }
+				point = Point2D(point.x + (GetRandomScalar() * multiplier), point.y + (GetRandomScalar() * multiplier));
+				if (query->Placement(aid_to_place, point)) { return point; }
 			}
 		}
 		std::cerr << "Time out getting building location, ABILITY_ID: " << (int) aid_to_place << std::endl;
