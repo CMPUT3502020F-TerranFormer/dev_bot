@@ -77,14 +77,14 @@ void ATTACK_BOT::step()
                 all_alive(attack_units);
                 action->UnitCommand(attack_units, t.ability_id, t.position);
                 action->SendChat("Attack Squadron moving");
+                troopManager->mark_location_visited();
             }
 
             // If there are a lot of units in our army, increase squadron size
             // if (observation->GetArmyCount() - troopManager->getSquadronSize() > 20)
             // {
             //     troopManager->incSquadronSize();
-            // }
-            troopManager->mark_location_visited();
+            // }  
             break;
         }
         case REPAIR:

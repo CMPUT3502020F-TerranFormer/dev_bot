@@ -209,11 +209,11 @@ public:
     void mark_location_visited()
     {
         std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
-        // if there is no enemy at the location
-        // mark the location as visited
        for (auto enemy : enemy_units)
        {
-           if (!enemy_at_base(enemy))
+           // if there are no visible enemies at an enemy base,
+           // mark the location as visited
+           if (enemy->Visible && !enemy_at_base(enemy))
            {
                enemy_locations.pop_back();
                break;
