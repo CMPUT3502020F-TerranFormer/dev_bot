@@ -74,7 +74,7 @@ void ATTACK_BOT::step()
                 // check that none of the units in the attack units are dead
                 all_alive(attack_units);
                 action->UnitCommand(attack_units, t.ability_id, t.position);
-                action->SendChat("Attack Squadron moving");
+                attack_units.clear();
                 troopManager->mark_location_visited();
             }
 
@@ -293,7 +293,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u)
     switch (u->unit_type.ToType())
     {
     case UNIT_TYPEID::TERRAN_BARRACKS:
-        resource->addTask(Task(TRAIN, ATTACK_AGENT, 6, UNIT_TYPEID::TERRAN_BARRACKS,
+        resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
                                ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
 
     case UNIT_TYPEID::TERRAN_FACTORY:
@@ -303,7 +303,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u)
 
     case UNIT_TYPEID::TERRAN_STARPORT:
         resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 5, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
+            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
                  u->tag));
     }
 }

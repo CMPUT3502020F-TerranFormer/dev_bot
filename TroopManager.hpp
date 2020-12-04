@@ -10,6 +10,7 @@
 #include <vector>
 #include "TF_unit.hpp"
 #include <iostream>
+#include "utility.hpp"
 
 /**
  * The purpose of this class is to train troops and allow for upgrades at training buildings.
@@ -47,7 +48,7 @@ public:
 
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 10)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
                                       UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             break;
@@ -208,38 +209,46 @@ public:
 
     void mark_location_visited()
     {
-        std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
-       for (auto enemy : enemy_units)
-       {
-           // if there are no visible enemies at an enemy base,
-           // mark the location as visited
-           if (enemy->Visible && !enemy_at_base(enemy))
-           {
-               enemy_locations.pop_back();
-               break;
-           }
-       }
-    }
-
-    double distance(Point2D p1, Point2D p2)
-    {
-        double x2 = pow((p1.x - p2.x), 2);
-        double y2 = pow((p1.y - p2.y), 2);
-        return sqrt(x2 + y2);
-    }
-
-    bool enemy_at_base(const Unit *enemy)
-    {
         Point2D current_location = enemy_locations.back();
-        Point2D enemy_position(enemy->pos.x, enemy->pos.y);
-
-        // if 
-        if (distance(enemy_position, current_location) < 10)
+        IsClose enemy_nearby(current_location, 100);
+        std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy, enemy_nearby);
+        
+        // bool present = false;
+        // for (auto enemy : enemy_units)
+        // {
+        //     // if there are visible enemies at an enemy base,
+        //     // mark the location as unvisited
+        //     if (enemy_at_base(enemy))
+        //     {
+        //         present = true;
+        //         break;
+        //     }
+        // }
+        if (enemy_units.size() == 0)
         {
-            return true;
+            enemy_locations.pop_back();
         }
-        return false;
     }
+
+    // double distance(Point2D p1, Point2D p2)
+    // {
+    //     double x2 = pow((p1.x - p2.x), 2);
+    //     double y2 = pow((p1.y - p2.y), 2);
+    //     return sqrt(x2 + y2);
+    // }
+
+    // bool enemy_at_base(const Unit *enemy)
+    // {
+    //     Point2D current_location = enemy_locations.back();
+    //     Point2D enemy_position(enemy->pos.x, enemy->pos.y);
+
+    //     // if
+    //     if (distance(enemy_position, current_location) < 10)
+    //     {
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
 private:
     threadsafe_priority_queue<Task> *task_queue;
@@ -247,7 +256,7 @@ private:
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size = 20;
+    int squadron_size = 30;
 };
 
 #endif
