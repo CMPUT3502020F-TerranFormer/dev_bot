@@ -263,17 +263,20 @@ public:
 			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
-						assignSCV(s);
+						assignSCV(s, true);
 						return;
 					}
 				}
 			}
 		}
+		// perform these checks much more infrequently to prevent excess switching of scvs
+		// and loss of efficiency when attempting to balance resources
+		if (observation->GetGameLoop() % (16 * 5) != 0) { return; }
 		// and do the same if we don't have enough vespene
 		if (observation->GetVespene() / (observation->GetMinerals() + 1) < 0.4) {
 			for (auto& s : scvs) {
 				if (IsCarryingMinerals(*s)) {
-					assignSCV(s);
+					assignSCV(s, true);
 					return;
 				}
 			}
@@ -365,15 +368,26 @@ public:
 					possible_scvs.push_back(scv);
 				}
 			}
-			else if (scv->orders.front().ability_id == ABILITY_ID::SMART
-				|| scv->orders.front().ability_id == ABILITY_ID::HARVEST_GATHER) {
-				if (point != Point2D(0, 0)) {
-					if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
-						possible_scvs.push_back(scv);
+			else {
+				bool safe = true;
+				for (auto& order : scv->orders) {
+					if (order.ability_id != ABILITY_ID::SMART
+						&& order.ability_id != ABILITY_ID::HARVEST_GATHER
+						&& order.ability_id != ABILITY_ID::HARVEST_RETURN)
+					{
+						safe = false;
+						break;
 					}
 				}
-				else {
-					possible_scvs.push_back(scv);
+				if (safe) {
+					if (point != Point2D(0, 0)) {
+						if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
+							possible_scvs.push_back(scv);
+						}
+					}
+					else {
+						possible_scvs.push_back(scv);
+					}
 				}
 			}
 		}
@@ -460,15 +474,18 @@ private:
 
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
-	void assignSCV(const Unit* u) {
+	void assignSCV(const Unit* u, bool resource_switch = false) {
+		// if resource_switch is true, then we would be switching the resource target if we reassign
+		// this is only a problem when trying to balance resource mining, (excess switching of scvs)
+		// so if we fail to switch resource type, the unit target will stay the same
 		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
 			&& observation->GetGameLoop() / 16 > 30) {
-			if (!assign_vespene(u)) {
+			if (!assign_vespene(u) && !resource_switch) {
 				assign_minerals(u);
 			}
 		}
 		else {
-			if (!assign_minerals(u)) {
+			if (!assign_minerals(u) && !resource_switch) {
 				assign_vespene(u);
 			}
 		}
@@ -497,6 +514,7 @@ private:
 	}
 	bool assign_vespene(const Unit* u, bool close = true) {
 		Units vespene = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
+		if (vespene.empty()) { return false; }
 		for (auto& v : vespene) {
 			if (close && !IsClose(v->pos, 100)(*v)) {
 				continue;

@@ -66,7 +66,7 @@ void RESOURCE_BOT::step() {
         switch (t.action) {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
-            action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN); // important because we do a lot of reassigning
+            action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true); // important because we do a lot of reassigning
             action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
             action->SendActions();
             break;
