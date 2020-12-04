@@ -6,6 +6,7 @@
 #include <cstring>
 #include "utility.hpp"
 #include <cassert>
+#include <algorithm>
 #include <array>
 
 /**
@@ -15,6 +16,8 @@
  * to provide a Point2D for placement, and instead call a method with the unit_type
  * which will return the correct Point2D <-- This has been done, but for compatibility
  * the option to pass in a point remains
+ * 
+ * The fixed points were obtained using the Map Editor
  */
 
 using namespace sc2;
@@ -193,7 +196,8 @@ private:
 				}
 			}
 			if (mineral_count >= 4) { 
-				// this is less likely for rich minerals, but as those patches have fewer minerals total...
+				// this is less likely for rich minerals, but as those patches have fewer minerals total
+				// we'd rather build a base with more resources
 				return true;
 			}
 		}
@@ -235,54 +239,74 @@ private:
 	}
 
 	Point2D getNextSupplyDepotLocation() {
-		// for now, get a random point with radius 15 around a command center
-		return getPlacement(ABILITY_ID::BUILD_SUPPLYDEPOT, 15);
+		// get a location that is by minerals, but away from the command center
+		// (so at least 6 distance from it), but within 4 from a mineral
+		Point2D point(0, 0);
+		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+		Units minerals = observation->GetUnits(Unit::Alliance::Neutral,
+			[command_centers](const Unit& u) 
+			{ return IsNearUnits(command_centers, 10.0f)(u) && IsMinerals()(u); });
+
+		for (auto i = 0; i < time_out; ++i) {
+			for (auto& m : minerals) {
+				point = Point2D(m->pos.x + (GetRandomScalar() * 4.0f), m->pos.y + (GetRandomScalar() * 4.0f));
+				for (auto& c : command_centers) {
+					if (DistanceSquared2D(c->pos, point) > 36
+						&& DistanceSquared2D(c->pos, m->pos) < 100
+						&& query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point))
+					{
+						return point;
+					}
+				}
+			}
+		}
+		return Point2D(0, 0);
 	}
 
 	Point2D getNextBarracksLocation() {
 		// we'll just build it near a command center for now
 		// which is the same as the supply depots
-		return getPlacement(ABILITY_ID::BUILD_BARRACKS, 15);
+		return getPlacement(ABILITY_ID::BUILD_BARRACKS, 15.0f);
 	}
 
 	Point2D getNextFusionCoreLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE, 15);
+		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE, 15.0f);
 	}
 
 	Point2D getNextBarracksLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_BARRACKS, pos, 10);
+		return getPointPlacement(ABILITY_ID::BUILD_BARRACKS, pos, 10.0f);
 	}
 
 	Point2D getNextFactoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FACTORY, 10);
+		return getPlacement(ABILITY_ID::BUILD_FACTORY, 10.0f);
 	}
 
 	Point2D getNextFactoryLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_FACTORY, pos, 10);
+		return getPointPlacement(ABILITY_ID::BUILD_FACTORY, pos, 10.0f);
 	}
 
 	Point2D getNextBunkerLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_BUNKER, pos, 3);
+		return getPointPlacement(ABILITY_ID::BUILD_BUNKER, pos, 3.0f);
 	}
 
 	Point2D getNextStarportLocation() {
-		return getPlacement(ABILITY_ID::BUILD_STARPORT, 10);
+		return getPlacement(ABILITY_ID::BUILD_STARPORT, 10.0f);
 	}
 
 	Point2D getNextStarportLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_STARPORT, pos, 10);
+		return getPointPlacement(ABILITY_ID::BUILD_STARPORT, pos, 10.0f);
 	}
 
 	Point2D getNextEngineeringBayLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY, 10);
+		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY, 10.0f);
 	}
 
 	Point2D getNextArmoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ARMORY, 10);
+		return getPlacement(ABILITY_ID::BUILD_ARMORY, 10.0f);
 	}
 
 	Point2D getNextMissileTurretLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_MISSILETURRET, pos, 4);
+		return getPointPlacement(ABILITY_ID::BUILD_MISSILETURRET, pos, 4.0f);
 	}
 };	
 

@@ -536,6 +536,7 @@ private:
 	 * don't add to queue when refineries already exist
 	 */
 	void buildRefineries(const Unit* command) {
+		if (observation->GetGameLoop() / 16 < 60) { return; }
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {

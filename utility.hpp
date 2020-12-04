@@ -128,4 +128,19 @@ struct IsStarport {
 	}
 };
 
+struct IsNearUnits {
+	IsNearUnits(const Units& units, float distance)
+		: units(units) {
+		distance_squared = distance * distance;
+	}
+	Units units;
+	float distance_squared;
+	bool operator()(const Unit& unit) const {
+		for (auto& u : units) {
+			if (IsClose(u->pos, distance_squared)(unit)) { return true; }
+		}
+		return false;
+	}
+};
+
 #endif //TFBOT_UTILITY_HPP

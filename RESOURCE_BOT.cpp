@@ -311,9 +311,11 @@ void RESOURCE_BOT::setAgents(TF_Agent* defenceb, TF_Agent* attackb, TF_Agent* sc
 }
 
 void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
-    // gets a location to build the supply depot then buildStructure
-    // which will prevent 2 from being built at the same time
-    buildStructure(scvs, UNIT_TYPEID::TERRAN_SUPPLYDEPOT, ABILITY_ID::BUILD_SUPPLYDEPOT, Point2D(0, 0));
+    // push task at max build priority (resource tasks are preferred at same priority)
+    // this way it will check for minerals and wait for them before doing anything else
+    // don't make this the first thing we build/train (start on an scv first)
+    if (observation->GetGameLoop() / 16 < 15) { return; }
+    task_queue.push(Task(BUILD, RESOURCE_AGENT, 10, UNIT_TYPEID::TERRAN_SUPPLYDEPOT, ABILITY_ID::BUILD_SUPPLYDEPOT));
 }
 
 /* We pass in scvs because this may be called multiple times/step so it's more efficient */
