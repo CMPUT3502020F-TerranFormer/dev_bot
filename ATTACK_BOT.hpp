@@ -88,6 +88,10 @@ public:
 
     void buildStarport();
 
+    // Pointer protection
+    // Clear all the dead units in the vector of attack_units
+    void all_alive(std::vector<const Unit*> attack_units);
+
     std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
 
 private:
