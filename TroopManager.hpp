@@ -112,81 +112,78 @@ public:
                     return;
                 }
             }
-            if (observation->GetArmyCount() > squadron_size)
+
+            if (possible_enemy_locations.size() == 0)
             {
-                if (possible_enemy_locations.size() == 0)
-                {
-                    possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-                }
+                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
+            }
 
-                if (enemy_locations.size() == 0)
+            if (enemy_locations.size() == 0)
+            {
+                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 120).size() > 0)
                 {
-                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 120).size() > 0)
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 120))
                     {
-                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 120))
-                        {
-                            enemy_locations.push_back(record.location);
-                        }
-                        possible_enemy_locations.pop_back();
+                        enemy_locations.push_back(record.location);
                     }
-                    else
-                    {
-                        enemy_locations.push_back(possible_enemy_locations.back());
-                        possible_enemy_locations.pop_back();
-                    }
+                    possible_enemy_locations.pop_back();
                 }
-
-                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
-
-                // Tried to limit choke points by designing an area as accepted rather than a point
-                Point2D enemy_loc = enemy_locations.back();
-                if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
+                else
                 {
-                    enemy_locations.pop_back();
+                    enemy_locations.push_back(possible_enemy_locations.back());
+                    possible_enemy_locations.pop_back();
                 }
             }
-            break;
+
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+
+            // Tried to limit choke points by designing an area as accepted rather than a point
+            // Point2D enemy_loc = enemy_locations.back();
+            // if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
+            // {
+            //     enemy_locations.pop_back();
+            // }
+
+            // break;
         }
 
         // Support Units don't attack, so gotta give them a differnt ABILITY_ID
         case UNIT_TYPEID::TERRAN_MEDIVAC:
         case UNIT_TYPEID::TERRAN_RAVEN:
         {
-            if (observation->GetArmyCount() > 20)
+            if (possible_enemy_locations.size() == 0)
             {
-                if (possible_enemy_locations.size() == 0)
-                {
-                    possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-                }
+                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
+            }
 
-                if (enemy_locations.size() == 0)
+            if (enemy_locations.size() == 0)
+            {
+                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
                 {
-                    // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                    if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
                     {
-                        for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
-                        {
-                            enemy_locations.push_back(record.location);
-                        }
-                        possible_enemy_locations.pop_back();
+                        enemy_locations.push_back(record.location);
                     }
-                    else
-                    {
-                        enemy_locations.push_back(possible_enemy_locations.back());
-                        possible_enemy_locations.pop_back();
-                    }
+                    possible_enemy_locations.pop_back();
                 }
-
-                task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
-
-                // Tried to limit choke points by designing an area as accepted rather than a point
-                Point2D enemy_loc = enemy_locations.back();
-                if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+                else
                 {
-                    enemy_locations.pop_back();
+                    enemy_locations.push_back(possible_enemy_locations.back());
+                    possible_enemy_locations.pop_back();
                 }
             }
+
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
+
+            // Tried to limit choke points by designing an area as accepted rather than a point
+            // Point2D enemy_loc = enemy_locations.back();
+            // if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
+            // {
+            //     enemy_locations.pop_back();
+            // }
+
             break;
         }
         }
@@ -204,13 +201,53 @@ public:
         return squadron_size;
     }
 
+    void incSquadronSize()
+    {
+        squadron_size += 5;
+    }
+
+    void mark_location_visited()
+    {
+        std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
+        // if there is no enemy at the location
+        // mark the location as visited
+       for (auto enemy : enemy_units)
+       {
+           if (!enemy_at_base(enemy))
+           {
+               enemy_locations.pop_back();
+               break;
+           }
+       }
+    }
+
+    double distance(Point2D p1, Point2D p2)
+    {
+        double x2 = pow((p1.x - p2.x), 2);
+        double y2 = pow((p1.y - p2.y), 2);
+        return sqrt(x2 + y2);
+    }
+
+    bool enemy_at_base(const Unit *enemy)
+    {
+        Point2D current_location = enemy_locations.back();
+        Point2D enemy_position(enemy->pos.x, enemy->pos.y);
+
+        // if 
+        if (distance(enemy_position, current_location) < 10)
+        {
+            return true;
+        }
+        return false;
+    }
+
 private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size =  20;
+    int squadron_size = 20;
 };
 
 #endif
