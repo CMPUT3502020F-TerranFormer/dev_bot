@@ -160,15 +160,14 @@ private:
 
     static double distance(const Point2D &p1, const Point2D &p2);
 
+    void buildingIdle(const sc2::Unit* u); // specifically for the building logic
+
     void buildMissileTurret(Point2D pos);
     void buildEngineeringBay();
     void buildArmory();
     void buildStarport();
-    void buildStarport(Point2D pos);
     void buildBarracks();
-    void buildBarracks(Point2D pos);
     void buildFactory();
-    void buildFactory(Point2D pos);
     void buildFusion();
     void buildBunker(Point2D pos);
 

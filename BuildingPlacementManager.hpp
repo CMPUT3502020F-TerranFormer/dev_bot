@@ -85,29 +85,11 @@ public:
 		switch (unit_type) {
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: return getNextCommandCenterLocation();
 		case UNIT_TYPEID::TERRAN_SUPPLYDEPOT: return getNextSupplyDepotLocation();
-		case UNIT_TYPEID::TERRAN_BARRACKS: 
-			if (point == Point2D(0, 0)) {
-				return getNextBarracksLocation();
-			}
-			else {
-				return getNextBarracksLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_BARRACKS: return getNextBarracksLocation();
 		case UNIT_TYPEID::TERRAN_FUSIONCORE: return getNextFusionCoreLocation();
-		case UNIT_TYPEID::TERRAN_FACTORY:
-			if (point == Point2D(0, 0)) {
-				return getNextFactoryLocation();
-			}
-			else {
-				return getNextFactoryLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_FACTORY: return getNextFactoryLocation();
 		case UNIT_TYPEID::TERRAN_BUNKER: return getNextBunkerLocation(point);
-		case UNIT_TYPEID::TERRAN_STARPORT:
-			if (point == Point2D(0, 0)) {
-				return getNextStarportLocation();
-			}
-			else {
-				return getNextStarportLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_STARPORT: return getNextStarportLocation();
 		case UNIT_TYPEID::TERRAN_ENGINEERINGBAY: return getNextEngineeringBayLocation();
 		case UNIT_TYPEID::TERRAN_ARMORY: return getNextArmoryLocation();
 		case UNIT_TYPEID::TERRAN_MISSILETURRET: return getNextMissileTurretLocation(point);
@@ -300,16 +282,8 @@ private:
 		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE, 15.0f);
 	}
 
-	Point2D getNextBarracksLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_BARRACKS, pos, 10.0f);
-	}
-
 	Point2D getNextFactoryLocation() {
 		return getPlacement(ABILITY_ID::BUILD_FACTORY, 10.0f);
-	}
-
-	Point2D getNextFactoryLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_FACTORY, pos, 10.0f);
 	}
 
 	Point2D getNextBunkerLocation(Point2D pos) {
@@ -318,10 +292,6 @@ private:
 
 	Point2D getNextStarportLocation() {
 		return getPlacement(ABILITY_ID::BUILD_STARPORT, 10.0f);
-	}
-
-	Point2D getNextStarportLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_STARPORT, pos, 10.0f);
 	}
 
 	Point2D getNextEngineeringBayLocation() {
