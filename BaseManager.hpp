@@ -159,7 +159,7 @@ public:
 				for (auto& unit : units) {
 					if (IsCarryingMinerals(*unit)) {
 						update = true;
-						assignSCV(unit);
+						assignSCV(unit, true, false);
 						break;
 					}
 				}
@@ -250,20 +250,22 @@ public:
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
 						update = true;
-						assignSCV(s);
+						assignSCV(s, true, false);
 						return;
 					}
 				}
 			}
 		}
-		// the following is here so that we only reassign 1 scv/step which prevents putting
-		// to many to any one building
+		// perform these checks much more infrequently to prevent excess switching of scvs
+		// and loss of efficiency when attempting to balance resources
+		if (observation->GetGameLoop() % (16 * 5) != 0) { return; }
+
 		// then switch scvs to minerals if we have too much gas compared to vespene
 		for (auto& r : refineries) { // focus oversaturated refineries first
 			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
-						assignSCV(s);
+						assignSCV(s, false, true);
 						return;
 					}
 				}
@@ -273,7 +275,7 @@ public:
 		if (observation->GetVespene() / (observation->GetMinerals() + 1) < 0.4) {
 			for (auto& s : scvs) {
 				if (IsCarryingMinerals(*s)) {
-					assignSCV(s);
+					assignSCV(s, false, true);
 					return;
 				}
 			}
@@ -286,7 +288,7 @@ public:
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
 			++scv_count;
-			assignSCV(u);
+			assignSCV(u, true, false);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -365,15 +367,26 @@ public:
 					possible_scvs.push_back(scv);
 				}
 			}
-			else if (scv->orders.front().ability_id == ABILITY_ID::SMART
-				|| scv->orders.front().ability_id == ABILITY_ID::HARVEST_GATHER) {
-				if (point != Point2D(0, 0)) {
-					if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
-						possible_scvs.push_back(scv);
+			else {
+				bool safe = true;
+				for (auto& order : scv->orders) {
+					if (order.ability_id != ABILITY_ID::SMART
+						&& order.ability_id != ABILITY_ID::HARVEST_GATHER
+						&& order.ability_id != ABILITY_ID::HARVEST_RETURN)
+					{
+						safe = false;
+						break;
 					}
 				}
-				else {
-					possible_scvs.push_back(scv);
+				if (safe) {
+					if (point != Point2D(0, 0)) {
+						if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
+							possible_scvs.push_back(scv);
+						}
+					}
+					else {
+						possible_scvs.push_back(scv);
+					}
 				}
 			}
 		}
@@ -401,7 +414,7 @@ public:
 		// make scv's if not enough; (do orbital_scan if requested)
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
-			assignSCV(u);
+			assignSCV(u, true, false);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MULE: {
@@ -436,13 +449,13 @@ public:
 
 	/**
 	 * Depending on how many command centers we have, we want to have so much extra supply
-	 * available; try to keep 3/5/6 supply ahead (1/2/3+ command centers)
+	 * available; try to keep 3/5/8 supply ahead (1/2/3+ command centers)
 	 */
 	int getSupplyFloat() {
 		int command_centers = isolated_bases.size() + active_bases.size();
 		if (command_centers <= 1) { return 3; }
 		else if (command_centers == 2) { return 5; }
-		else { return 6; }
+		else { return 8; }
 	}
 
 private:
@@ -460,15 +473,26 @@ private:
 
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
-	void assignSCV(const Unit* u) {
-		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
+	/*
+	* Assigns an scv to minerals/vespene and tries to maintain a ratio between them
+	* @param u : The scv
+	* @param from_saturated: If the scv is from a saturated resource (treat idle scvs as if they are from
+	*	a saturated resource. If this is set we will just try to assign the scv somewhere
+	* @param resource_switch: Set when attempting to switch from one resource to another. If we cannot switch
+	*	then do not reassign to the original resource (saves time & efficiency from switching targets)
+	*/
+	void assignSCV(const Unit* u, bool from_saturated, bool resource_switch) {
+		if (from_saturated) {
+			if (!assign_minerals(u)) { assign_vespene(u); }
+		}
+		else if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
 			&& observation->GetGameLoop() / 16 > 30) {
-			if (!assign_vespene(u)) {
+			if (!assign_vespene(u) && !resource_switch) {
 				assign_minerals(u);
 			}
 		}
 		else {
-			if (!assign_minerals(u)) {
+			if (!assign_minerals(u) && !resource_switch) {
 				assign_vespene(u);
 			}
 		}
@@ -497,6 +521,7 @@ private:
 	}
 	bool assign_vespene(const Unit* u, bool close = true) {
 		Units vespene = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
+		if (vespene.empty()) { return false; }
 		for (auto& v : vespene) {
 			if (close && !IsClose(v->pos, 100)(*v)) {
 				continue;
@@ -536,6 +561,7 @@ private:
 	 * don't add to queue when refineries already exist
 	 */
 	void buildRefineries(const Unit* command) {
+		if (observation->GetGameLoop() / 16 < 60) { return; }
 		if (command->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
 			Units vespene = observation->GetUnits(IsVespeneGeyser());
 			for (auto& p : vespene) {
