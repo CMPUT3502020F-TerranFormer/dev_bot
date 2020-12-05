@@ -118,9 +118,8 @@ public:
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
 
-		if (!update) { return; }
-		// if things are happening the flag will be set again (eg. command center being damamged, too many scvs assigned)
-		// we don't know how many units were added/deleted before this was called
+		// update every 1/4 second
+		if (observation->GetGameLoop() % 4 != 0) { return; }
 
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
@@ -133,8 +132,7 @@ public:
 			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				update = true;
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -145,11 +143,17 @@ public:
 					buildRefineries(command);
 				}
 
-				// repair all units that are close to the command center
+				// repair all units that are close to the command center and try to finish unfinished buildings
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+					}
+					else if (unit->build_progress < 1) {
+						/* We first need to figure out how to determine if an scv is working on a building
+						* (They don't have a target tag, and only a position as far as I'm currently aware)
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+						*/
 					}
 				}
 			}
@@ -158,8 +162,7 @@ public:
 			if (command->assigned_harvesters > command->ideal_harvesters) {
 				for (auto& unit : units) {
 					if (IsCarryingMinerals(*unit)) {
-						update = true;
-						assignSCV(unit, true, false);
+						assignSCV(unit);
 						break;
 					}
 				}
@@ -202,11 +205,11 @@ public:
 				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
 			}
 			else {
-				// repair all units that are close to the command center
+				// repair all units that are close to the command center (with less priority, there are likely no nearby scvs
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 5, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 6, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 				}
 			}
@@ -249,33 +252,28 @@ public:
 			if (r->assigned_harvesters > r->ideal_harvesters) {
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
-						update = true;
-						assignSCV(s, true, false);
+						assignSCV(s);
 						return;
 					}
 				}
 			}
 		}
-		// perform these checks much more infrequently to prevent excess switching of scvs
-		// and loss of efficiency when attempting to balance resources
-		if (observation->GetGameLoop() % (16 * 5) != 0) { return; }
 
-		// then switch scvs to minerals if we have too much gas compared to vespene
+		// now deal with balancing working gas and minerals
 		for (auto& r : refineries) { // focus oversaturated refineries first
-			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
+			if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) > 1.5) {
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
-						assignSCV(s, false, true);
+						assignSCV(s, false);
 						return;
 					}
 				}
 			}
 		}
-		// and do the same if we don't have enough vespene
-		if (observation->GetVespene() / (observation->GetMinerals() + 1) < 0.4) {
+		if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) < 0.4) {
 			for (auto& s : scvs) {
 				if (IsCarryingMinerals(*s)) {
-					assignSCV(s, false, true);
+					assignSCV(s, false);
 					return;
 				}
 			}
@@ -283,12 +281,11 @@ public:
 	}
 
 	void addUnit(const Unit* u) {
-		update = true;
 		// Add MULES?? -> should still work because they are included in unitIdle()
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
 			++scv_count;
-			assignSCV(u, true, false);
+			assignSCV(u);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -315,10 +312,10 @@ public:
 	 */
 	void deleteUnit(const Unit* u) {
 		if (u->alliance != Unit::Alliance::Self) { return; }
-		update = true;
+
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
-		IsCommandCenter f;
-		if (f(*u)) { // it is necessary to remove the base so scvs will be properly assigned
+
+		if (IsCommandCenter()(*u)) { // it is necessary to remove the base so scvs will be properly assigned
 			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 				if (it->command.tag == u->tag) {
 					active_bases.erase(it);
@@ -375,7 +372,6 @@ public:
 						&& order.ability_id != ABILITY_ID::HARVEST_RETURN)
 					{
 						safe = false;
-						break;
 					}
 				}
 				if (safe) {
@@ -414,7 +410,7 @@ public:
 		// make scv's if not enough; (do orbital_scan if requested)
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
-			assignSCV(u, true, false);
+			assignSCV(u);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MULE: {
@@ -430,7 +426,7 @@ public:
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
 				auto priority = 6;
-				if (scv_count < (active_bases.size() * 10)) { priority = 7; } // prioritize scvs when we are missing many workers
+				if (scv_count < (active_bases.size() * 14)) { priority = 7; } // prioritize scvs when we are missing many workers
 				task_queue->push(Task(TRAIN, RESOURCE_AGENT, priority, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
@@ -463,8 +459,6 @@ private:
 	const ObservationInterface* observation;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
-
-	bool update; // we set this when things happen/are happening so we don't execute step() when not needed
 	
 	int scv_count; // total active scv count
 	int scv_target_count; // aim for 66?
@@ -473,30 +467,29 @@ private:
 
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
-	/*
-	* Assigns an scv to minerals/vespene and tries to maintain a ratio between them
-	* @param u : The scv
-	* @param from_saturated: If the scv is from a saturated resource (treat idle scvs as if they are from
-	*	a saturated resource. If this is set we will just try to assign the scv somewhere
-	* @param resource_switch: Set when attempting to switch from one resource to another. If we cannot switch
-	*	then do not reassign to the original resource (saves time & efficiency from switching targets)
+	/* Tries to assign scvs so we maintain a decent amount of both minerals & vespene
+	* Assumes that when switching the scvs are already harvesting at another target
+	* so if we fail to find a new target (different resource) then we let them keep
+	* working the current one
+	* @param retarget: If switching from another resource this should be set to false
+	*		so we don't waste time switching targets
 	*/
-	void assignSCV(const Unit* u, bool from_saturated, bool resource_switch) {
-		if (from_saturated) {
-			if (!assign_minerals(u)) { assign_vespene(u); }
-		}
-		else if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
-			&& observation->GetGameLoop() / 16 > 30) {
-			if (!assign_vespene(u) && !resource_switch) {
-				assign_minerals(u);
+	void assignSCV(const Unit* u, bool retarget = true) {
+		if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) < 0.4) {
+			if (retarget) {
+				if (!assign_vespene(u)) { assign_minerals(u); }
 			}
+			else { assign_vespene(u); }
 		}
 		else {
-			if (!assign_minerals(u) && !resource_switch) {
-				assign_vespene(u);
+			if (retarget) {
+				if (!assign_minerals(u)) { assign_vespene(u); }
 			}
+			else { assign_minerals(u); }
 		}
 	}
+
+	/* Assign an scv to minerals, preferring the ones they are close to */
 	bool assign_minerals(const Unit* u, bool close = true) {
 		// first try to assign it to the closest base, if that fails go through them all
 		for (auto& p : active_bases) { // saturate bases with scv's
@@ -519,6 +512,8 @@ private:
 		if (close) { assign_minerals(u, false); }
 		return false;
 	}
+
+	/* Assign an scv to vespene, preferring the ones they are close to */
 	bool assign_vespene(const Unit* u, bool close = true) {
 		Units vespene = observation->GetUnits(Unit::Alliance::Self, IsVespeneRefinery());
 		if (vespene.empty()) { return false; }
