@@ -208,7 +208,7 @@ private:
 	* They will form a (semi) ring around the command center. 2+ Rings can exists, but we will first try to 
 	* get a complete ring around each command center of the previous size
 	*/
-	Point2D getPlacement(ABILITY_ID aid_to_place, float multiplier = 1) {
+	Point2D getPlacement(ABILITY_ID aid_to_place) {
 		// for now, get a random point with radius 15 around a command center
 		Point2D point(0, 0);
 		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
@@ -275,15 +275,15 @@ private:
 	Point2D getNextBarracksLocation() {
 		// we'll just build it near a command center for now
 		// which is the same as the supply depots
-		return getPlacement(ABILITY_ID::BUILD_BARRACKS, 15.0f);
+		return getPlacement(ABILITY_ID::BUILD_BARRACKS);
 	}
 
 	Point2D getNextFusionCoreLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE, 15.0f);
+		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE);
 	}
 
 	Point2D getNextFactoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FACTORY, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_FACTORY);
 	}
 
 	Point2D getNextBunkerLocation(Point2D pos) {
@@ -291,15 +291,15 @@ private:
 	}
 
 	Point2D getNextStarportLocation() {
-		return getPlacement(ABILITY_ID::BUILD_STARPORT, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_STARPORT);
 	}
 
 	Point2D getNextEngineeringBayLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY);
 	}
 
 	Point2D getNextArmoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ARMORY, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_ARMORY);
 	}
 
 	Point2D getNextMissileTurretLocation(Point2D pos) {
