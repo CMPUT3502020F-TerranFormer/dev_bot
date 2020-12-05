@@ -159,7 +159,7 @@ public:
 				for (auto& unit : units) {
 					if (IsCarryingMinerals(*unit)) {
 						update = true;
-						assignSCV(unit);
+						assignSCV(unit, true, false);
 						break;
 					}
 				}
@@ -250,20 +250,7 @@ public:
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
 						update = true;
-						assignSCV(s);
-						return;
-					}
-				}
-			}
-		}
-		// the following is here so that we only reassign 1 scv/step which prevents putting
-		// to many to any one building
-		// then switch scvs to minerals if we have too much gas compared to vespene
-		for (auto& r : refineries) { // focus oversaturated refineries first
-			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
-				for (auto& s : scvs) {
-					if (IsCarryingVespene(*s)) {
-						assignSCV(s, true);
+						assignSCV(s, true, false);
 						return;
 					}
 				}
@@ -272,11 +259,23 @@ public:
 		// perform these checks much more infrequently to prevent excess switching of scvs
 		// and loss of efficiency when attempting to balance resources
 		if (observation->GetGameLoop() % (16 * 5) != 0) { return; }
+
+		// then switch scvs to minerals if we have too much gas compared to vespene
+		for (auto& r : refineries) { // focus oversaturated refineries first
+			if (observation->GetVespene() / (observation->GetMinerals() + 1) > 1.5) {
+				for (auto& s : scvs) {
+					if (IsCarryingVespene(*s)) {
+						assignSCV(s, false, true);
+						return;
+					}
+				}
+			}
+		}
 		// and do the same if we don't have enough vespene
 		if (observation->GetVespene() / (observation->GetMinerals() + 1) < 0.4) {
 			for (auto& s : scvs) {
 				if (IsCarryingMinerals(*s)) {
-					assignSCV(s, true);
+					assignSCV(s, false, true);
 					return;
 				}
 			}
@@ -289,7 +288,7 @@ public:
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
 			++scv_count;
-			assignSCV(u);
+			assignSCV(u, true, false);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -415,7 +414,7 @@ public:
 		// make scv's if not enough; (do orbital_scan if requested)
 		switch (u->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_SCV: {
-			assignSCV(u);
+			assignSCV(u, true, false);
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MULE: {
@@ -450,13 +449,13 @@ public:
 
 	/**
 	 * Depending on how many command centers we have, we want to have so much extra supply
-	 * available; try to keep 3/5/6 supply ahead (1/2/3+ command centers)
+	 * available; try to keep 3/5/8 supply ahead (1/2/3+ command centers)
 	 */
 	int getSupplyFloat() {
 		int command_centers = isolated_bases.size() + active_bases.size();
 		if (command_centers <= 1) { return 3; }
 		else if (command_centers == 2) { return 5; }
-		else { return 6; }
+		else { return 8; }
 	}
 
 private:
@@ -474,11 +473,19 @@ private:
 
 	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
-	void assignSCV(const Unit* u, bool resource_switch = false) {
-		// if resource_switch is true, then we would be switching the resource target if we reassign
-		// this is only a problem when trying to balance resource mining, (excess switching of scvs)
-		// so if we fail to switch resource type, the unit target will stay the same
-		if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
+	/*
+	* Assigns an scv to minerals/vespene and tries to maintain a ratio between them
+	* @param u : The scv
+	* @param from_saturated: If the scv is from a saturated resource (treat idle scvs as if they are from
+	*	a saturated resource. If this is set we will just try to assign the scv somewhere
+	* @param resource_switch: Set when attempting to switch from one resource to another. If we cannot switch
+	*	then do not reassign to the original resource (saves time & efficiency from switching targets)
+	*/
+	void assignSCV(const Unit* u, bool from_saturated, bool resource_switch) {
+		if (from_saturated) {
+			if (!assign_minerals(u)) { assign_vespene(u); }
+		}
+		else if (observation->GetVespene() / (observation->GetMinerals()+1) < 0.4
 			&& observation->GetGameLoop() / 16 > 30) {
 			if (!assign_vespene(u) && !resource_switch) {
 				assign_minerals(u);

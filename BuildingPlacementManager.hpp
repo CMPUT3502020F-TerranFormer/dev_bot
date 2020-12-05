@@ -218,23 +218,50 @@ private:
 		return Point2D(0, 0);
 	}
 
-	/* This checks around all the command centers */
+	/* This checks around all the command centers 
+	* Try to form a 3x3 grid of buildings with the command center in the center
+	* All locations must be >4 units from minerals, and >5 units (horizontallly) from the next location
+	* (4 units vertically, so units can move between them) this lets all add-ons be built as long as they aren't
+	*	against a wall (so check for placement 1 unit to the right before it's considered valid)
+	* They will form a (semi) ring around the command center. 2+ Rings can exists, but we will first try to 
+	* get a complete ring around each command center of the previous size
+	*/
 	Point2D getPlacement(ABILITY_ID aid_to_place, float multiplier = 1) {
 		// for now, get a random point with radius 15 around a command center
 		Point2D point(0, 0);
 		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
 
-		auto i = 0;
-		while (++i < time_out) {
-			// we don't want to build them all around the same command center so while this is not perfect
-			// as more buildings are built, it's more likely to build around a different command center
+		auto ring = 0; // ring 0 is 1x1 (the command center)
+		while (++ring < 6) {
 			for (auto& c : command_centers) {
-				point = c->pos;
-				point = Point2D(point.x + (GetRandomScalar() * multiplier), point.y + (GetRandomScalar() * multiplier));
-				if (query->Placement(aid_to_place, point)) { return point; }
+				auto minerals = observation->GetUnits(Unit::Alliance::Neutral,
+					[c](const Unit& u) { return IsMinerals()(u) && IsClose(c->pos, 100)(u); });
+				for (auto x = -ring; x <= ring; ++x) { // to get x coord
+					point = c->pos;
+					point.x += (x * 5.0f);
+					for (auto y = -ring; y <= ring; ++y) { // y coord
+						point.y = c->pos.y;
+						point.y += (y * 4.0f);
+						if (x == 0) { // so units can move between command center & building
+							if (y < 0) { point.y -= 1; }
+							else if (y > 0) { point.y += 1; }
+						}
+						if (query->Placement(aid_to_place, point)) { 
+							// check that an add-on can be built, and that
+							// it doesn't get in the way of scvs mining minerals
+							Point2D right = point;
+							++right.x;
+							if (query->Placement(aid_to_place, right)
+								&& !PointNearUnits(minerals, 4.0f)(point)) {
+								return point;
+							}
+						}
+					}
+				}
 			}
+			++ring;
 		}
-		std::cerr << "Time out getting building location, ABILITY_ID: " << (int) aid_to_place << std::endl;
+		std::cerr << "Error getting Ring building location, ABILITY_ID: " << (int) aid_to_place << std::endl;
 		return Point2D(0, 0);
 	}
 
@@ -251,7 +278,7 @@ private:
 			for (auto& m : minerals) {
 				point = Point2D(m->pos.x + (GetRandomScalar() * 4.0f), m->pos.y + (GetRandomScalar() * 4.0f));
 				for (auto& c : command_centers) {
-					if (DistanceSquared2D(c->pos, point) > 36
+					if (DistanceSquared2D(c->pos, point) > 40
 						&& DistanceSquared2D(c->pos, m->pos) < 100
 						&& query->Placement(ABILITY_ID::BUILD_SUPPLYDEPOT, point))
 					{
