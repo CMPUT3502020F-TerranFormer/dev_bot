@@ -152,17 +152,6 @@ void ATTACK_BOT::addUnit(TF_unit u)
 
 void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit *u)
 {
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-    case UNIT_TYPEID::TERRAN_FACTORY:
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        buildAddOn(u);
-        break;
-
-    default:
-        break;
-    }
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit *u)
@@ -179,28 +168,6 @@ void ATTACK_BOT::unitDestroyed(const sc2::Unit *u)
 
 void ATTACK_BOT::unitCreated(const sc2::Unit *u)
 {
-    // this is  where we want to check for building pre-requisites and try to build them.
-
-    // for now, only allow this many barracks/factories/starports -> should have more complex conditions
-    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
-    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
-    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
-    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
-    if (barracks_count < 1 + (2 * command_count))
-    {
-
-        buildBarracks();
-    }
-
-    if (factory_count < 2 * command_count)
-    {
-        buildFactory();
-    }
-
-    if (starport_count < 1 * command_count)
-    {
-        buildStarport();
-    }
 }
 
 void ATTACK_BOT::unitEnterVision(const sc2::Unit *u)
@@ -221,91 +188,6 @@ void ATTACK_BOT::setAgents(TF_Agent *defenceb, TF_Agent *resourceb, TF_Agent *sc
     this->defence = defenceb;
     this->resource = resourceb;
     this->scout = scoutb;
-}
-
-void ATTACK_BOT::buildBarracks()
-{
-    // Prereqs of building barrack: Supply Depot
-    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1)
-    {
-        return;
-    }
-    else
-    {
-        resource->addTask(
-            Task(BUILD, 
-                ATTACK_AGENT, 
-                5, // we want to prioritize building units over buildings 
-                UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_BARRACKS));
-    }
-}
-
-void ATTACK_BOT::buildFactory()
-{
-    //  Prereqs of building factory: Barracks
-    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 1)
-    {
-        buildBarracks();
-    }
-    else
-    {
-        resource->addTask(
-            Task(BUILD,
-                ATTACK_AGENT,
-                5,
-                UNIT_TYPEID::TERRAN_FACTORY,
-                ABILITY_ID::BUILD_FACTORY)
-        );
-    }
-}
-
-void ATTACK_BOT::buildStarport()
-{
-    // Prereqs of building starport: Factory
-    if (troopManager->CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 1)
-    {
-        buildFactory();
-    }
-    else
-    {
-        resource->addTask(
-            Task(BUILD,
-                ATTACK_AGENT,
-                5,
-                UNIT_TYPEID::TERRAN_STARPORT,
-                ABILITY_ID::BUILD_STARPORT)
-        );
-    }
-}
-
-void ATTACK_BOT::buildAddOn(const Unit *u)
-{
-    // proof of concept, build a reactor on each barracks (should not actually use priority 8)
-
-    // TODO: For now all add-ons have been set to default, will need to implement a way to choose the add - on
-
-    if (u->build_progress != 1)
-    {
-        return;
-    }
-
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-        resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
-                               ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
-
-    case UNIT_TYPEID::TERRAN_FACTORY:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
-                 u->tag));
-
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
-                 u->tag));
-    }
 }
 
 void ATTACK_BOT::all_alive(std::vector<const Unit *> attack_units)

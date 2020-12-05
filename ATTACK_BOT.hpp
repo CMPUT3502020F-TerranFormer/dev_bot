@@ -75,18 +75,7 @@ public:
 
     void setAgents(TF_Agent* defenceb, TF_Agent* resourceb, TF_Agent* scoutb);
 
-
     void init();
-
-    // Same as buildStructure, except in this case, we build much closer to the building
-    // template, change later
-    void buildAddOn(const Unit* unit);
-
-    void buildBarracks();
-
-    void buildFactory();
-
-    void buildStarport();
 
     // Pointer protection
     // Clear all the dead units in the vector of attack_units
