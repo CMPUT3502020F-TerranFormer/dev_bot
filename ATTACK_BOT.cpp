@@ -396,7 +396,7 @@ const Unit* ATTACK_BOT::slowestUnit(Units attack_units)
 {
 
     UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[0]->unit_type];
-    const Unit *slowestUnit = nullptr;
+    const Unit *slowestUnit = attack_units[0];
 
     float min_speed = ut.movement_speed;
     float current_speed = ut.movement_speed;
