@@ -33,19 +33,18 @@ void RESOURCE_BOT::step() {
     // actions for bases
 
     //Throttle some behavior that can wait to avoid duplicate orders.
-    int frames_to_skip = 8;
+    //int frames_to_skip = 4;
 
-    if (observation->GetFoodUsed() >= observation->GetFoodCap()) {
-        frames_to_skip = 16;
-    }
-
-    if (observation->GetGameLoop() % frames_to_skip != 0) {
-        return;
-    }
+    //if (observation->GetFoodUsed() >= observation->GetFoodCap()) {
+    //    frames_to_skip = 12;
+    //}
 
     Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
-
     baseManager->step(scvs);
+
+    //if (observation->GetGameLoop() % frames_to_skip != 0) {
+    //    return;
+    //}
 
     // Resource Management
     // check if we need to build a supply depot
@@ -66,7 +65,9 @@ void RESOURCE_BOT::step() {
         switch (t.action) {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
-            action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true); // important because we do a lot of reassigning
+            if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
+                action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN);
+            }
             action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
             action->SendActions();
             break;
@@ -81,9 +82,13 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
-                task_queue.push(t);
-                task_success = false;
-                break;
+                if (observation->GetFoodCap() < 200
+                    && (ut.mineral_cost > available_minerals || ut.vespene_cost > available_vespene))
+                { // don't keep tasks when we reach max supply, and have the resources
+                    task_queue.push(t);
+                    task_success = false;
+                    break;
+                }
             }
             if (buildStructure(scvs, t.unit_typeid, t.ability_id, t.position, t.target)) { // if building succeeded
                 action->SendActions();
@@ -122,8 +127,12 @@ void RESOURCE_BOT::step() {
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
             {
-                task_queue.push(t);
-                task_success = false;
+                if (observation->GetFoodCap() < 200
+                    && (ut.mineral_cost > available_minerals || ut.vespene_cost > available_vespene))
+                { // don't keep tasks when we reach max supply, and have the resources
+                    task_queue.push(t);
+                    task_success = false;
+                }
                 break;
             }
 
@@ -142,8 +151,7 @@ void RESOURCE_BOT::step() {
         case REPAIR: {
             // will repair unit anyway even if there is not enough resources
             // resource cost = %health lost * build cost
-            // we must also limit the number of scvs that can repair a unit at once
-            // -> t.count
+            // we must also limit the number of scvs that can repair a unit at -> t.count
             int current_scvs = 0;
             for (auto& s : scvs) {
                 for (auto& order : s->orders) {
@@ -163,9 +171,6 @@ void RESOURCE_BOT::step() {
                     action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN, true);
                     action->UnitCommand(scv, t.ability_id, u, true);
                     action->SendActions();
-
-                    // don't update resources as they have not been used yet
-                    // and we want to flush out all extra repair tasks
                 }
             }
             break;
@@ -322,24 +327,25 @@ void RESOURCE_BOT::buildSupplyDepot(Units scvs) {
 bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type, 
     ABILITY_ID ability_to_build_structure, Point2D point, Tag target) {
 
-    Tag scv_tag = baseManager->getSCV(scvs).tag;
-    if (scv_tag == -1) { 
-        std::cerr << "Error building: There are no scvs" << std::endl;
-        return false; 
-    } // there are no scvs
-    const Unit* scv = observation->GetUnit(scv_tag);
-    if (scv == nullptr) { 
-        std::cerr << "Error building: invalid scv" << std::endl;
-        return false; 
-    }
-
-    // commands are queued just in case the same scv is returned several times
     if (target != -1) { // build on a target unit
         const Unit* building = observation->GetUnit(target);
         if (building == nullptr) { 
             std::cerr << "Building Error: Invalid Target Unit" << std::endl;
             return false; 
         }
+
+        // get close scv
+        Tag scv_tag = baseManager->getSCV(scvs, building->pos).tag;
+        if (scv_tag == -1) {
+            std::cerr << "Error building: There are no scvs" << std::endl;
+            return false;
+        } // there are no scvs
+        const Unit* scv = observation->GetUnit(scv_tag);
+        if (scv == nullptr) {
+            std::cerr << "Error building: invalid scv" << std::endl;
+            return false;
+        }
+
         if (query->Placement(ability_to_build_structure, building->pos, building)
             && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
             action->UnitCommand(scv, ability_to_build_structure, building, true);
@@ -350,6 +356,19 @@ bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type,
         if (!buildCheckDuplicate(scvs, ability_to_build_structure)) {
             Point2D new_point = buildingPlacementManager->getNextLocation(unit_type, point);
             if (new_point == Point2D(0, 0)) { return false; }
+
+            // get close scv
+            Tag scv_tag = baseManager->getSCV(scvs, new_point).tag;
+            if (scv_tag == -1) {
+                std::cerr << "Error building: There are no scvs" << std::endl;
+                return false;
+            } // there are no scvs
+            const Unit* scv = observation->GetUnit(scv_tag);
+            if (scv == nullptr) {
+                std::cerr << "Error building: invalid scv" << std::endl;
+                return false;
+            }
+
             action->UnitCommand(scv, ability_to_build_structure, new_point, true);
             return true;
         }
