@@ -92,24 +92,15 @@ public:
     void allAlive(std::vector<const Unit *> attack_units);
 
     // Returns the slowest unit
-    void slowestUnit(Units attack_units);
+    const Unit* slowestUnit(Units attack_units);
 
     // if unit is a flying attack unit,
     // returns true 
     // else 
     // return false
-    bool IsAFlyingAttackUnit(UNIT_TYPEID unit_typeid)
-    {
-        switch (unit_typeid)
-        {
-        case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
-        case UNIT_TYPEID::TERRAN_LIBERATOR:
-        case UNIT_TYPEID::TERRAN_BANSHEE:
-        case UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            return true;
-        }
-        return false;
-    }
+    bool IsAFlyingAttackUnit(UNIT_TYPEID unit_typeid);
+
+    bool IsASupportUnit(UNIT_TYPEID unit_typeid);
 
     std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
 
@@ -117,6 +108,7 @@ private:
     std::vector<TF_unit> units;
     Units ground_units;
     Units air_units;
+    Units support_units;
     TF_Agent *defence;
     TF_Agent *resource;
     TF_Agent *scout;

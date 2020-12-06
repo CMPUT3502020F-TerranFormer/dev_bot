@@ -376,6 +376,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         case (int) UNIT_TYPEID::TERRAN_TECHLAB:
             action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
             action->UnitCommand(u, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD);
             break;
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             /*

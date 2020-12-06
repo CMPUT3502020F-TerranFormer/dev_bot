@@ -109,7 +109,7 @@ public:
         {
             if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
-                if (CountUnitType(unit->unit_type) < 3)
+                if (CountUnitType(unit->unit_type) < 4)
                 {
                     return;
                 }
@@ -138,7 +138,7 @@ public:
                 }
             }
 
-            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACKBARRAGE, enemy_locations.back()));
 
             // Tried to limit choke points by designing an area as accepted rather than a point
             // Point2D enemy_loc = enemy_locations.back();
@@ -177,7 +177,7 @@ public:
                 }
             }
 
-            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
 
             // Tried to limit choke points by designing an area as accepted rather than a point
             // Point2D enemy_loc = enemy_locations.back();
@@ -257,7 +257,7 @@ private:
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size = 30;
+    int squadron_size = 32;
 };
 
 #endif

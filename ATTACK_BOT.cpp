@@ -50,9 +50,15 @@ void ATTACK_BOT::step()
             // Because air units will travel faster than the ground units
             const Unit *air_unit = nullptr;
             const Unit *ground_unit = nullptr;
+            const Unit *support_unit = nullptr;
+            ABILITY_ID support_aid;
             if (IsAFlyingAttackUnit(t.unit_typeid))
             {
                 air_unit = t.unit;
+            }
+            else if (IsASupportUnit(t.unit_typeid))
+            {
+                support_unit = t.unit;
             }
             else
             {
@@ -82,11 +88,19 @@ void ATTACK_BOT::step()
                 //action->SendChat("Adding ground units");
             }
 
-            if (air_unit != nullptr && std::find(air_units.begin(), air_units.end(), t.unit) == air_units.end())
+            if (air_unit != nullptr && std::find(air_units.begin(), air_units.end(), air_unit) == air_units.end())
             {
                 // if the unit is not in the vector
                 // add it
                 air_units.push_back(air_unit);
+                //action->SendChat("Adding air units");
+            }
+
+            if (support_unit != nullptr && std::find(support_units.begin(), support_units.end(), support_unit) == support_units.end())
+            {
+                // if the unit is not in the vector
+                // add it
+                support_units.push_back(support_unit);
                 //action->SendChat("Adding air units");
             }
 
@@ -97,13 +111,20 @@ void ATTACK_BOT::step()
                 // check that none of the units in the attack units are dead
                 allAlive(ground_units);
                 allAlive(air_units);
+                allAlive(support_units);
                 action->UnitCommand(ground_units, t.ability_id, t.position);
                 //action->SendChat("Moving ground units");
 
                 auto size = ground_units.size();
-                action->UnitCommand(air_units, t.ability_id, ground_units[size - 1]->pos);
+                const Unit *slowest_unit = slowestUnit(ground_units);
+                Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
+                action->UnitCommand(air_units, t.ability_id, su_pos);
+
+                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, su_pos);
+
                 ground_units.clear();
                 air_units.clear();
+                support_units.clear();
                 troopManager->mark_location_visited();
             }
 
@@ -347,16 +368,51 @@ void ATTACK_BOT::allAlive(std::vector<const Unit *> attack_units)
     }
 }
 
-// void ATTACK_BOT::slowestUnit(Units attack_units)
-// {
-//     UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
-//     auto slowestUnit = attack_units.end();
-//     for (auto unit : attack_units)
-//     {
-//         UnitTypeData()
-//         if (unit->unit_type.)
-//     }
-// }
+bool ATTACK_BOT::IsAFlyingAttackUnit(UNIT_TYPEID unit_typeid)
+{
+    switch (unit_typeid)
+    {
+    case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+    case UNIT_TYPEID::TERRAN_LIBERATOR:
+    case UNIT_TYPEID::TERRAN_BANSHEE:
+    case UNIT_TYPEID::TERRAN_BATTLECRUISER:
+        return true;
+    }
+    return false;
+}
+
+bool ATTACK_BOT::IsASupportUnit(UNIT_TYPEID unit_typeid)
+{
+    switch (unit_typeid)
+    {
+    case UNIT_TYPEID::TERRAN_RAVEN:
+    case UNIT_TYPEID::TERRAN_MEDIVAC:
+        return true;
+    }
+    return false;
+}
+
+const Unit* ATTACK_BOT::slowestUnit(Units attack_units)
+{
+
+    UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[0]->unit_type];
+    const Unit *slowestUnit = nullptr;
+
+    float min_speed = ut.movement_speed;
+    float current_speed = ut.movement_speed;
+
+    for (auto unit : attack_units)
+    {
+        ut = observation->GetUnitTypeData()[(UnitTypeID)unit->unit_type];
+        current_speed = ut.movement_speed;
+        if (current_speed < min_speed)
+        {
+            min_speed = current_speed;
+            slowestUnit = unit;
+        }
+    }
+    return slowestUnit;
+}
 
 std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since)
 {
