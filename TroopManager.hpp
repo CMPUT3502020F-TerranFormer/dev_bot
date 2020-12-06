@@ -34,15 +34,16 @@ public:
         {
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
+        case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
         case UNIT_TYPEID::TERRAN_BANSHEE:
         case UNIT_TYPEID::TERRAN_MARAUDER:
         case UNIT_TYPEID::TERRAN_THOR:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
-            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK)
+            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
-                if (CountUnitType(unit->unit_type) < 4)
+                if (CountUnitType(unit->unit_type) < 3)
                 {
                     return;
                 }

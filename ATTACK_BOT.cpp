@@ -18,7 +18,8 @@ ATTACK_BOT::~ATTACK_BOT()
 {
 }
 
-void ATTACK_BOT::init() {
+void ATTACK_BOT::init()
+{
     troopManager = new TroopManager(&task_queue, observation, scout);
 }
 
@@ -44,12 +45,24 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
+            // Classify the units in flying or ground
+            // to facilitate movement
+            // Because air units will travel faster than the ground units
+            const Unit *air_unit = nullptr;
+            const Unit *ground_unit = nullptr;
+            if (IsAFlyingAttackUnit(t.unit_typeid))
+            {
+                air_unit = t.unit;
+            }
+            else
+            {
+                ground_unit = t.unit;
+            }
+
             // if a tank is in siege mode, unsiege them
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
                 action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
-                attack_units.push_back(t.unit);
-                return;
             }
 
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_BANSHEE)
@@ -60,21 +73,37 @@ void ATTACK_BOT::step()
             // Check that we are not duplicating units
             // My assumption is that since units attack only when the army count reaches squadron size
             // Units might be idle for multiple game cycles
-            if (std::find(attack_units.begin(), attack_units.end(), t.unit) == attack_units.end())
+
+            if (ground_unit != nullptr && std::find(ground_units.begin(), ground_units.end(), ground_unit) == ground_units.end())
             {
                 // if the unit is not in the vector
                 // add it
-                attack_units.push_back(t.unit);
+                ground_units.push_back(ground_unit);
+                //action->SendChat("Adding ground units");
             }
-            
+
+            if (air_unit != nullptr && std::find(air_units.begin(), air_units.end(), t.unit) == air_units.end())
+            {
+                // if the unit is not in the vector
+                // add it
+                air_units.push_back(air_unit);
+                //action->SendChat("Adding air units");
+            }
+
             // if our current number of attacks units are enough to form a squadron
             // Command all units to attack
-            if (attack_units.size() >= troopManager->getSquadronSize())
+            if (ground_units.size() + air_units.size() >= troopManager->getSquadronSize())
             {
                 // check that none of the units in the attack units are dead
-                all_alive(attack_units);
-                action->UnitCommand(attack_units, t.ability_id, t.position);
-                attack_units.clear();
+                allAlive(ground_units);
+                allAlive(air_units);
+                action->UnitCommand(ground_units, t.ability_id, t.position);
+                //action->SendChat("Moving ground units");
+
+                auto size = ground_units.size();
+                action->UnitCommand(air_units, t.ability_id, ground_units[size - 1]->pos);
+                ground_units.clear();
+                air_units.clear();
                 troopManager->mark_location_visited();
             }
 
@@ -82,7 +111,7 @@ void ATTACK_BOT::step()
             // if (observation->GetArmyCount() - troopManager->getSquadronSize() > 20)
             // {
             //     troopManager->incSquadronSize();
-            // }  
+            // }
             break;
         }
         case REPAIR:
@@ -201,6 +230,17 @@ void ATTACK_BOT::all_alive(std::vector<const Unit *> attack_units)
         }
     }
 }
+
+// void ATTACK_BOT::slowestUnit(Units attack_units)
+// {
+//     UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+//     auto slowestUnit = attack_units.end();
+//     for (auto unit : attack_units)
+//     {
+//         UnitTypeData()
+//         if (unit->unit_type.)
+//     }
+// }
 
 std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since)
 {
