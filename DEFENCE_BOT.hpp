@@ -11,8 +11,8 @@
 #include "SQLITE3.hpp"
 #include "SQLITE3_QUERY.hpp"
 
+#include <random>
 #include <thread>
-#include <atomic>
 
 struct DEFENCE_POI {
     Point2D pos;
@@ -100,6 +100,10 @@ private:
     TF_Agent *resource;
     TF_Agent *scout;
 
+    std::random_device rd;
+    std::mt19937 gen;
+    std::uniform_real_distribution<> dis;
+
     std::vector<DEFENCE_POI> poi;
     std::vector<Point2D> bases;
     std::vector<Point2D> base_needs_defence;
@@ -123,16 +127,16 @@ private:
     int bansheeCount = 0;
     int battleCruiserCount = 0;
 
-    int tankMaxCount = 5;
+    int tankMaxCount = 8;
     int cycloneMaxCount = 5;
     int marineMaxCount = 30;
-    int marauderMaxCount = 20;
-    int thorMaxCount = 2;
-    int bansheeMaxCount = 20;
+    int marauderMaxCount = 30;
+    int thorMaxCount = 4;
+    int bansheeMaxCount = 40;
     int battleCruiserMaxCount = 1;
 
     double troopMaxCountMultiplier = 1.5;
-    int multiplierCounter = 0;
+    double multiplierCounter = 0;
 
     bool hasBarracks = false;
     bool hasEngineeringBay = false;
@@ -179,6 +183,7 @@ private:
     void orderBanshee(int count);
     void orderCyclone(int count);
     void orderBattleCruiser(int count);
+    void orderWidowMine(int count);
 
     void check_for_engineering_bay();
     void check_for_factory();
