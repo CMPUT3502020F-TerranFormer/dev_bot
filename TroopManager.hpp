@@ -60,7 +60,7 @@ public:
             // Anti Marines and Tanks
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 4)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -91,24 +91,25 @@ public:
         case UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
         case UNIT_TYPEID::TERRAN_FACTORYREACTOR:
         {
-            // if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
-            // {
-            //     task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_FACTORY, unit->tag));
-            // }
+            if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
+            {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_FACTORY, unit->tag));
+            }
             break;
         }
 
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
+        case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
         case UNIT_TYPEID::TERRAN_BANSHEE:
         case UNIT_TYPEID::TERRAN_MARAUDER:
         case UNIT_TYPEID::TERRAN_THOR:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
-            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANK)
+            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
-                if (CountUnitType(unit->unit_type) < 4)
+                if (CountUnitType(unit->unit_type) < 3)
                 {
                     return;
                 }
