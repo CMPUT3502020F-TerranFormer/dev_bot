@@ -13,6 +13,42 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
 DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
+    while (!task_queue.empty()) {
+        Task t = task_queue.pop();
+        switch (t.action) {
+        case TRANSFER: {
+            /* Transfer a unit to another agent, and remove from resource unit list
+            * The exact unit must be specified
+            */
+            TF_unit unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self);
+
+            // add to correct agent
+            switch (t.source) {
+            case RESOURCE_AGENT: resource->addUnit(unit);
+                break;
+            case ATTACK_AGENT: attack->addUnit(unit);
+                break;
+            case SCOUT_AGENT: scout->addUnit(unit);
+                break;
+            default:
+                std::cerr << "TRANSFER to invalid agent requested!" << std::endl;
+                return;
+            }
+
+            // and remove from resource_units
+            for (auto it = units.cbegin(); it != units.cend(); ++it) {
+                if (it->tag == t.self) {
+                    units.erase(it);
+                    break;
+                }
+            }
+            break;
+        }
+        default:
+            std::cerr << "DEFENCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
+        }
+    }
+
     if (balance_step / 16 > 20) {
         defence_balance();
         balance_step = 0;
@@ -351,6 +387,9 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
     if (observation->GetMinerals() > 50) { buildingIdle(u); }
+
+    if (std::find(std::begin(units), std::end(units), u->tag) == std::end(units)) { return; }
+
     switch ((int) u->unit_type) { // troop logic is here
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             /*
@@ -382,7 +421,7 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
     // TODO use behavior tree to replace the following logic
     // engineering bay upgrade tree
     switch (u->unit_type.ToType()) {
-    case UNIT_TYPEID::TERRAN_ENGINEERINGBAY:
+    case UNIT_TYPEID::TERRAN_ENGINEERINGBAY: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1));
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1));
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2));
@@ -396,9 +435,10 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
             }
         }
         break;
+    }
         // TODO use behavior tree to replace the following logic
         // armoury upgrade tree
-    case UNIT_TYPEID::TERRAN_ARMORY:
+    case UNIT_TYPEID::TERRAN_ARMORY: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1));
         if (infantryUpgradePhase1Complete) {
             resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1));
@@ -415,11 +455,13 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
             }
         }
         break;
-    case UNIT_TYPEID::TERRAN_TECHLAB:
+    }
+    case UNIT_TYPEID::TERRAN_TECHLAB: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::COMBATSHIELD, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1));
         // not sure what the UPGRADE_ID is, neosteel frames has a higher cost so we'll use that in it's place
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS)); 
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS));
         break;
+    }
     // the following is the old (modified for defence) logic from ATTACK
     case UNIT_TYPEID::TERRAN_BARRACKS:
         // barracks train marine
@@ -1065,7 +1107,4 @@ void DEFENCE_BOT::defence_balance() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
-
-
-
 
