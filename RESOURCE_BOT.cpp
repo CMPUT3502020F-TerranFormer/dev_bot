@@ -32,19 +32,8 @@ void RESOURCE_BOT::gameStart() {
 void RESOURCE_BOT::step() {
     // actions for bases
 
-    //Throttle some behavior that can wait to avoid duplicate orders.
-    //int frames_to_skip = 4;
-
-    //if (observation->GetFoodUsed() >= observation->GetFoodCap()) {
-    //    frames_to_skip = 12;
-    //}
-
     Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
     baseManager->step(scvs);
-
-    //if (observation->GetGameLoop() % frames_to_skip != 0) {
-    //    return;
-    //}
 
     // Resource Management
     // check if we need to build a supply depot
@@ -68,7 +57,7 @@ void RESOURCE_BOT::step() {
             if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
                 action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN);
             }
-            action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+            action->UnitCommand(unit, ABILITY_ID::SMART, observation->GetUnit(t.target), true);
             action->SendActions();
             break;
         }
@@ -77,7 +66,7 @@ void RESOURCE_BOT::step() {
              * unless specifically allowed. Identical units will be removed from the queue
              * and check that we have enough resources to build unit
              */
-            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
+            UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID) t.unit_typeid];
             if (ut.food_required > available_food
                 || ut.mineral_cost > available_minerals
                 || ut.vespene_cost > available_vespene)
@@ -259,7 +248,7 @@ void RESOURCE_BOT::buildingConstructionComplete(const sc2::Unit* u) {
 void RESOURCE_BOT::unitDestroyed(const sc2::Unit* u) {
     if (u->alliance != Unit::Alliance::Self) { return; }
     baseManager->deleteUnit(u);
-    for (auto it = units.cbegin(); it != units.cend(); ++it) {
+    for (auto it = units.begin(); it != units.end(); ++it) {
         if (*it == u->tag) {
             units.erase(it);
             return;

@@ -95,8 +95,8 @@ void ATTACK_BOT::step()
             if (ground_units.size() + air_units.size() >= troopManager->getSquadronSize())
             {
                 // check that none of the units in the attack units are dead
-                allAlive(ground_units);
-                allAlive(air_units);
+                all_alive(ground_units);
+                all_alive(air_units);
                 action->UnitCommand(ground_units, t.ability_id, t.position);
                 //action->SendChat("Moving ground units");
 

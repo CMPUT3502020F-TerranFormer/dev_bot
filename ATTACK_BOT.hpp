@@ -79,7 +79,7 @@ public:
 
     // Pointer protection
     // Clear all the dead units in the vector of attack_units
-    void allAlive(std::vector<const Unit *> attack_units);
+    void all_alive(std::vector<const Unit*> attack_units);
 
     // Returns the slowest unit
     void slowestUnit(Units attack_units);

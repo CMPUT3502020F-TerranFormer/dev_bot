@@ -72,7 +72,7 @@ public:
                 }
             }
 
-            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACKTOWARDS, enemy_locations.back()));
 
             // Tried to limit choke points by designing an area as accepted rather than a point
             // Point2D enemy_loc = enemy_locations.back();

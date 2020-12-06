@@ -191,6 +191,8 @@ private:
     static int get_defence_score(UNIT_TYPEID id);
 
     void defence_balance();
+
+    void check_active_defence();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP

@@ -26,7 +26,7 @@ void DEFENCE_BOT::step() {
             switch (t.source) {
             case RESOURCE_AGENT: resource->addUnit(unit);
                 break;
-            case ATTACK_AGENT: attack->addUnit(unit);
+            case DEFENCE_AGENT: attack->addUnit(unit);
                 break;
             case SCOUT_AGENT: scout->addUnit(unit);
                 break;
@@ -60,6 +60,8 @@ void DEFENCE_BOT::step() {
     check_for_factory();
 
     auto gl = observation->GetGameLoop();
+
+    if (gl % 16 == 0) { check_active_defence(); }
 
     if (!orderedEngBay && !hasEngineeringBay && gl / 16 > 500) {
         buildEngineeringBay();
@@ -314,26 +316,33 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
             battleCruiserCount -= 5 * multiplierCounter;
             break;
     }
+
+    for (auto it = units.begin(); it != units.end(); ++it) {
+        if (it->tag == u->tag) {
+            units.erase(it);
+            return;
+        }
+    }
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
-    /* From ATTACK, this needs to be updated -- we build too many buildings!!
+    /* From ATTACK, this needs to be updated -- we build too many buildings - I already reduced the number we build from this
     I lowered the priority of these building to 6 so they would still build */
     int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
     int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
     int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
     int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
-    if (barracks_count < 1 + (2 * command_count))
+    if (barracks_count < 1 + (command_count))
     {
         buildBarracks();
     }
 
-    if (factory_count < 2 * command_count)
+    if (factory_count < command_count)
     {
         buildFactory();
     }
 
-    if (starport_count < 1 * command_count)
+    if (starport_count < command_count)
     {
         buildStarport();
     }
@@ -395,7 +404,7 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
 }
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
-    if (observation->GetMinerals() > 50) { buildingIdle(u); }
+    buildingIdle(u);
 
     if (std::find(std::begin(units), std::end(units), TF_unit(u->unit_type, u->tag)) == std::end(units)) { return; }
 
@@ -542,19 +551,19 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
         // Anti air units
         if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_VIKINGFIGHTER)).size() < 4)
         {
-            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 6, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 7, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
                 UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
 
         // Detector troops
         if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_RAVEN)).size() < 2) {
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
                 UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
 
         // Healer
         if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MEDIVAC)).size() < 2) {
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
                 UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
         break;
@@ -699,7 +708,7 @@ void DEFENCE_BOT::buildFusion() {
 
 void DEFENCE_BOT::buildStarport() {
     Task buildSP(BUILD,
-                 ATTACK_AGENT,
+                 DEFENCE_AGENT,
                  6,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT);
@@ -708,7 +717,7 @@ void DEFENCE_BOT::buildStarport() {
 
 void DEFENCE_BOT::buildBarracks() {
     Task buildBR(BUILD,
-                 ATTACK_AGENT,
+                 DEFENCE_AGENT,
                  6,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS);
@@ -717,7 +726,7 @@ void DEFENCE_BOT::buildBarracks() {
 
 void DEFENCE_BOT::buildFactory() {
     Task buildFT(BUILD,
-                 ATTACK_AGENT,
+                 DEFENCE_AGENT,
                  6,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY);
@@ -726,7 +735,7 @@ void DEFENCE_BOT::buildFactory() {
 
 void DEFENCE_BOT::buildBunker(Point2D pos) {
     Task buildFT(BUILD,
-                 ATTACK_AGENT,
+                 DEFENCE_AGENT,
                  10,
                  UNIT_TYPEID::TERRAN_BUNKER,
                  ABILITY_ID::BUILD_BUNKER,
@@ -889,7 +898,7 @@ void DEFENCE_BOT::orderSiegeTank(int count) {
 
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                7,
                                ABILITY_ID::TRAIN_SIEGETANK,
                                UNIT_TYPEID::TERRAN_SIEGETANK,
@@ -919,7 +928,7 @@ void DEFENCE_BOT::orderBattleCruiser(int count) {
         if (port->unit_type == UNIT_TYPEID::TERRAN_STARPORTTECHLAB) {
             for (int i = 0; i < count; ++i) {
                 resource->addTask(Task(TRAIN,
-                                       ATTACK_AGENT,
+                                       DEFENCE_AGENT,
                                        10,
                                        ABILITY_ID::TRAIN_BATTLECRUISER,
                                        UNIT_TYPEID::TERRAN_BATTLECRUISER,
@@ -942,7 +951,7 @@ void DEFENCE_BOT::orderThor(int count) {
 
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                8,
                                ABILITY_ID::TRAIN_THOR,
                                UNIT_TYPEID::TERRAN_THOR,
@@ -960,7 +969,7 @@ void DEFENCE_BOT::orderMarine(int count) {
     }
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                7,
                                ABILITY_ID::TRAIN_MARINE,
                                UNIT_TYPEID::TERRAN_MARINE,
@@ -978,7 +987,7 @@ void DEFENCE_BOT::orderMarauder(int count) {
     }
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                7,
                                ABILITY_ID::TRAIN_MARAUDER,
                                UNIT_TYPEID::TERRAN_MARAUDER,
@@ -996,7 +1005,7 @@ void DEFENCE_BOT::orderBanshee(int count) {
     }
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                10,
                                ABILITY_ID::TRAIN_BANSHEE,
                                UNIT_TYPEID::TERRAN_BANSHEE,
@@ -1015,7 +1024,7 @@ void DEFENCE_BOT::orderCyclone(int count) {
 
     for (int i = 0; i < count; ++i) {
         resource->addTask(Task(TRAIN,
-                               ATTACK_AGENT,
+                               DEFENCE_AGENT,
                                7,
                                ABILITY_ID::TRAIN_CYCLONE,
                                UNIT_TYPEID::TERRAN_CYCLONE,
@@ -1134,3 +1143,65 @@ void DEFENCE_BOT::defence_balance() {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
+void DEFENCE_BOT::check_active_defence() {
+    // this figures out what the groups of enemy units nears our command centers are
+    // and commands our units to approach them (if not in range -- need to figure this one out)
+    auto command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+    auto enemy_units = observation->GetUnits(Unit::Alliance::Enemy, IsNearUnits(command_centers, 8));
+
+    if (enemy_units.empty() || command_centers.empty()) { return; }
+
+    // get only the offensive units we own
+    std::vector<TF_unit> army;
+    for (auto& u : units) {
+        if (IsArmy()(u.type)) {
+            army.push_back(u);
+        }
+    }
+
+    // now we need to figure out if there are separate groups of enemies (and how large they are)
+    // we'll do this by going through the enemy units (taking the first unit as the initial group)
+    // and checking if the other units are within range 10, if they aren't -> treat it as another group
+    std::vector<std::pair<Point2D, int>> enemy_groups;
+
+    auto first_enemy = enemy_units.back();
+    enemy_units.pop_back();
+    enemy_groups.emplace_back(first_enemy->pos, 1);
+
+    for (auto& e : enemy_units) {
+        for (auto& group : enemy_groups) {
+            if (IsClose(group.first, 100)(*e)) {
+                ++group.second;
+                break;
+            }
+            else {
+                enemy_groups.emplace_back(e->pos, 1);
+                break;
+            }
+        }
+    }
+
+    // we'll go through the enemy groups from largest to smallest sending our units to attack 
+    // (in 10% larger numbers) until we run out of units (this may result it enemy targets changing rapidly
+    // during the start of the attack (maybe search a wider radius for enemy units, only pay attention 
+    //      to very close groups)
+    // ISSUE: consider grabbing all attacking units nearby in the future (or coordinate with attack)
+    std::sort(enemy_groups.begin(), enemy_groups.end(), [](auto i, auto j) { return i.second > j.second; });
+
+    auto unit_num = 0; // access units by index
+    for (auto& group : enemy_groups) {
+        auto troop_count = unit_num + (group.second * 1.1);
+        while (unit_num < troop_count && unit_num < army.size()) {
+            auto unit = observation->GetUnit(army.at(unit_num++).tag);
+            if (unit == nullptr) { 
+                ++troop_count; 
+                continue;
+            }
+            if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED
+                && !IsClose(group.first, 49)(*unit)) {
+                action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
+            }
+            action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+        }
+    }
+}

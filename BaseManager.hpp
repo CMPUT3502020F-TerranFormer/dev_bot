@@ -102,7 +102,7 @@ public:
 		active_bases.push_back(base);
 
 		scv_count = 0;
-		scv_target_count = 62;
+		scv_target_count = 60;
 
 		std::random_device r;
 		rand_gen = std::mt19937(r());
@@ -118,12 +118,11 @@ public:
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
 
-		// update every 1/4 second
+		// update every ~1/4 second
 		if (observation->GetGameLoop() % 4 != 0) { return; }
 
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
-			// smaller range than 15, should still include refineries and immediate units
 			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 225)); 
 			const Unit* command = observation->GetUnit(base.command.tag);
 			if (command == nullptr) { return; }
@@ -147,10 +146,11 @@ public:
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 					else if (unit->build_progress < 1) {
-						if (observation->GetUnits(Unit::Alliance::Self, IsClose(unit->pos, 4)).empty()) {
+						if (observation->GetUnits(Unit::Alliance::Self, 
+							[unit](const Unit& u) {return IsClose(unit->pos, 25)(u) && IsSCV()(u);}).empty()) {
 							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
 						}
 					}
@@ -221,7 +221,7 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		auto command_build_priority = 9;
+		auto command_build_priority = 6;
 		if (num_command_centers == 0) { 
 			build = true;
 			command_build_priority = 20;
@@ -288,9 +288,10 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-			if (active_bases.size() == 1
-				&& active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
-				active_bases.front().command = TF_unit(u->unit_type, u->tag);
+			if (active_bases.size() == 1) {
+				if (active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
+					active_bases.front().command = TF_unit(u->unit_type, u->tag);
+				}
 			}
 			else {
 				Base base = Base();
@@ -299,6 +300,7 @@ public:
 				base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
 				active_bases.push_back(base);
 			}
+			break;
 		}
 		// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
 		}
@@ -315,6 +317,7 @@ public:
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 
 		if (IsCommandCenter()(*u)) { // it is necessary to remove the base so scvs will be properly assigned
+			auto loc = u->pos;
 			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 				if (it->command.tag == u->tag) {
 					active_bases.erase(it);
@@ -327,6 +330,9 @@ public:
 					return;
 				}
 			}
+			auto scvs = observation->GetUnits(Unit::Alliance::Self,
+				[loc](const Unit& u) { return IsSCV()(u) && IsClose(loc, 81)(u); });
+			for (auto& s : scvs) { assignSCV(s); }
 		}
 	}
 
@@ -353,7 +359,7 @@ public:
 			if (std::find(std::begin(*resource_units), std::end(*resource_units), scv->tag) == std::end(*resource_units)) {
 				continue;
 			}
-			if (scv->orders.empty()) {
+			else if (scv->orders.empty()) {
 				if (point != Point2D(0, 0)) {
 					if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
 						possible_scvs.push_back(scv);
@@ -399,7 +405,7 @@ public:
 		// otherwise return a random scv
 		std::uniform_int_distribution<> distrib(0, possible_scvs.size() - 1);
 		int index = distrib(rand_gen);
-		return TF_unit(scvs.data()[index]->unit_type, scvs.data()[index]->tag);
+		return TF_unit(scvs.at(index)->unit_type, scvs.at(index)->tag);
 	}
 
 	/**
@@ -418,22 +424,22 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 9, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			else if (u->energy >= 50){ // MULE energy cost
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			break;
 		}
