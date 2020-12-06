@@ -320,7 +320,7 @@ void ATTACK_BOT::all_alive(std::vector<const Unit *> attack_units)
     }
 }
 
-std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since)
+std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, float radius, int since)
 {
     return scout->last_seen_near(location, radius, since);
 }

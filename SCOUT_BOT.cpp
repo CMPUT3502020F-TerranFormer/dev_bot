@@ -17,9 +17,15 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
+    // if (ordered_scv) {
+    //     for (auto& record : last_seen_near(Point2D(0, 0), 100000000, 100000000)) {
+    //         std::cout << "(" << record.location.x << ", " << record.location.y << ") ";
+    //     }
+    // }
+
     // order scv 120sec into game time
     if (!ordered_scv) {
-        if (steps / 16 > 280) {
+        if (steps / 16 > -1) {
             // order MAX_SCOUT_COUNT scvs
             auto t = Task(TRAIN,
                            SCOUT_AGENT,
@@ -105,7 +111,7 @@ void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
     // if unit is enemy, record spotting
     if (u->alliance == Unit::Alliance::Enemy) {
         auto now = observation->GetGameLoop() / 16;
-        detection_record.emplace_back(*u, Point2D(u->pos), now);
+        detection_record.insert(Spotted_Enemy(*u, Point2D(u->pos), now));
     }
 }
 
@@ -173,17 +179,21 @@ void SCOUT_BOT::setAgents(TF_Agent * defenceb, TF_Agent * attackb, TF_Agent * re
     this->resource = resourceb;
 }
 
-std::vector<Spotted_Enemy> SCOUT_BOT::last_seen_near(Point2D location, int radius, int since) {
-    std::vector<Spotted_Enemy> ret;
+std::vector<Spotted_Enemy> SCOUT_BOT::last_seen_near(Point2D location, float radius, int since) {
+    std::cout << "last seen near called\n";
+    auto now = observation->GetGameLoop() / 16;
+    
+    std::vector<Spotted_Enemy> ret = detection_record.search(location, radius);
+    
+    std::cout << "ret before time filter = " << ret.size() << "\n";
+    // Filter out results older than "since"
+    auto new_end = std::remove_if(ret.begin(), ret.end(), [now, since](const Spotted_Enemy& e) { return now - e.time < since; });
+    ret.erase(new_end, ret.end());
+    
+    std::cout << "ret after time filter = " << ret.size() << "\n";
 
-    // run query
-    for (auto& record : detection_record) {
-        if (record.distance(location) < radius) {
-            auto now = observation->GetGameLoop() / 16;
-            if (now - record.time < since) {
-                ret.push_back(record);
-            }
-        }
+    for (auto& record : ret) {
+        std::cout << "(" << record.location.x << ", " << record.location.y << ") ";
     }
 
     return ret;

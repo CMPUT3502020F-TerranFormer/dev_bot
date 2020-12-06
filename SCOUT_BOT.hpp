@@ -14,6 +14,7 @@
 #include "./sqlite3/SQLITE3.hpp"
 
 #include "sc2api/sc2_map_info.h"
+#include "RTree.hpp"
 
 class SCOUT_BOT final : public TF_Agent {
 public:
@@ -87,7 +88,7 @@ public:
      * @param since time limit
      * @return a vector of Spotted_Enemy
      */
-    std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
+    std::vector<Spotted_Enemy> last_seen_near(Point2D location, float radius, int since);
 
     /**
      * Initialize agent
@@ -106,7 +107,7 @@ private:
     std::pair<int, std::vector<Point2D>> poi_close_to_base;
     std::pair<int, std::vector<Point2D>> poi_close_to_enemy;
 
-    std::vector<Spotted_Enemy> detection_record;
+    RTree<Spotted_Enemy> detection_record;
 
     int steps = 0;
     bool ordered_scv = false;

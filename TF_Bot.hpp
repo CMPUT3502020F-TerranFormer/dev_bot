@@ -13,6 +13,8 @@
 
 #include <vector>
 #include <regex>
+#include <limits>
+#include <algorithm>
 #include "threadsafe_priority_queue.h"
 #include "TS_Queue.hpp"
 #include "TF_unit.hpp"
@@ -38,9 +40,22 @@ struct Spotted_Enemy {
     Point2D location;
     float time;
 
-    Spotted_Enemy(Unit _u, Point2D _location, float _time) :
-    u(std::move(_u)), location(_location), time(_time) {
+    Spotted_Enemy() : u() , location(), time() {}
 
+    Spotted_Enemy(Unit _u, Point2D _location, float _time) :
+    u(std::move(_u)), location(_location), time(_time) {}
+
+    Spotted_Enemy(const Spotted_Enemy& r) : u(std::move(r.u)), location(r.location), time(r.time) {}
+
+    Spotted_Enemy(Spotted_Enemy&& r) : u(std::move(r.u)), location(r.location), time(r.time) {};
+
+    Spotted_Enemy& operator=(const Spotted_Enemy& r) {
+        if (this != &r) {
+            u = std::move(r.u);
+            location = r.location;
+            time = r.time;
+        }
+        return *this;
     }
 
     int distance(Point2D p) const {
@@ -115,7 +130,7 @@ public:
      */
     virtual void addUnit(TF_unit u) = 0;
 
-    virtual std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since) = 0;
+    virtual std::vector<Spotted_Enemy> last_seen_near(Point2D location, float radius, int since) = 0;
 
     /**
      * Called when a building is completed

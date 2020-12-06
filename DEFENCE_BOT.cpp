@@ -428,7 +428,7 @@ void DEFENCE_BOT::setAgents(TF_Agent *attackb, TF_Agent *resourceb, TF_Agent *sc
     this->scout = scoutb;
 }
 
-std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, int radius, int since) {
+std::vector<Spotted_Enemy> DEFENCE_BOT::last_seen_near(sc2::Point2D location, float radius, int since) {
     return scout->last_seen_near(location, radius, since);
 }
 
