@@ -155,8 +155,7 @@ void RESOURCE_BOT::step() {
             int current_scvs = 0;
             for (auto& s : scvs) {
                 for (auto& order : s->orders) {
-                    if (order.ability_id == ABILITY_ID::EFFECT_REPAIR
-                        && order.target_unit_tag == t.target) {
+                    if (order.target_unit_tag == t.target) {
                         ++current_scvs;
                         break;
                     }

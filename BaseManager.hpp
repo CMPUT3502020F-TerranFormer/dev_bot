@@ -150,10 +150,9 @@ public:
 						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 					else if (unit->build_progress < 1) {
-						/* We first need to figure out how to determine if an scv is working on a building
-						* (They don't have a target tag, and only a position as far as I'm currently aware)
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
-						*/
+						if (observation->GetUnits(Unit::Alliance::Self, IsClose(unit->pos, 4)).empty()) {
+							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+						}
 					}
 				}
 			}
