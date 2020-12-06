@@ -292,6 +292,13 @@ public:
 				if (active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
 					active_bases.front().command = TF_unit(u->unit_type, u->tag);
 				}
+				else {
+					Base base = Base();
+					base.command = TF_unit(u->unit_type, u->tag);
+					base.location = u->pos;
+					base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+					active_bases.push_back(base);
+				}
 			}
 			else {
 				Base base = Base();
