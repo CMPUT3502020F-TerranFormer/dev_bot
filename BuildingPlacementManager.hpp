@@ -202,8 +202,8 @@ private:
 
 	/* This checks around all the command centers 
 	* Try to form a 3x3 grid of buildings with the command center in the center
-	* All locations must be >4 units from minerals, and >5 units (horizontallly) from the next location
-	* (4 units vertically, so units can move between them) this lets all add-ons be built as long as they aren't
+	* All locations must be >5 units from minerals, and >6 units (horizontally) from the next location
+	* (so units can move between them) this lets all add-ons be built as long as they aren't
 	*	against a wall (so check for placement 1 unit to the right before it's considered valid)
 	* They will form a (semi) ring around the command center. 2+ Rings can exists, but we will first try to 
 	* get a complete ring around each command center of the previous size
@@ -219,11 +219,10 @@ private:
 				auto minerals = observation->GetUnits(Unit::Alliance::Neutral,
 					[c](const Unit& u) { return IsMinerals()(u) && IsClose(c->pos, 100)(u); });
 				for (auto x = -ring; x <= ring; ++x) { // to get x coord
-					point = c->pos;
-					point.x += (x * 5.0f);
 					for (auto y = -ring; y <= ring; ++y) { // y coord
-						point.y = c->pos.y;
-						point.y += (y * 4.0f);
+						point = c->pos;
+						point.x += (x * 6.0f);
+						point.y += (y * 5.0f);
 						if (x == 0) { // so units can move between command center & building
 							if (y < 0) { point.y -= 1; }
 							else if (y > 0) { point.y += 1; }
@@ -241,7 +240,6 @@ private:
 					}
 				}
 			}
-			++ring;
 		}
 		std::cerr << "Error getting Ring building location, ABILITY_ID: " << (int) aid_to_place << std::endl;
 		return Point2D(0, 0);

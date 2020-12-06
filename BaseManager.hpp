@@ -102,7 +102,7 @@ public:
 		active_bases.push_back(base);
 
 		scv_count = 0;
-		scv_target_count = 60;
+		scv_target_count = 62;
 
 		std::random_device r;
 		rand_gen = std::mt19937(r());
@@ -124,7 +124,7 @@ public:
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
 			// smaller range than 15, should still include refineries and immediate units
-			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 100)); 
+			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 225)); 
 			const Unit* command = observation->GetUnit(base.command.tag);
 			if (command == nullptr) { return; }
 
@@ -132,7 +132,7 @@ public:
 			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 8));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -175,7 +175,7 @@ public:
 			if (command->build_progress == 1) {
 				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
 				if (base.startTransfer() && command->ideal_harvesters <= 8) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 8,
 						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
 				}
 				else if (base.depleted()) {
@@ -221,7 +221,7 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		auto command_build_priority = 7;
+		auto command_build_priority = 9;
 		if (num_command_centers == 0) { 
 			build = true;
 			command_build_priority = 20;
@@ -418,24 +418,22 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				auto priority = 6;
-				if (scv_count < (active_bases.size() * 14)) { priority = 7; } // prioritize scvs when we are missing many workers
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, priority, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 9, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			else if (u->energy >= 50){ // MULE energy cost
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			break;
 		}
@@ -561,7 +559,7 @@ private:
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225
 					&& p->vespene_contents > 0) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 8, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
 			}

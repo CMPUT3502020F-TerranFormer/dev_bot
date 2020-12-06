@@ -317,7 +317,7 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
-    /* From ATTACK, this needs to be updated 
+    /* From ATTACK, this needs to be updated -- we build too many buildings!!
     I lowered the priority of these building to 6 so they would still build */
     int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
     int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
