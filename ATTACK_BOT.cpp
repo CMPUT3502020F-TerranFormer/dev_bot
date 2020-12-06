@@ -3,6 +3,7 @@
 //
 #include "ATTACK_BOT.hpp"
 #include <iostream>
+#include <string>
 
 using namespace sc2;
 
@@ -51,18 +52,42 @@ void ATTACK_BOT::step()
             const Unit *air_unit = nullptr;
             const Unit *ground_unit = nullptr;
             const Unit *support_unit = nullptr;
-            ABILITY_ID support_aid;
-            if (IsAFlyingAttackUnit(t.unit_typeid))
+
+            if (t.unit->is_flying)
             {
-                air_unit = t.unit;
-            }
-            else if (IsASupportUnit(t.unit_typeid))
-            {
-                support_unit = t.unit;
+                if (IsAFlyingAttackUnit(t.unit_typeid))
+                {
+                    air_unit = t.unit;
+                    if (air_unit != nullptr && IsNotInVector(air_units, air_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        air_units.push_back(air_unit);
+                        action->SendChat("Adding air units");
+                    }
+                }
+                else if (IsASupportUnit(t.unit_typeid))
+                {
+                    support_unit = t.unit;
+                    if (support_unit != nullptr && IsNotInVector(support_units, support_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        support_units.push_back(support_unit);
+                        action->SendChat("Adding air support units");
+                    }
+                }
             }
             else
             {
                 ground_unit = t.unit;
+                if (ground_unit != nullptr && IsNotInVector(ground_units, ground_unit))
+                {
+                    // if the unit is not in the vector
+                    // add it
+                    ground_units.push_back(ground_unit);
+                    //action->SendChat("Adding ground units");
+                }
             }
 
             // if a tank is in siege mode, unsiege them
@@ -80,30 +105,6 @@ void ATTACK_BOT::step()
             // My assumption is that since units attack only when the army count reaches squadron size
             // Units might be idle for multiple game cycles
 
-            if (ground_unit != nullptr && std::find(ground_units.begin(), ground_units.end(), ground_unit) == ground_units.end())
-            {
-                // if the unit is not in the vector
-                // add it
-                ground_units.push_back(ground_unit);
-                //action->SendChat("Adding ground units");
-            }
-
-            if (air_unit != nullptr && std::find(air_units.begin(), air_units.end(), air_unit) == air_units.end())
-            {
-                // if the unit is not in the vector
-                // add it
-                air_units.push_back(air_unit);
-                //action->SendChat("Adding air units");
-            }
-
-            if (support_unit != nullptr && std::find(support_units.begin(), support_units.end(), support_unit) == support_units.end())
-            {
-                // if the unit is not in the vector
-                // add it
-                support_units.push_back(support_unit);
-                //action->SendChat("Adding air units");
-            }
-
             // if our current number of attacks units are enough to form a squadron
             // Command all units to attack
             if (ground_units.size() + air_units.size() >= troopManager->getSquadronSize())
@@ -112,24 +113,27 @@ void ATTACK_BOT::step()
                 allAlive(ground_units);
                 allAlive(air_units);
                 allAlive(support_units);
-                action->UnitCommand(ground_units, t.ability_id, t.position);
-                //action->SendChat("Moving ground units");
 
-                auto size = ground_units.size();
                 const Unit *slowest_unit = slowestUnit(ground_units);
                 Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
-                action->UnitCommand(air_units, t.ability_id, su_pos);
 
-                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, su_pos);
+                //action->UnitCommand(ground_units, t.ability_id, t.position);
+                action->SendChat("Squadron size: " + std::to_string(ground_units.size()));
+                std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
+
+                action->UnitCommand(air_units, t.ability_id, t.position);
+                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, t.position);
+                std::cout << "Slowest unit coordinates are " + std::to_string(su_pos.x) + " " + std::to_string(su_pos.y) << std::endl;
 
                 ground_units.clear();
                 air_units.clear();
                 support_units.clear();
+
                 troopManager->mark_location_visited();
             }
 
             // If there are a lot of units in our army, increase squadron size
-            // if (observation->GetArmyCount() - troopManager->getSquadronSize() > 20)
+            // if (observation->GetFoodArmy() % 40 == 0)
             // {
             //     troopManager->incSquadronSize();
             // }
@@ -145,11 +149,11 @@ void ATTACK_BOT::step()
             resource->addTask(t);
             break;
         }
-        case MOVE:
-        {
-            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
-            break;
-        }
+        // case MOVE:
+        // {
+        //     action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
+        //     break;
+        // }
         case TRANSFER:
         {
             TF_unit unit = TF_unit(observation->GetUnit(t.self)->unit_type.ToType(), t.self);
@@ -373,6 +377,7 @@ bool ATTACK_BOT::IsAFlyingAttackUnit(UNIT_TYPEID unit_typeid)
     switch (unit_typeid)
     {
     case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+    case UNIT_TYPEID::VIKING:
     case UNIT_TYPEID::TERRAN_LIBERATOR:
     case UNIT_TYPEID::TERRAN_BANSHEE:
     case UNIT_TYPEID::TERRAN_BATTLECRUISER:
@@ -392,26 +397,33 @@ bool ATTACK_BOT::IsASupportUnit(UNIT_TYPEID unit_typeid)
     return false;
 }
 
-const Unit* ATTACK_BOT::slowestUnit(Units attack_units)
+const Unit *ATTACK_BOT::slowestUnit(Units attack_units)
 {
-
     UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[0]->unit_type];
     const Unit *slowestUnit = attack_units[0];
 
     float min_speed = ut.movement_speed;
     float current_speed = ut.movement_speed;
+    int unit_idx = 0;
 
-    for (auto unit : attack_units)
+    for (int i = 0; i < attack_units.size(); ++i)
     {
-        ut = observation->GetUnitTypeData()[(UnitTypeID)unit->unit_type];
+        ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[i]->unit_type];
         current_speed = ut.movement_speed;
         if (current_speed < min_speed)
         {
             min_speed = current_speed;
-            slowestUnit = unit;
+            slowestUnit = attack_units[i];
         }
     }
+    auto begin = attack_units.begin();
+    attack_units.erase(begin + unit_idx);
     return slowestUnit;
+}
+
+bool ATTACK_BOT::IsNotInVector(Units vector, const Unit *u)
+{
+    return std::find(vector.begin(), vector.end(), u) == vector.end();
 }
 
 std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since)

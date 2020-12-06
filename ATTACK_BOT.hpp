@@ -102,6 +102,8 @@ public:
 
     bool IsASupportUnit(UNIT_TYPEID unit_typeid);
 
+    bool IsNotInVector(Units vector, const Unit* u);
+
     std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
 
 private:

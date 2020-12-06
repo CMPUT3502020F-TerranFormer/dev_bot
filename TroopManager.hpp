@@ -123,9 +123,9 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 120).size() > 0)
+                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
                 {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 120))
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
                     {
                         enemy_locations.push_back(record.location);
                     }
@@ -138,19 +138,11 @@ public:
                 }
             }
 
-            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACKBARRAGE, enemy_locations.back()));
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
 
-            // Tried to limit choke points by designing an area as accepted rather than a point
-            // Point2D enemy_loc = enemy_locations.back();
-            // if (abs(unit->pos.x - enemy_loc.x) < 5 && abs(unit->pos.y - enemy_loc.y) < 5)
-            // {
-            //     enemy_locations.pop_back();
-            // }
-
-            // break;
         }
 
-        // Support Units don't attack, so gotta give them a differnt ABILITY_ID
+        // Support Units don't attack, so gotta give them a different ABILITY_ID
         case UNIT_TYPEID::TERRAN_MEDIVAC:
         case UNIT_TYPEID::TERRAN_RAVEN:
         {
@@ -162,9 +154,9 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 300).size() > 0)
+                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
                 {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 300))
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
                     {
                         enemy_locations.push_back(record.location);
                     }
@@ -177,15 +169,7 @@ public:
                 }
             }
 
-            task_queue->push(Task(ATTACK, ATTACK_AGENT, 5, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
-
-            // Tried to limit choke points by designing an area as accepted rather than a point
-            // Point2D enemy_loc = enemy_locations.back();
-            // if (abs(unit->pos.x - enemy_loc.x) < 4 && abs(unit->pos.y - enemy_loc.y) < 4)
-            // {
-            //     enemy_locations.pop_back();
-            // }
-
+            task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
             break;
         }
         }
@@ -205,7 +189,7 @@ public:
 
     void incSquadronSize()
     {
-        squadron_size += 5;
+        ++squadron_size;
     }
 
     void mark_location_visited()
@@ -214,17 +198,6 @@ public:
         IsClose enemy_nearby(current_location, 100);
         std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy, enemy_nearby);
         
-        // bool present = false;
-        // for (auto enemy : enemy_units)
-        // {
-        //     // if there are visible enemies at an enemy base,
-        //     // mark the location as unvisited
-        //     if (enemy_at_base(enemy))
-        //     {
-        //         present = true;
-        //         break;
-        //     }
-        // }
         if (enemy_units.size() == 0)
         {
             enemy_locations.pop_back();
@@ -257,7 +230,7 @@ private:
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size = 32;
+    int squadron_size = 20;
 };
 
 #endif
