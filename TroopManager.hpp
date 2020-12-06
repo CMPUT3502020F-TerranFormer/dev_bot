@@ -48,7 +48,7 @@ public:
 
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 10)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARAUDER, UNIT_TYPEID::TERRAN_MARAUDER,
                                       UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
             }
             break;
@@ -123,23 +123,22 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
+                // if (scout->last_seen_near(possible_enemy_locations.back(), 12, 100).size() > 0)
+                // {
+                //     for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 12, 100))
+                //     {
+                //         enemy_locations.push_back(record.location);
+                //     }
+                //     possible_enemy_locations.pop_back();
+                // }
+                // else
+                // {
                     enemy_locations.push_back(possible_enemy_locations.back());
                     possible_enemy_locations.pop_back();
-                }
+                // }
             }
 
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
-
         }
 
         // Support Units don't attack, so gotta give them a different ABILITY_ID
@@ -154,19 +153,19 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
-                    enemy_locations.push_back(possible_enemy_locations.back());
-                    possible_enemy_locations.pop_back();
-                }
+                // if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
+                // {
+                //     for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
+                //     {
+                //         enemy_locations.push_back(record.location);
+                //     }
+                //     possible_enemy_locations.pop_back();
+                // }
+                // else
+                // {
+                enemy_locations.push_back(possible_enemy_locations.back());
+                possible_enemy_locations.pop_back();
+                // }
             }
 
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
@@ -197,11 +196,18 @@ public:
         Point2D current_location = enemy_locations.back();
         IsClose enemy_nearby(current_location, 100);
         std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy, enemy_nearby);
-        
+
         if (enemy_units.size() == 0)
         {
             enemy_locations.pop_back();
         }
+        // else
+        // {
+        //     int rndInt = GetRandomInteger(0, enemy_units.size() - 1);
+        //     const Unit *rndEnemy = enemy_units[rndInt];
+        //     Point2D enemy_pos(rndEnemy->pos.x, rndEnemy->pos.y);
+        //     enemy_locations.push_back(enemy_pos);
+        // }
     }
 
     // double distance(Point2D p1, Point2D p2)

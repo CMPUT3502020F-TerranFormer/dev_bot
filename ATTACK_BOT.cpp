@@ -46,50 +46,6 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
-            // Classify the units in flying or ground
-            // to facilitate movement
-            // Because air units will travel faster than the ground units
-            const Unit *air_unit = nullptr;
-            const Unit *ground_unit = nullptr;
-            const Unit *support_unit = nullptr;
-
-            if (t.unit->is_flying)
-            {
-                if (IsAFlyingAttackUnit(t.unit_typeid))
-                {
-                    air_unit = t.unit;
-                    if (air_unit != nullptr && IsNotInVector(air_units, air_unit))
-                    {
-                        // if the unit is not in the vector
-                        // add it
-                        air_units.push_back(air_unit);
-                        action->SendChat("Adding air units");
-                    }
-                }
-                else if (IsASupportUnit(t.unit_typeid))
-                {
-                    support_unit = t.unit;
-                    if (support_unit != nullptr && IsNotInVector(support_units, support_unit))
-                    {
-                        // if the unit is not in the vector
-                        // add it
-                        support_units.push_back(support_unit);
-                        action->SendChat("Adding air support units");
-                    }
-                }
-            }
-            else
-            {
-                ground_unit = t.unit;
-                if (ground_unit != nullptr && IsNotInVector(ground_units, ground_unit))
-                {
-                    // if the unit is not in the vector
-                    // add it
-                    ground_units.push_back(ground_unit);
-                    //action->SendChat("Adding ground units");
-                }
-            }
-
             // if a tank is in siege mode, unsiege them
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
@@ -101,34 +57,67 @@ void ATTACK_BOT::step()
                 action->UnitCommand(t.unit, ABILITY_ID::BEHAVIOR_CLOAKON);
             }
 
-            // Check that we are not duplicating units
-            // My assumption is that since units attack only when the army count reaches squadron size
-            // Units might be idle for multiple game cycles
+            // Classify the units in flying or ground
+            // to facilitate movement
+            // Because air units will travel faster than the ground units
+            const Unit *air_unit = nullptr;
+            const Unit *ground_unit = nullptr;
+            const Unit *support_unit = nullptr;
 
+            if (t.unit->is_flying)
+            {
+                if (IsAFlyingAttackUnit(t.unit->unit_type))
+                {
+                    air_unit = t.unit;
+                    if (air_unit != nullptr && IsNotInVector(air_units, air_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        air_units.push_back(air_unit);
+                    }
+                }
+                else if (IsASupportUnit(t.unit->unit_type))
+                {
+                    support_unit = t.unit;
+                    if (support_unit != nullptr && IsNotInVector(support_units, support_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        support_units.push_back(support_unit);
+                    }
+                }
+            }
+            else
+            {
+                ground_unit = t.unit;
+                if (ground_unit != nullptr && IsNotInVector(ground_units, ground_unit))
+                {
+                    // if the unit is not in the vector
+                    // add it
+                    ground_units.push_back(ground_unit);
+                }
+            }
             // if our current number of attacks units are enough to form a squadron
             // Command all units to attack
             if (ground_units.size() + air_units.size() >= troopManager->getSquadronSize())
             {
                 // check that none of the units in the attack units are dead
                 allAlive(ground_units);
+
+                action->UnitCommand(ground_units, t.ability_id, t.position);
+
+                const Unit *slowest_unit = slowestUnit(ground_units);
                 allAlive(air_units);
                 allAlive(support_units);
 
-                const Unit *slowest_unit = slowestUnit(ground_units);
                 Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
-
-                //action->UnitCommand(ground_units, t.ability_id, t.position);
-                action->SendChat("Squadron size: " + std::to_string(ground_units.size()));
-                std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
-
-                action->UnitCommand(air_units, t.ability_id, t.position);
-                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, t.position);
-                std::cout << "Slowest unit coordinates are " + std::to_string(su_pos.x) + " " + std::to_string(su_pos.y) << std::endl;
-
-                ground_units.clear();
+                action->UnitCommand(air_units, t.ability_id, su_pos);
+                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, su_pos);
                 air_units.clear();
                 support_units.clear();
+                // std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
 
+                // ground_units.clear();
                 troopManager->mark_location_visited();
             }
 
@@ -137,6 +126,7 @@ void ATTACK_BOT::step()
             // {
             //     troopManager->incSquadronSize();
             // }
+
             break;
         }
         case REPAIR:
@@ -186,6 +176,7 @@ void ATTACK_BOT::step()
             }
             break;
         }
+
         default:
         {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
@@ -410,14 +401,13 @@ const Unit *ATTACK_BOT::slowestUnit(Units attack_units)
     {
         ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[i]->unit_type];
         current_speed = ut.movement_speed;
-        if (current_speed < min_speed)
+        if (current_speed < min_speed && attack_units[i]->unit_type != UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
         {
             min_speed = current_speed;
             slowestUnit = attack_units[i];
         }
     }
-    auto begin = attack_units.begin();
-    attack_units.erase(begin + unit_idx);
+    
     return slowestUnit;
 }
 
