@@ -388,7 +388,7 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
 void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
     if (observation->GetMinerals() > 50) { buildingIdle(u); }
 
-    if (std::find(std::begin(units), std::end(units), u->tag) == std::end(units)) { return; }
+    if (std::find(std::begin(units), std::end(units), TF_unit(u->unit_type, u->tag)) == std::end(units)) { return; }
 
     switch ((int) u->unit_type) { // troop logic is here
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
@@ -588,8 +588,8 @@ void DEFENCE_BOT::init() {
         // load query result to poi
         auto r = scout_POI_db.copy_result();
         for (auto &xy_vec : *r) {
-            auto x = std::stod(xy_vec.at(0));
-            auto y = std::stod(xy_vec.at(1));
+            float x = std::stod(xy_vec.at(0));
+            float y = std::stod(xy_vec.at(1));
             auto major = std::stoi(xy_vec.at(2));
             poi.emplace_back(x, y, major);
         }

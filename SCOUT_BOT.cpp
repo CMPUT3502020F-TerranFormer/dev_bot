@@ -104,7 +104,7 @@ void SCOUT_BOT::unitCreated(const sc2::Unit * u) {
 void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
     // if unit is enemy, record spotting
     if (u->alliance == Unit::Alliance::Enemy) {
-        auto now = observation->GetGameLoop() / 16;
+        auto now = (float) observation->GetGameLoop() / 16;
         detection_record.emplace_back(*u, Point2D(u->pos), now);
     }
 }
@@ -211,8 +211,8 @@ void SCOUT_BOT::init() {
         // load query result to poi
         auto r = scout_POI_db.copy_result();
         for (auto& xy_vec : *r) {
-            auto x = std::stod(xy_vec.at(0));
-            auto y = std::stod(xy_vec.at(1));
+            float x = std::stod(xy_vec.at(0));
+            float y = std::stod(xy_vec.at(1));
             poi.emplace_back(x, y);
         }
     }
