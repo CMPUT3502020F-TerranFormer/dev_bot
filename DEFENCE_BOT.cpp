@@ -233,30 +233,16 @@ void DEFENCE_BOT::buildingConstructionComplete(const sc2::Unit *u) {
             break;
         case (int) UNIT_TYPEID::TERRAN_FACTORY:
             hasFactory = true;
-            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_FACTORY,
-                UNIT_TYPEID::TERRAN_FACTORYTECHLAB, u->unit_type, u->tag));
-            // build reactor factories?
             factories.push_back(const_cast<Unit *>(u));
             orderSiegeTank(2);
             break;
         case (int) UNIT_TYPEID::TERRAN_BARRACKS:
             hasBarracks = true;
             barracks.push_back(const_cast<Unit *>(u));
-            if (barracks.size() - 1 % 4 == 0) { // the first barracks should have a reactor
-                resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_REACTOR_BARRACKS,
-                    UNIT_TYPEID::TERRAN_BARRACKSREACTOR, u->unit_type, u->tag));
-            }
-            else {
-                resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_BARRACKS,
-                    UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, u->unit_type, u->tag));
-            }
             break;
         case (int) UNIT_TYPEID::TERRAN_STARPORT:
             hasStarport = true;
             starports.push_back(const_cast<Unit *>(u));
-            // build reactor starport?
-            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_STARPORT,
-                UNIT_TYPEID::TERRAN_STARPORTTECHLAB, u->unit_type, u->tag));
             break;
         case (int) UNIT_TYPEID::TERRAN_BUNKER:
             bunkers.push_back(const_cast<Unit *>(u));
@@ -331,6 +317,29 @@ void DEFENCE_BOT::unitDestroyed(const sc2::Unit *u) {
 }
 
 void DEFENCE_BOT::unitCreated(const sc2::Unit *u) {
+    /* From ATTACK, this needs to be updated 
+    I lowered the priority of these building to 6 so they would still build */
+    int command_count = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter()).size();
+    int barracks_count = observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size();
+    int factory_count = observation->GetUnits(Unit::Alliance::Self, IsFactory()).size();
+    int starport_count = observation->GetUnits(Unit::Alliance::Self, IsStarport()).size();
+    if (barracks_count < 1 + (2 * command_count))
+    {
+        buildBarracks();
+    }
+
+    if (factory_count < 2 * command_count)
+    {
+        buildFactory();
+    }
+
+    if (starport_count < 1 * command_count)
+    {
+        buildStarport();
+    }
+    /* End from ATTACK */
+
+
     // find the closes defence point
     std::sort(defence_points.begin(), defence_points.end(), [u](const DEFENCE_POI &p1, const DEFENCE_POI &p2) {
         return distance(u->pos, p1.pos) < distance(u->pos, p2.pos);
@@ -463,7 +472,17 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
         break;
     }
     // the following is the old (modified for defence) logic from ATTACK
-    case UNIT_TYPEID::TERRAN_BARRACKS:
+    case UNIT_TYPEID::TERRAN_BARRACKS: {
+        if (barracks.size() - 1 % 4 == 0) { // the first barracks should have a reactor
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_REACTOR_BARRACKS,
+                UNIT_TYPEID::TERRAN_BARRACKSREACTOR, u->unit_type, u->tag));
+        }
+        else {
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_BARRACKS,
+                UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, u->unit_type, u->tag));
+        }
+        break;
+    }
         // barracks train marine
         // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
         //
@@ -491,18 +510,28 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
         }
         break;
     }
-    case UNIT_TYPEID::TERRAN_FACTORY:
+    case UNIT_TYPEID::TERRAN_FACTORY: {
+        resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_FACTORY,
+            UNIT_TYPEID::TERRAN_FACTORYTECHLAB, u->unit_type, u->tag));
+        // build reactor factories?
+        break;
+    }
     case UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
     case UNIT_TYPEID::TERRAN_FACTORYREACTOR: {
-        /*
-        if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK < 5)
+        
+        if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SIEGETANK)).size() < 5)
         {
             orderSiegeTank(1);
         }
         break;
-        */
+        
     }
-    case UNIT_TYPEID::TERRAN_STARPORT:
+    case UNIT_TYPEID::TERRAN_STARPORT: {
+        // build reactor starport?
+        resource->addTask(Task(TRAIN, DEFENCE_AGENT, 8, ABILITY_ID::BUILD_TECHLAB_STARPORT,
+            UNIT_TYPEID::TERRAN_STARPORTTECHLAB, u->unit_type, u->tag));
+        break;
+    }
     case UNIT_TYPEID::TERRAN_STARPORTREACTOR:
     case UNIT_TYPEID::TERRAN_STARPORTTECHLAB: {
         // Anti Marines and Tanks
@@ -510,27 +539,24 @@ void DEFENCE_BOT::buildingIdle(const Unit* u) {
         {
             orderBanshee(1);
         }
-        /*
         // Anti air units
-        if (CountUnitType(UNIT_TYPEID::TERRAN_VIKINGFIGHTER) < 4)
+        if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_VIKINGFIGHTER)).size() < 4)
         {
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
-                UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+            resource->addTask(Task(TRAIN, DEFENCE_AGENT, 6, ABILITY_ID::TRAIN_VIKINGFIGHTER, UNIT_TYPEID::TERRAN_VIKINGFIGHTER,
+                UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
 
         // Detector troops
-        if (CountUnitType(UNIT_TYPEID::TERRAN_RAVEN) < 2)
-        
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
-                UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+        if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_RAVEN)).size() < 2) {
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
+                UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
 
         // Healer
-        if (CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC) < 2)
-            task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
-                UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
+        if (observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MEDIVAC)).size() < 2) {
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+                UNIT_TYPEID::TERRAN_STARPORT, u->tag));
         }
-        */
         break;
     }
     }
@@ -674,7 +700,7 @@ void DEFENCE_BOT::buildFusion() {
 void DEFENCE_BOT::buildStarport() {
     Task buildSP(BUILD,
                  ATTACK_AGENT,
-                 8,
+                 6,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT);
     resource->addTask(buildSP);
@@ -683,7 +709,7 @@ void DEFENCE_BOT::buildStarport() {
 void DEFENCE_BOT::buildBarracks() {
     Task buildBR(BUILD,
                  ATTACK_AGENT,
-                 8,
+                 6,
                  UNIT_TYPEID::TERRAN_BARRACKS,
                  ABILITY_ID::BUILD_BARRACKS);
     resource->addTask(buildBR);
@@ -692,7 +718,7 @@ void DEFENCE_BOT::buildBarracks() {
 void DEFENCE_BOT::buildFactory() {
     Task buildFT(BUILD,
                  ATTACK_AGENT,
-                 8,
+                 6,
                  UNIT_TYPEID::TERRAN_FACTORY,
                  ABILITY_ID::BUILD_FACTORY);
     resource->addTask(buildFT);
