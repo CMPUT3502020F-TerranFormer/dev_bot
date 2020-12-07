@@ -17,6 +17,17 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
+    // order command center 10 minutes into the game
+    if (!ordered_ccenter && observation->GetGameLoop() / 16 >= 600 &&
+        observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() != 0) {
+        resource->addTask(Task(BUILD,
+                               SCOUT_AGENT,
+                               7,
+                               UNIT_TYPEID::TERRAN_COMMANDCENTER,
+                               ABILITY_ID::BUILD_COMMANDCENTER));
+        ordered_ccenter = true;
+    }
+
     // order scv 120sec into game time
     if (!ordered_scv) {
         if (steps / 16 > 280) {
@@ -60,6 +71,18 @@ void SCOUT_BOT::addUnit(TF_unit u) {
     // add unit to units
     units.emplace_back(u.type, u.tag);
 
+    // If unit is command center, upgrade to orbital command
+    if (u.type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        resource->addTask(Task(TRAIN,
+                          SCOUT_AGENT,
+                          7,
+                          ABILITY_ID::MORPH_ORBITALCOMMAND,
+                          UNIT_TYPEID::TERRAN_ORBITALCOMMAND,
+                          sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER,
+                          u.tag));
+        return;        
+    }
+
     // give unit a task
     while (task_queue.empty()) { std::this_thread::sleep_for(std::chrono::milliseconds(20)); }
 
@@ -101,11 +124,122 @@ void SCOUT_BOT::unitCreated(const sc2::Unit * u) {
 
 }
 
+// Reference: https://liquipedia.net/starcraft2/Buildings
+std::unordered_set<UNIT_TYPEID> building_types {
+    // Townhall
+    UNIT_TYPEID::TERRAN_COMMANDCENTER,
+    UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING,
+    UNIT_TYPEID::TERRAN_ORBITALCOMMAND,
+    UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING,
+    UNIT_TYPEID::TERRAN_PLANETARYFORTRESS,
+    UNIT_TYPEID::PROTOSS_NEXUS,
+    UNIT_TYPEID::ZERG_HATCHERY,
+    UNIT_TYPEID::ZERG_LAIR,
+    UNIT_TYPEID::ZERG_HIVE,
+    
+    // Gas Buildings
+    UNIT_TYPEID::TERRAN_REFINERY,
+    UNIT_TYPEID::TERRAN_REFINERYRICH,
+    UNIT_TYPEID::PROTOSS_ASSIMILATOR,
+    UNIT_TYPEID::PROTOSS_ASSIMILATORRICH,
+    UNIT_TYPEID::ZERG_EXTRACTOR,
+    UNIT_TYPEID::ZERG_EXTRACTORRICH,
+    
+    // Supply buildings
+    UNIT_TYPEID::PROTOSS_PYLON,
+    UNIT_TYPEID::PROTOSS_PYLONOVERCHARGED,
+    UNIT_TYPEID::TERRAN_SUPPLYDEPOT,
+    UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED,
+    UNIT_TYPEID::ZERG_OVERLORD,
+    UNIT_TYPEID::ZERG_OVERLORDCOCOON,
+    UNIT_TYPEID::ZERG_OVERLORDTRANSPORT,
+
+    // Static defence
+    UNIT_TYPEID::TERRAN_BUNKER,
+    UNIT_TYPEID::TERRAN_MISSILETURRET,
+    UNIT_TYPEID::TERRAN_PLANETARYFORTRESS,
+    UNIT_TYPEID::PROTOSS_PHOTONCANNON,
+    UNIT_TYPEID::PROTOSS_SHIELDBATTERY,
+    UNIT_TYPEID::ZERG_SPINECRAWLER,
+    UNIT_TYPEID::ZERG_SPINECRAWLERUPROOTED,
+    UNIT_TYPEID::ZERG_SPORECRAWLER,
+    UNIT_TYPEID::ZERG_SPORECRAWLERUPROOTED,
+    
+    // Production buildings
+    UNIT_TYPEID::TERRAN_BARRACKS,
+    UNIT_TYPEID::TERRAN_BARRACKSFLYING,
+    UNIT_TYPEID::TERRAN_BARRACKSREACTOR,
+    UNIT_TYPEID::TERRAN_BARRACKSTECHLAB,
+    UNIT_TYPEID::TERRAN_FACTORY,
+    UNIT_TYPEID::TERRAN_FACTORYFLYING,
+    UNIT_TYPEID::TERRAN_FACTORYREACTOR,
+    UNIT_TYPEID::TERRAN_FACTORYTECHLAB,
+    UNIT_TYPEID::TERRAN_STARPORT,
+    UNIT_TYPEID::TERRAN_STARPORTFLYING,
+    UNIT_TYPEID::TERRAN_STARPORTREACTOR,
+    UNIT_TYPEID::TERRAN_STARPORTTECHLAB,
+    UNIT_TYPEID::PROTOSS_GATEWAY,
+    UNIT_TYPEID::PROTOSS_STARGATE,
+    UNIT_TYPEID::PROTOSS_ROBOTICSFACILITY,
+
+    // Upgrade buildings
+    UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
+    UNIT_TYPEID::TERRAN_ARMORY,
+    UNIT_TYPEID::PROTOSS_FORGE,
+    UNIT_TYPEID::PROTOSS_CYBERNETICSCORE,
+    UNIT_TYPEID::ZERG_EVOLUTIONCHAMBER,
+    UNIT_TYPEID::ZERG_SPIRE,
+
+    // Technology-only buildings
+    UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
+    UNIT_TYPEID::TERRAN_GHOSTACADEMY,
+    UNIT_TYPEID::TERRAN_FUSIONCORE,
+    UNIT_TYPEID::TERRAN_ARMORY,
+    UNIT_TYPEID::PROTOSS_FORGE,
+    UNIT_TYPEID::PROTOSS_CYBERNETICSCORE,
+    UNIT_TYPEID::PROTOSS_ROBOTICSBAY,
+    UNIT_TYPEID::PROTOSS_TWILIGHTCOUNCIL,
+    UNIT_TYPEID::PROTOSS_TEMPLARARCHIVE,
+    UNIT_TYPEID::PROTOSS_DARKSHRINE,
+    UNIT_TYPEID::PROTOSS_DARKTEMPLAR,
+    UNIT_TYPEID::PROTOSS_FLEETBEACON,
+    UNIT_TYPEID::ZERG_SPAWNINGPOOL,
+    UNIT_TYPEID::ZERG_BANELINGNEST,
+    UNIT_TYPEID::ZERG_ROACHWARREN,
+    UNIT_TYPEID::ZERG_HYDRALISKDEN,
+    UNIT_TYPEID::LURKERDEN,
+    UNIT_TYPEID::ZERG_SPIRE,
+    UNIT_TYPEID::ZERG_GREATERSPIRE,
+    UNIT_TYPEID::ZERG_ULTRALISKCAVERN,
+};
+
 void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
     // if unit is enemy, record spotting
     if (u->alliance == Unit::Alliance::Enemy) {
         auto now = (float) observation->GetGameLoop() / 16;
-        detection_record.emplace_back(*u, Point2D(u->pos), now);
+
+        // For building types record location; Else record nearest base location
+        if (building_types.find(u->unit_type.ToType()) != building_types.end()) {
+            detection_record.emplace_back(*u, Point2D(u->pos), now);
+        } else {
+            Point2D nearest_point = poi[0];
+            float smallest_dist = 100000;
+            for (const auto& point : poi) {
+                float dist = Distance2D(nearest_point, point);
+                if (dist < smallest_dist) {
+                    nearest_point = point;
+                    smallest_dist = dist;
+                }
+            }
+            bool seen = false;
+            for (const auto& record : detection_record) {
+                if (record.location == nearest_point) {
+                    seen = true;
+                    break;
+                }
+            }
+            if (!seen) detection_record.emplace_back(Unit(), nearest_point, now);
+        }
     }
 }
 
@@ -115,41 +249,13 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
         return;
     }
 
+    // lift off
+    if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_ORBITALCOMMAND) {
+        action->UnitCommand(u, ABILITY_ID::LIFT_ORBITALCOMMAND, true);
+        return;
+    }
+
     if (!task_queue.empty()) {
-        // const auto task_queue_container(task_queue.get_container());
-        // Get highest priority task in queue
-        // Task taskToDo = task_queue_container[0];
-        // for (auto& task : task_queue_container) {
-        //     if (task.priority > taskToDo.priority) {
-        //         taskToDo = task;
-        //     }
-        // }
-
-        // if (taskToDo.priority != 11) {
-        //     // Determine closest highest priority task to the unit
-
-        //     // Calculate distances to each task
-        //     std::vector<std::pair<Task, float>> task_distances;
-        //     float furthest_distance = 0;
-        //     for (auto& task : task_queue_container) {
-        //         float distance = sc2::Distance2D(u->pos, task.position);
-        //         task_distances.push_back({task, distance});
-        //         furthest_distance = std::max(furthest_distance, distance);
-        //     }
-        //     // Find the task with the highest score (priority minus distance)
-        //     int highest_score = -11;
-        //     for (auto& task_distance : task_distances) {
-        //         auto task = task_distance.first;
-        //         auto distance = task_distance.second;
-        //         int normalized_distance = 10 * distance / furthest_distance;
-        //         int score = task.priority - normalized_distance;
-        //         if (score > highest_score) {
-        //             highest_score = score;
-        //             taskToDo = task;
-        //         }
-        //     }
-        // }
-
         // task_queue.remove(taskToDo);
         Task taskToDo = task_queue.pop();
         switch (taskToDo.action) {

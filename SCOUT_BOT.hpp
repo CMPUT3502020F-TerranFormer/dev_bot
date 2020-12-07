@@ -110,6 +110,7 @@ private:
 
     int steps = 0;
     bool ordered_scv = false;
+    bool ordered_ccenter = false;
 
     enum {MAX_SCOUT_COUNT = 8};
 
