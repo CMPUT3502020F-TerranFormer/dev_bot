@@ -3,6 +3,7 @@
 //
 #include "ATTACK_BOT.hpp"
 #include <iostream>
+#include <string>
 
 using namespace sc2;
 
@@ -45,20 +46,6 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
-            // Classify the units in flying or ground
-            // to facilitate movement
-            // Because air units will travel faster than the ground units
-            const Unit *air_unit = nullptr;
-            const Unit *ground_unit = nullptr;
-            if (IsAFlyingAttackUnit(t.unit_typeid))
-            {
-                air_unit = t.unit;
-            }
-            else
-            {
-                ground_unit = t.unit;
-            }
-
             // if a tank is in siege mode, unsiege them
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
@@ -70,48 +57,84 @@ void ATTACK_BOT::step()
                 action->UnitCommand(t.unit, ABILITY_ID::BEHAVIOR_CLOAKON);
             }
 
-            // Check that we are not duplicating units
-            // My assumption is that since units attack only when the army count reaches squadron size
-            // Units might be idle for multiple game cycles
+            // Classify the units in flying or ground
+            // to facilitate movement
+            // Because air units will travel faster than the ground units
+            const Unit *air_unit = nullptr;
+            const Unit *ground_unit = nullptr;
+            const Unit *support_unit = nullptr;
 
-            if (ground_unit != nullptr && std::find(ground_units.begin(), ground_units.end(), ground_unit) == ground_units.end())
+            if (t.unit->is_flying)
             {
-                // if the unit is not in the vector
-                // add it
-                ground_units.push_back(ground_unit);
-                //action->SendChat("Adding ground units");
+                if (IsAFlyingAttackUnit(t.unit->unit_type))
+                {
+                    air_unit = t.unit;
+                    if (air_unit != nullptr && IsNotInVector(air_units, air_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        air_units.push_back(air_unit);
+                    }
+                }
+                else if (IsASupportUnit(t.unit->unit_type))
+                {
+                    support_unit = t.unit;
+                    if (support_unit != nullptr && IsNotInVector(support_units, support_unit))
+                    {
+                        // if the unit is not in the vector
+                        // add it
+                        support_units.push_back(support_unit);
+                    }
+                }
             }
-
-            if (air_unit != nullptr && std::find(air_units.begin(), air_units.end(), t.unit) == air_units.end())
+            else
             {
-                // if the unit is not in the vector
-                // add it
-                air_units.push_back(air_unit);
-                //action->SendChat("Adding air units");
+                ground_unit = t.unit;
+                if (ground_unit != nullptr && IsNotInVector(ground_units, ground_unit))
+                {
+                    // if the unit is not in the vector
+                    // add it
+                    ground_units.push_back(ground_unit);
+                }
             }
-
             // if our current number of attacks units are enough to form a squadron
             // Command all units to attack
             if (ground_units.size() + air_units.size() >= troopManager->getSquadronSize())
             {
+                if (!IsPositionValid(t.position))
+                {
+                    return;
+                }
+
                 // check that none of the units in the attack units are dead
                 allAlive(ground_units);
-                allAlive(air_units);
                 action->UnitCommand(ground_units, t.ability_id, t.position);
-                //action->SendChat("Moving ground units");
 
-                auto size = ground_units.size();
-                action->UnitCommand(air_units, t.ability_id, ground_units[size - 1]->pos);
+                allAlive(air_units);
+                allAlive(support_units);
+                slowest_unit = slowestUnit(ground_units);
+                if (slowest_unit == nullptr)
+                {
+                    return;
+                }
+                // Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
+                action->UnitCommand(air_units, t.ability_id, t.position);
+                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, t.position);
+                // air_units.clear();
+                // support_units.clear();
+                // std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
+
                 ground_units.clear();
-                air_units.clear();
-                troopManager->mark_location_visited();
             }
 
             // If there are a lot of units in our army, increase squadron size
-            // if (observation->GetArmyCount() - troopManager->getSquadronSize() > 20)
+            // if ((observation->GetArmyCount() - troopManager->getSquadronSize()) >= 15)
             // {
             //     troopManager->incSquadronSize();
+            //     action->SendChat("Army count: " + std::to_string(observation->GetArmyCount()));
+            //     action->SendChat("Squadron size incremented");
             // }
+
             break;
         }
         case REPAIR:
@@ -161,6 +184,7 @@ void ATTACK_BOT::step()
             }
             break;
         }
+
         default:
         {
             std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
@@ -343,26 +367,92 @@ void ATTACK_BOT::buildAddOn(const Unit *u)
 
 void ATTACK_BOT::allAlive(std::vector<const Unit *> attack_units)
 {
-    for (int i = 0; i < attack_units.size(); ++i)
+    if (!attack_units.empty())
     {
-        if (!attack_units[i]->is_alive)
+        for (int i = 0; i < attack_units.size(); ++i)
         {
-            auto position = attack_units.begin() + i;
-            attack_units.erase(position);
+            if (!attack_units[i]->is_alive || attack_units[i] == nullptr)
+            {
+                auto position = attack_units.begin() + i;
+                attack_units.erase(position);
+            }
         }
     }
 }
 
-// void ATTACK_BOT::slowestUnit(Units attack_units)
-// {
-//     UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)t.unit_typeid];
-//     auto slowestUnit = attack_units.end();
-//     for (auto unit : attack_units)
-//     {
-//         UnitTypeData()
-//         if (unit->unit_type.)
-//     }
-// }
+bool ATTACK_BOT::IsAFlyingAttackUnit(UNIT_TYPEID unit_typeid)
+{
+    switch (unit_typeid)
+    {
+    case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+    case UNIT_TYPEID::VIKING:
+    case UNIT_TYPEID::TERRAN_LIBERATOR:
+    case UNIT_TYPEID::TERRAN_BANSHEE:
+    case UNIT_TYPEID::TERRAN_BATTLECRUISER:
+        return true;
+    }
+    return false;
+}
+
+bool ATTACK_BOT::IsASupportUnit(UNIT_TYPEID unit_typeid)
+{
+    switch (unit_typeid)
+    {
+    case UNIT_TYPEID::TERRAN_RAVEN:
+    case UNIT_TYPEID::TERRAN_MEDIVAC:
+        return true;
+    }
+    return false;
+}
+
+const Unit *ATTACK_BOT::slowestUnit(Units attack_units)
+{
+    const Unit *slowestUnit = nullptr;
+    if (!attack_units.empty())
+    {
+        UnitTypeData ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[0]->unit_type];
+        slowestUnit = attack_units[0];
+
+        float min_speed = ut.movement_speed;
+        float current_speed = ut.movement_speed;
+        int unit_idx = 0;
+
+        for (int i = 0; i < attack_units.size(); ++i)
+        {
+            ut = observation->GetUnitTypeData()[(UnitTypeID)attack_units[i]->unit_type];
+            current_speed = ut.movement_speed;
+            if (current_speed < min_speed && attack_units[i]->unit_type != UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
+            {
+                min_speed = current_speed;
+                slowestUnit = attack_units[i];
+            }
+        }
+    }
+
+    return slowestUnit;
+}
+
+bool ATTACK_BOT::IsNotInVector(Units vector, const Unit *u)
+{
+    return std::find(vector.begin(), vector.end(), u) == vector.end();
+}
+
+bool ATTACK_BOT::IsPositionValid(Point2D target_pt)
+{
+    int map_height = observation->GetGameInfo().height;
+    int map_width = observation->GetGameInfo().width;
+    
+    if (target_pt.x <= 0  && target_pt.x >= map_width)
+    {
+        return false;
+    }
+
+    if (target_pt.y <= 0 && target_pt.y >= map_width)
+    {
+        return false;
+    }
+    return true;
+}
 
 std::vector<Spotted_Enemy> ATTACK_BOT::last_seen_near(Point2D location, int radius, int since)
 {
