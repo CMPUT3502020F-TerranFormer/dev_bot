@@ -101,11 +101,122 @@ void SCOUT_BOT::unitCreated(const sc2::Unit * u) {
 
 }
 
+// Reference: https://liquipedia.net/starcraft2/Buildings
+std::unordered_set<UNIT_TYPEID> building_types {
+    // Townhall
+    UNIT_TYPEID::TERRAN_COMMANDCENTER,
+    UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING,
+    UNIT_TYPEID::TERRAN_ORBITALCOMMAND,
+    UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING,
+    UNIT_TYPEID::TERRAN_PLANETARYFORTRESS,
+    UNIT_TYPEID::PROTOSS_NEXUS,
+    UNIT_TYPEID::ZERG_HATCHERY,
+    UNIT_TYPEID::ZERG_LAIR,
+    UNIT_TYPEID::ZERG_HIVE,
+    
+    // Gas Buildings
+    UNIT_TYPEID::TERRAN_REFINERY,
+    UNIT_TYPEID::TERRAN_REFINERYRICH,
+    UNIT_TYPEID::PROTOSS_ASSIMILATOR,
+    UNIT_TYPEID::PROTOSS_ASSIMILATORRICH,
+    UNIT_TYPEID::ZERG_EXTRACTOR,
+    UNIT_TYPEID::ZERG_EXTRACTORRICH,
+    
+    // Supply buildings
+    UNIT_TYPEID::PROTOSS_PYLON,
+    UNIT_TYPEID::PROTOSS_PYLONOVERCHARGED,
+    UNIT_TYPEID::TERRAN_SUPPLYDEPOT,
+    UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED,
+    UNIT_TYPEID::ZERG_OVERLORD,
+    UNIT_TYPEID::ZERG_OVERLORDCOCOON,
+    UNIT_TYPEID::ZERG_OVERLORDTRANSPORT,
+
+    // Static defence
+    UNIT_TYPEID::TERRAN_BUNKER,
+    UNIT_TYPEID::TERRAN_MISSILETURRET,
+    UNIT_TYPEID::TERRAN_PLANETARYFORTRESS,
+    UNIT_TYPEID::PROTOSS_PHOTONCANNON,
+    UNIT_TYPEID::PROTOSS_SHIELDBATTERY,
+    UNIT_TYPEID::ZERG_SPINECRAWLER,
+    UNIT_TYPEID::ZERG_SPINECRAWLERUPROOTED,
+    UNIT_TYPEID::ZERG_SPORECRAWLER,
+    UNIT_TYPEID::ZERG_SPORECRAWLERUPROOTED,
+    
+    // Production buildings
+    UNIT_TYPEID::TERRAN_BARRACKS,
+    UNIT_TYPEID::TERRAN_BARRACKSFLYING,
+    UNIT_TYPEID::TERRAN_BARRACKSREACTOR,
+    UNIT_TYPEID::TERRAN_BARRACKSTECHLAB,
+    UNIT_TYPEID::TERRAN_FACTORY,
+    UNIT_TYPEID::TERRAN_FACTORYFLYING,
+    UNIT_TYPEID::TERRAN_FACTORYREACTOR,
+    UNIT_TYPEID::TERRAN_FACTORYTECHLAB,
+    UNIT_TYPEID::TERRAN_STARPORT,
+    UNIT_TYPEID::TERRAN_STARPORTFLYING,
+    UNIT_TYPEID::TERRAN_STARPORTREACTOR,
+    UNIT_TYPEID::TERRAN_STARPORTTECHLAB,
+    UNIT_TYPEID::PROTOSS_GATEWAY,
+    UNIT_TYPEID::PROTOSS_STARGATE,
+    UNIT_TYPEID::PROTOSS_ROBOTICSFACILITY,
+
+    // Upgrade buildings
+    UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
+    UNIT_TYPEID::TERRAN_ARMORY,
+    UNIT_TYPEID::PROTOSS_FORGE,
+    UNIT_TYPEID::PROTOSS_CYBERNETICSCORE,
+    UNIT_TYPEID::ZERG_EVOLUTIONCHAMBER,
+    UNIT_TYPEID::ZERG_SPIRE,
+
+    // Technology-only buildings
+    UNIT_TYPEID::TERRAN_ENGINEERINGBAY,
+    UNIT_TYPEID::TERRAN_GHOSTACADEMY,
+    UNIT_TYPEID::TERRAN_FUSIONCORE,
+    UNIT_TYPEID::TERRAN_ARMORY,
+    UNIT_TYPEID::PROTOSS_FORGE,
+    UNIT_TYPEID::PROTOSS_CYBERNETICSCORE,
+    UNIT_TYPEID::PROTOSS_ROBOTICSBAY,
+    UNIT_TYPEID::PROTOSS_TWILIGHTCOUNCIL,
+    UNIT_TYPEID::PROTOSS_TEMPLARARCHIVE,
+    UNIT_TYPEID::PROTOSS_DARKSHRINE,
+    UNIT_TYPEID::PROTOSS_DARKTEMPLAR,
+    UNIT_TYPEID::PROTOSS_FLEETBEACON,
+    UNIT_TYPEID::ZERG_SPAWNINGPOOL,
+    UNIT_TYPEID::ZERG_BANELINGNEST,
+    UNIT_TYPEID::ZERG_ROACHWARREN,
+    UNIT_TYPEID::ZERG_HYDRALISKDEN,
+    UNIT_TYPEID::LURKERDEN,
+    UNIT_TYPEID::ZERG_SPIRE,
+    UNIT_TYPEID::ZERG_GREATERSPIRE,
+    UNIT_TYPEID::ZERG_ULTRALISKCAVERN,
+};
+
 void SCOUT_BOT::unitEnterVision(const sc2::Unit * u) {
     // if unit is enemy, record spotting
     if (u->alliance == Unit::Alliance::Enemy) {
         auto now = (float) observation->GetGameLoop() / 16;
-        detection_record.emplace_back(*u, Point2D(u->pos), now);
+
+        // For building types record location; Else record nearest base location
+        if (building_types.find(u->unit_type.ToType()) != building_types.end()) {
+            detection_record.emplace_back(*u, Point2D(u->pos), now);
+        } else {
+            Point2D nearest_point = poi[0];
+            float smallest_dist = 100000;
+            for (const auto& point : poi) {
+                float dist = Distance2D(nearest_point, point);
+                if (dist < smallest_dist) {
+                    nearest_point = point;
+                    smallest_dist = dist;
+                }
+            }
+            bool seen = false;
+            for (const auto& record : detection_record) {
+                if (record.location == nearest_point) {
+                    seen = true;
+                    break;
+                }
+            }
+            if (!seen) detection_record.emplace_back(Unit(), nearest_point, now);
+        }
     }
 }
 
