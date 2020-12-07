@@ -111,6 +111,21 @@ void RESOURCE_BOT::step() {
                 break; 
             }
 
+            switch (worker->unit_type.ToType()) {
+            case UNIT_TYPEID::TERRAN_FACTORY:
+            case UNIT_TYPEID::TERRAN_BARRACKS:
+            case UNIT_TYPEID::TERRAN_STARPORT:
+                if (worker->add_on_tag == 0
+                    && t.ability_id != ABILITY_ID::BUILD_REACTOR_BARRACKS
+                    && t.ability_id != ABILITY_ID::BUILD_TECHLAB_BARRACKS
+                    && t.ability_id != ABILITY_ID::BUILD_TECHLAB_FACTORY
+                    && t.ability_id != ABILITY_ID::BUILD_TECHLAB_STARPORT) {
+                    task_queue.push(t);
+                    task_success = false;
+                    continue;
+                }
+            }
+
             // check that we have enough resources to do ability
             if (ut.food_required > available_food
                 || ut.mineral_cost > available_minerals
@@ -125,6 +140,7 @@ void RESOURCE_BOT::step() {
                 break;
             }
 
+            std::cout << "Attempting to train: " << ut.name << std::endl;
             // when the unit is created we want to add it to the correct agent
             ordered_units.push_back(order_unit(t.source, t.unit_typeid));
 

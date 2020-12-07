@@ -62,6 +62,7 @@ void DEFENCE_BOT::step() {
     auto gl = observation->GetGameLoop();
 
     if (gl % 16 == 0) { check_active_defence(); }
+    if (gl % 4 != 0) { return; } // only update ~ever 1/4 second
 
     if (!orderedEngBay && !hasEngineeringBay && gl / 16 > 500) {
         buildEngineeringBay();
@@ -98,12 +99,12 @@ void DEFENCE_BOT::step() {
 
     if (gl / 16 > 200) {
         orderTroops();
-        std::cout << orderQueueSize << std::endl;
+       // std::cout << orderQueueSize << std::endl;
     }
 }
 
 void DEFENCE_BOT::addTask(Task t) {
-
+    task_queue.push(t);
 }
 
 void DEFENCE_BOT::addUnit(TF_unit u) {
