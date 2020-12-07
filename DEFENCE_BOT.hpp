@@ -156,6 +156,9 @@ private:
     bool sAndVUpgradePhase2Complete = false;
     bool sAndVUpgradePhase3Complete = false;
 
+    bool stim_researched = false;
+    bool banshee_cloak_researched = false;
+
     int balance_step = 0;
 
     static double distance(const Point2D &p1, const Point2D &p2);
@@ -192,6 +195,8 @@ private:
     static int get_defence_score(UNIT_TYPEID id);
 
     void defence_balance();
+
+    void check_active_defence();
 };
 
 #endif //CPP_SC2_DEFENCE_BOT_HPP

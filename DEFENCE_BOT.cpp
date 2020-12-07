@@ -13,6 +13,12 @@ DEFENCE_BOT::DEFENCE_BOT(TF_Bot *bot)
 DEFENCE_BOT::~DEFENCE_BOT() = default;
 
 void DEFENCE_BOT::step() {
+    auto gl = observation->GetGameLoop();
+
+    if (gl % 4 != 0) { return; } // only about ever 1/4 second
+
+    if (gl % 8 == 0) { check_active_defence(); }
+
     if (balance_step / 16 > 20) {
         defence_balance();
         balance_step = 0;
@@ -22,8 +28,6 @@ void DEFENCE_BOT::step() {
 
     check_for_engineering_bay();
     check_for_factory();
-
-    auto gl = observation->GetGameLoop();
 
     if (!orderedEngBay && !hasEngineeringBay && gl / 16 > 500) {
         buildEngineeringBay();
@@ -375,7 +379,9 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
             break;
         case (int) UNIT_TYPEID::TERRAN_TECHLAB:
             action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_STIMPACK);
             action->UnitCommand(u, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS);
+            action->UnitCommand(u, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD);
             break;
         case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
             /*
@@ -419,6 +425,12 @@ void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
         case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3:
             infantryUpgradePhase3Complete = true;
             break;
+        case (int)UPGRADE_ID::STIMPACK:
+            stim_researched = true;
+            break;
+        case (int)UPGRADE_ID::BANSHEECLOAK:
+            banshee_cloak_researched = true;
+            break;
     }
 }
 
@@ -451,8 +463,8 @@ void DEFENCE_BOT::init() {
         // load query result to poi
         auto r = scout_POI_db.copy_result();
         for (auto &xy_vec : *r) {
-            auto x = std::stod(xy_vec.at(0));
-            auto y = std::stod(xy_vec.at(1));
+            float x = std::stod(xy_vec.at(0));
+            float y = std::stod(xy_vec.at(1));
             auto major = std::stoi(xy_vec.at(2));
             poi.emplace_back(x, y, major);
         }
@@ -1001,6 +1013,162 @@ void DEFENCE_BOT::defence_balance() {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
+void DEFENCE_BOT::check_active_defence() {
+    // this figures out what the groups of enemy units nears our command centers are
+    // and commands our units to approach them (if not in range -- need to figure this one out)
+    auto command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
+    auto enemy_units = observation->GetUnits(Unit::Alliance::Enemy, IsNearUnits(command_centers, 8));
+    auto our_units = observation->GetUnits(Unit::Alliance::Self, IsArmy());
 
+    if (enemy_units.empty() || command_centers.empty() || our_units.empty()) { return; }
 
+    // now we need to figure out if there are separate groups of enemies (and how large they are)
+    // we'll do this by going through the enemy units (taking the first unit as the initial group)
+    // and checking if the other units are within range 10, if they aren't -> treat it as another group
+    std::vector<std::pair<Point2D, int>> enemy_groups;
 
+    auto first_enemy = enemy_units.back();
+    enemy_units.pop_back();
+    enemy_groups.emplace_back(first_enemy->pos, 1);
+
+    for (auto& e : enemy_units) {
+        for (auto& group : enemy_groups) {
+            if (IsClose(group.first, 100)(*e)) {
+                ++group.second;
+                break;
+            }
+            else {
+                enemy_groups.emplace_back(e->pos, 1);
+                break;
+            }
+        }
+    }
+
+    // we'll go through the enemy groups from largest to smallest sending our units to attack 
+    // (in 10% larger numbers) until we run out of units (this may result it enemy targets changing rapidly
+    // during the start of the attack (maybe search a wider radius for enemy units, only pay attention 
+    //      to very close groups)
+    // ISSUE: consider grabbing all attacking units nearby in the future (or coordinate with attack)
+    //      for now we queue commands
+    std::sort(enemy_groups.begin(), enemy_groups.end(), [](auto i, auto j) { return i.second > j.second; });
+
+    auto unit_num = 0; // access units by index
+    for (auto& group : enemy_groups) {
+        auto troop_count = unit_num + (group.second * 1.1);
+        while (unit_num < troop_count && unit_num < our_units.size()) {
+            auto unit = our_units.at(unit_num++);
+            switch (unit->unit_type.ToType()) { // use abilities & attack
+            case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
+                auto close_units = observation->GetUnits(IsClose(unit->pos, 13 * 13));
+                if (close_units.empty()) {
+                    action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_SIEGETANK: {
+                // check at 1 unit under max range in case they move away slightly
+                auto close_units = observation->GetUnits(IsClose(unit->pos, 12 * 12));
+                if (!close_units.empty()) {
+                    action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_MARAUDER: {
+                if (IsClose(group.first, 6 * 6)(*unit) && stim_researched) {
+                    bool stimmed = false;
+                    for (auto& buff : unit->buffs) {
+                        if (buff == BUFF_ID::STIMPACK) {
+                            stimmed = true;
+                        }
+                    }
+                    if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_BANSHEE: {
+                if (IsClose(group.first, 6 * 6)(*unit)
+                    && banshee_cloak_researched
+                    && unit->energy > 50) {
+                    action->UnitCommand(unit, ABILITY_ID::BEHAVIOR_CLOAKON);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_MARINE: {
+                if (IsClose(group.first, 5 * 5)(*unit) && stim_researched) {
+                    bool stimmed = false;
+                    for (auto& buff : unit->buffs) {
+                        if (buff == BUFF_ID::STIMPACK) {
+                            stimmed = true;
+                        }
+                    }
+                    if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_CYCLONE: {
+                // see examples.cc for how to use lock on with flying units
+                action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_THOR: {
+                // just use basic attack
+                // see https://liquipedia.net/starcraft2/Thor_(Legacy_of_the_Void) for abilities to use on air
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_VIKINGASSAULT: {
+                // figure out when to switch from air to ground -> for now prefer air and just try to attack
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_VIKINGFIGHTER: {
+                // same as above
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_MEDIVAC: {
+                action->UnitCommand(unit, ABILITY_ID::EFFECT_HEAL);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_RAVEN: {
+                if (IsClose(group.first, 6 * 6)(*unit) && unit->energy > 50) {
+                    // does this need a 2d point?
+                    action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, unit->pos);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_BATTLECRUISER: {
+                // figure out abilities later
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_HELLION: {
+                if (hasArmoury) {
+                    action->UnitCommand(unit, ABILITY_ID::MORPH_HELLBAT);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_HELLIONTANK: {
+                // not sure what abilities it can use
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_REAPER: {
+                if (IsClose(group.first, 4)(*unit)) {
+                    action->UnitCommand(unit, ABILITY_ID::EFFECT_KD8CHARGE);
+                }
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                break;
+            }
+            default: action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+            }
+        }
+    }
+}

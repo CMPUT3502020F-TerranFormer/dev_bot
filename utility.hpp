@@ -158,4 +158,27 @@ struct PointNearUnits {
 	}
 };
 
+struct IsArmy {
+	bool operator()(const Unit& u) {
+		switch (u.unit_type.ToType()) {
+		case UNIT_TYPEID::TERRAN_SIEGETANK: return true;
+		case UNIT_TYPEID::TERRAN_MARAUDER: return true;
+		case UNIT_TYPEID::TERRAN_BANSHEE: return true;
+		case UNIT_TYPEID::TERRAN_MARINE: return true;
+		case UNIT_TYPEID::TERRAN_CYCLONE: return true;
+		case UNIT_TYPEID::TERRAN_THOR: return true;
+		case UNIT_TYPEID::TERRAN_VIKINGASSAULT: return true;
+		case UNIT_TYPEID::TERRAN_VIKINGFIGHTER: return true;
+		case UNIT_TYPEID::TERRAN_MEDIVAC: return true;
+		case UNIT_TYPEID::TERRAN_RAVEN: return true;
+		case UNIT_TYPEID::TERRAN_BATTLECRUISER: return true;
+		case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: return true;
+		case UNIT_TYPEID::TERRAN_HELLION: return true;
+		case UNIT_TYPEID::TERRAN_HELLIONTANK: return true;
+		case UNIT_TYPEID::TERRAN_REAPER: return true;
+		default: return false;
+		}
+	}
+};
+
 #endif //TFBOT_UTILITY_HPP
