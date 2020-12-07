@@ -321,7 +321,7 @@ void ATTACK_BOT::buildAddOn(const Unit *u)
     {
     case UNIT_TYPEID::TERRAN_BARRACKS:
         if (observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() - 1 % 4 == 0) { // build a reactor first
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
+            resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
                 ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
         }
         else {
