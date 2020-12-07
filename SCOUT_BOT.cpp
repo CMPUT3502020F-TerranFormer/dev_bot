@@ -17,6 +17,17 @@ SCOUT_BOT::~SCOUT_BOT() = default;
  * MainTask Generate new tasked to be executed when unitIdle is called
  */
 void SCOUT_BOT::step() {
+    // order command center 10 minutes into the game
+    if (!ordered_ccenter && observation->GetGameLoop() / 16 >= 600 &&
+        observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() != 0) {
+        resource->addTask(Task(BUILD,
+                               SCOUT_AGENT,
+                               7,
+                               UNIT_TYPEID::TERRAN_COMMANDCENTER,
+                               ABILITY_ID::BUILD_COMMANDCENTER));
+        ordered_ccenter = true;
+    }
+
     // order scv 120sec into game time
     if (!ordered_scv) {
         if (steps / 16 > 280) {
@@ -59,6 +70,18 @@ void SCOUT_BOT::addUnit(TF_unit u) {
 
     // add unit to units
     units.emplace_back(u.type, u.tag);
+
+    // If unit is command center, upgrade to orbital command
+    if (u.type == UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        resource->addTask(Task(TRAIN,
+                          SCOUT_AGENT,
+                          7,
+                          ABILITY_ID::MORPH_ORBITALCOMMAND,
+                          UNIT_TYPEID::TERRAN_ORBITALCOMMAND,
+                          sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER,
+                          u.tag));
+        return;        
+    }
 
     // give unit a task
     while (task_queue.empty()) { std::this_thread::sleep_for(std::chrono::milliseconds(20)); }
@@ -226,41 +249,13 @@ void SCOUT_BOT::unitIdle(const sc2::Unit * u) {
         return;
     }
 
+    // lift off
+    if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_ORBITALCOMMAND) {
+        action->UnitCommand(u, ABILITY_ID::LIFT_ORBITALCOMMAND, true);
+        return;
+    }
+
     if (!task_queue.empty()) {
-        // const auto task_queue_container(task_queue.get_container());
-        // Get highest priority task in queue
-        // Task taskToDo = task_queue_container[0];
-        // for (auto& task : task_queue_container) {
-        //     if (task.priority > taskToDo.priority) {
-        //         taskToDo = task;
-        //     }
-        // }
-
-        // if (taskToDo.priority != 11) {
-        //     // Determine closest highest priority task to the unit
-
-        //     // Calculate distances to each task
-        //     std::vector<std::pair<Task, float>> task_distances;
-        //     float furthest_distance = 0;
-        //     for (auto& task : task_queue_container) {
-        //         float distance = sc2::Distance2D(u->pos, task.position);
-        //         task_distances.push_back({task, distance});
-        //         furthest_distance = std::max(furthest_distance, distance);
-        //     }
-        //     // Find the task with the highest score (priority minus distance)
-        //     int highest_score = -11;
-        //     for (auto& task_distance : task_distances) {
-        //         auto task = task_distance.first;
-        //         auto distance = task_distance.second;
-        //         int normalized_distance = 10 * distance / furthest_distance;
-        //         int score = task.priority - normalized_distance;
-        //         if (score > highest_score) {
-        //             highest_score = score;
-        //             taskToDo = task;
-        //         }
-        //     }
-        // }
-
         // task_queue.remove(taskToDo);
         Task taskToDo = task_queue.pop();
         switch (taskToDo.action) {
