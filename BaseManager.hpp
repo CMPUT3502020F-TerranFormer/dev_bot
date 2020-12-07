@@ -148,10 +148,17 @@ public:
 						&& unit->build_progress >= 1) {
 						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
-					else if (unit->build_progress < 1) {
-						if (observation->GetUnits(Unit::Alliance::Self,
-							[unit](const Unit& u) {return IsClose(unit->pos, 25)(u) && IsSCV()(u);}).empty()) {
-							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+					else if (unit->build_progress < 1) { // check that it isn't an addon (of the ones we build)
+						if (unit->unit_type.ToType() != UNIT_TYPEID::TERRAN_BARRACKSREACTOR
+							&& unit->unit_type.ToType() != UNIT_TYPEID::TERRAN_BARRACKSTECHLAB
+							&& unit->unit_type.ToType() != UNIT_TYPEID::TERRAN_FACTORYTECHLAB
+							&& unit->unit_type.ToType() != UNIT_TYPEID::TERRAN_STARPORTTECHLAB) {
+
+							// check for close scvs that could be working on it
+							if (observation->GetUnits(Unit::Alliance::Self,
+								[unit](const Unit& u) {return IsClose(unit->pos, 25)(u) && IsSCV()(u);}).empty()) {
+								task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+							}
 						}
 					}
 				}
