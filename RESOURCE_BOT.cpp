@@ -35,6 +35,8 @@ void RESOURCE_BOT::step() {
     Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
     baseManager->step(scvs);
 
+    if ((observation->GetGameLoop() + 1) % 4 != 0) { return; } // offset from BaseManager timing
+
     // Resource Management
     // check if we need to build a supply depot
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
@@ -54,10 +56,13 @@ void RESOURCE_BOT::step() {
         switch (t.action) {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
+            if (unit == nullptr) { continue; }
             if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
                 action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true);
             }
-            action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+            else {
+                action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+            }
             action->SendActions();
             break;
         }
@@ -198,7 +203,11 @@ void RESOURCE_BOT::step() {
                 unit = scv;
                 action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN, true);
             }
-            else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
+            else { 
+                auto u = observation->GetUnit(t.self);
+                if (u == nullptr) { break; }
+                unit = TF_unit(u->unit_type, t.self); 
+            }
 
             // add to correct agent
             switch (t.source) {

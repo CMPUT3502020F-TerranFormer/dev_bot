@@ -46,6 +46,7 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
+            if (t.unit == nullptr) { break; }
             // if a tank is in siege mode, unsiege them
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
@@ -149,12 +150,17 @@ void ATTACK_BOT::step()
         }
         case MOVE:
         {
-            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
+            auto unit = observation->GetUnit(t.target);
+            if (unit != nullptr) {
+                action->UnitCommand(unit, t.ability_id, t.position);
+            }
             break;
         }
         case TRANSFER:
         {
-            TF_unit unit = TF_unit(observation->GetUnit(t.self)->unit_type.ToType(), t.self);
+            auto u = observation->GetUnit(t.self);
+            if (u == nullptr) { break; }
+            TF_unit unit = TF_unit(u->unit_type.ToType(), t.self);
 
             // add to correct agent
             switch (t.source)
@@ -187,7 +193,7 @@ void ATTACK_BOT::step()
 
         default:
         {
-            std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
+            std::cerr << "ATTACK Unrecognized Task: " << t.source << " " << t.action << std::endl;
         }
         }
     }
@@ -205,17 +211,6 @@ void ATTACK_BOT::addUnit(TF_unit u)
 
 void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit *u)
 {
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-    case UNIT_TYPEID::TERRAN_FACTORY:
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        buildAddOn(u);
-        break;
-
-    default:
-        break;
-    }
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit *u)
@@ -327,41 +322,6 @@ void ATTACK_BOT::buildStarport()
                  5,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT));
-    }
-}
-
-void ATTACK_BOT::buildAddOn(const Unit *u)
-{
-    // proof of concept, build a reactor on each barracks (should not actually use priority 8)
-
-    // TODO: For now all add-ons have been set to default, will need to implement a way to choose the add - on
-
-    if (u->build_progress != 1)
-    {
-        return;
-    }
-
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-        if (observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() - 1 % 4 == 0) { // build a reactor first
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
-        }
-        else {
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
-        }
-
-    case UNIT_TYPEID::TERRAN_FACTORY:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
-                 u->tag));
-
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
-                 u->tag));
     }
 }
 

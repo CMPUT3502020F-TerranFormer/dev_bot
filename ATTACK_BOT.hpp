@@ -77,10 +77,6 @@ public:
 
     void init();
 
-    // Same as buildStructure, except in this case, we build much closer to the building
-    // template, change later
-    void buildAddOn(const Unit *unit);
-
     void buildBarracks();
 
     void buildFactory();
