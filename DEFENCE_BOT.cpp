@@ -341,67 +341,68 @@ void DEFENCE_BOT::unitEnterVision(const sc2::Unit *u) {
 
 void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
 
-    switch ((int) u->unit_type) {
+    switch ((int)u->unit_type) {
         // TODO use behavior tree to replace the following logic
         // engineering bay upgrade tree
-        case (int) UNIT_TYPEID::TERRAN_ENGINEERINGBAY:
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2);
-            if (sAndVUpgradePhase1Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3);
-                if (sAndVUpgradePhase2Complete) {
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_HISECAUTOTRACKING);
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_NEOSTEELFRAME);
+    case (int)UNIT_TYPEID::TERRAN_ENGINEERINGBAY: {
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2));
+        if (sAndVUpgradePhase1Complete) {
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3));
+            if (sAndVUpgradePhase2Complete) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::HISECAUTOTRACKING, ABILITY_ID::RESEARCH_HISECAUTOTRACKING));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_NEOSTEELFRAME));
+            }
+        }
+        break;
+    }
+                                                // TODO use behavior tree to replace the following logic
+                                                // armoury upgrade tree
+    case (int)UNIT_TYPEID::TERRAN_ARMORY: {
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1));
+        if (infantryUpgradePhase1Complete) {
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1));
+            if (infantryUpgradePhase2Complete) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2));
+                if (infantryUpgradePhase3Complete) {
+                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3));
+                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3));
+                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3));
                 }
             }
-            break;
-            // TODO use behavior tree to replace the following logic
-            // armoury upgrade tree
-        case (int) UNIT_TYPEID::TERRAN_ARMORY:
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1);
-            if (infantryUpgradePhase1Complete) {
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1);
-                action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1);
-                if (infantryUpgradePhase2Complete) {
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2, true);
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2, true);
-                    action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2, true);
-                    if (infantryUpgradePhase3Complete) {
-                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3, true);
-                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3, true);
-                        action->UnitCommand(u, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3, true);
-                    }
-                }
+        }
+        break;
+    }
+    case (int)UNIT_TYPEID::TERRAN_TECHLAB: {
+        // do we have to put these in the **TECHLAB?
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::STIMPACK, ABILITY_ID::RESEARCH_STIMPACK)); // barracks
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::COMBATSHIELD, ABILITY_ID::RESEARCH_COMBATSHIELD)); // barracks
+        // not sure what the UPGRADE_ID is, neosteel frames has a higher cost so we'll use that in it's place
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS)); // barracks
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::BANSHEECLOAK, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD)); // starport
+        break;
+    }
+    case (int)UNIT_TYPEID::TERRAN_SIEGETANK:
+        if (u->orders.empty()) {
+            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
+        }
+        break;
+    case (int)UNIT_TYPEID::TERRAN_MARINE:
+    case (int)UNIT_TYPEID::TERRAN_MARAUDER:
+        // load empty bunkers
+        if (!bunkers.empty()) {
+            action->UnitCommand(bunkers[0], ABILITY_ID::LOAD_BUNKER, u);
+            action->SendActions();
+            if (bunkers[0]->cargo_space_taken == bunkers[0]->cargo_space_max) {
+                bunkers.erase(bunkers.begin());
             }
-            break;
-        case (int) UNIT_TYPEID::TERRAN_TECHLAB:
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_COMBATSHIELD);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_STIMPACK);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS);
-            action->UnitCommand(u, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD);
-            break;
-        case (int) UNIT_TYPEID::TERRAN_SIEGETANK:
-            /*
-            if (u->orders.empty()) {
-                action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
-            }
-             */
-            break;
-        case (int) UNIT_TYPEID::TERRAN_MARINE:
-        case (int) UNIT_TYPEID::TERRAN_MARAUDER:
-            // load empty bunkers
-            if (!bunkers.empty()) {
-                action->UnitCommand(bunkers[0], ABILITY_ID::LOAD_BUNKER, u);
-                action->SendActions();
-                if (bunkers[0]->cargo_space_taken == bunkers[0]->cargo_space_max) {
-                    bunkers.erase(bunkers.begin());
-                }
-            }
-        case (int) UNIT_TYPEID::TERRAN_RAVEN:
-            action->UnitCommand(u, ABILITY_ID::EFFECT_AUTOTURRET);
+        }
     }
 }
 
