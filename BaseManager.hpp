@@ -26,7 +26,7 @@
 
 using namespace sc2;
 
-static const TF_unit NoUnit = TF_unit(UNIT_TYPEID::INVALID, (Tag) -1);
+static const TF_unit NoUnit = TF_unit(UNIT_TYPEID::INVALID, (Tag)-1);
 
 struct Base {
 
@@ -118,13 +118,12 @@ public:
 		// Stuff that is particular to each base, such as refineries, handling excess scv's
 		// we must check that build progress is complete when looking for units that can be repaired
 
-		// update every 1/4 second
+		// update every ~1/4 second
 		if (observation->GetGameLoop() % 4 != 0) { return; }
 
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
-			// smaller range than 15, should still include refineries and immediate units
-			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 100)); 
+			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 225));
 			const Unit* command = observation->GetUnit(base.command.tag);
 			if (command == nullptr) { return; }
 
@@ -132,7 +131,7 @@ public:
 			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 6));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 8));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -147,13 +146,13 @@ public:
 				for (auto& unit : units) {
 					if (unit->health < unit->health_max
 						&& unit->build_progress >= 1) {
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
+						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 7, unit->tag, ABILITY_ID::EFFECT_REPAIR, 1));
 					}
 					else if (unit->build_progress < 1) {
-						/* We first need to figure out how to determine if an scv is working on a building
-						* (They don't have a target tag, and only a position as far as I'm currently aware)
-						task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
-						*/
+						if (observation->GetUnits(Unit::Alliance::Self,
+							[unit](const Unit& u) {return IsClose(unit->pos, 25)(u) && IsSCV()(u);}).empty()) {
+							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+						}
 					}
 				}
 			}
@@ -176,7 +175,7 @@ public:
 			if (command->build_progress == 1) {
 				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
 				if (base.startTransfer() && command->ideal_harvesters <= 8) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 8,
 						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
 				}
 				else if (base.depleted()) {
@@ -223,7 +222,7 @@ public:
 
 		// to stay alive as long as possible
 		auto command_build_priority = 7;
-		if (num_command_centers == 0) { 
+		if (num_command_centers == 0) {
 			build = true;
 			command_build_priority = 20;
 		}
@@ -261,7 +260,7 @@ public:
 
 		// now deal with balancing working gas and minerals
 		for (auto& r : refineries) { // focus oversaturated refineries first
-			if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) > 1.5) {
+			if ((float)observation->GetVespene() / (float)(observation->GetMinerals() + 1) > 1.5) {
 				for (auto& s : scvs) {
 					if (IsCarryingVespene(*s)) {
 						assignSCV(s, false);
@@ -270,7 +269,7 @@ public:
 				}
 			}
 		}
-		if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) < 0.4) {
+		if ((float)observation->GetVespene() / (float)(observation->GetMinerals() + 1) < 0.4) {
 			for (auto& s : scvs) {
 				if (IsCarryingMinerals(*s)) {
 					assignSCV(s, false);
@@ -289,9 +288,17 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-			if (active_bases.size() == 1
-				&& active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
-				active_bases.front().command = TF_unit(u->unit_type, u->tag);
+			if (active_bases.size() == 1) {
+				if (active_bases.front().command.tag == -1) { // check for initial case where scv's were added before command center
+					active_bases.front().command = TF_unit(u->unit_type, u->tag);
+				}
+				else {
+					Base base = Base();
+					base.command = TF_unit(u->unit_type, u->tag);
+					base.location = u->pos;
+					base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
+					active_bases.push_back(base);
+				}
 			}
 			else {
 				Base base = Base();
@@ -300,8 +307,9 @@ public:
 				base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
 				active_bases.push_back(base);
 			}
+			break;
 		}
-		// not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
+											  // not yet sure how upgrades are handled -> maybe have to add ORBITAL_COMMAND, etc
 		}
 	}
 
@@ -316,6 +324,7 @@ public:
 		if (u->unit_type.ToType() == UNIT_TYPEID::TERRAN_SCV) { --scv_count; }
 
 		if (IsCommandCenter()(*u)) { // it is necessary to remove the base so scvs will be properly assigned
+			auto loc = u->pos;
 			for (auto it = active_bases.cbegin(); it != active_bases.cend(); ++it) {
 				if (it->command.tag == u->tag) {
 					active_bases.erase(it);
@@ -328,6 +337,9 @@ public:
 					return;
 				}
 			}
+			auto scvs = observation->GetUnits(Unit::Alliance::Self,
+				[loc](const Unit& u) { return IsSCV()(u) && IsClose(loc, 81)(u); });
+			for (auto& s : scvs) { assignSCV(s); }
 		}
 	}
 
@@ -341,7 +353,7 @@ public:
 	 * It is recommended to call this method without a point when you know there is likely only 1 scv
 	 * nearby and you want to build multiple buildings (they will all queue to the same scv
 	 *	we don't know the scv queue size)
-	 * 
+	 *
 	 * We pass in scvs because this may be called multiple times a step
 	 */
 	TF_unit getSCV(Units scvs, Point2D point = Point2D(0, 0)) {
@@ -354,7 +366,7 @@ public:
 			if (std::find(std::begin(*resource_units), std::end(*resource_units), scv->tag) == std::end(*resource_units)) {
 				continue;
 			}
-			if (scv->orders.empty()) {
+			else if (scv->orders.empty()) {
 				if (point != Point2D(0, 0)) {
 					if (DistanceSquared2D(scv->pos, point) < 225) { // 15**2
 						possible_scvs.push_back(scv);
@@ -400,7 +412,7 @@ public:
 		// otherwise return a random scv
 		std::uniform_int_distribution<> distrib(0, possible_scvs.size() - 1);
 		int index = distrib(rand_gen);
-		return TF_unit(scvs.data()[index]->unit_type, scvs.data()[index]->tag);
+		return TF_unit(scvs.at(index)->unit_type, scvs.at(index)->tag);
 	}
 
 	/**
@@ -419,24 +431,22 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				auto priority = 6;
-				if (scv_count < (active_bases.size() * 14)) { priority = 7; } // prioritize scvs when we are missing many workers
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, priority, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 8, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
-			else if (u->energy >= 50){ // MULE energy cost
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 5, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
+			else if (u->energy >= 50) { // MULE energy cost
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 6, ABILITY_ID::EFFECT_CALLDOWNMULE, UNIT_TYPEID::TERRAN_MULE, UNIT_TYPEID::TERRAN_ORBITALCOMMAND, u->tag));
 			}
 			break;
 		}
@@ -459,7 +469,7 @@ private:
 	const ObservationInterface* observation;
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
-	
+
 	int scv_count; // total active scv count
 	int scv_target_count; // aim for 66?
 
@@ -475,7 +485,7 @@ private:
 	*		so we don't waste time switching targets
 	*/
 	void assignSCV(const Unit* u, bool retarget = true) {
-		if ((float) observation->GetVespene() / (float) (observation->GetMinerals() + 1) < 0.4) {
+		if ((float)observation->GetVespene() / (float)(observation->GetMinerals() + 1) < 0.4) {
 			if (retarget) {
 				if (!assign_vespene(u)) { assign_minerals(u); }
 			}
@@ -562,7 +572,7 @@ private:
 			for (auto& p : vespene) {
 				if (DistanceSquared2D(command->pos, p->pos) < 225
 					&& p->vespene_contents > 0) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 6, UNIT_TYPEID::TERRAN_REFINERY,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 8, UNIT_TYPEID::TERRAN_REFINERY,
 						ABILITY_ID::BUILD_REFINERY, p->tag));
 				}
 			}
