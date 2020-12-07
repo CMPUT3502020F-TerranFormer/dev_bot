@@ -16,7 +16,7 @@
  * to provide a Point2D for placement, and instead call a method with the unit_type
  * which will return the correct Point2D <-- This has been done, but for compatibility
  * the option to pass in a point remains
- * 
+ *
  * The fixed points were obtained using the Map Editor
  */
 
@@ -50,15 +50,15 @@ public:
 			map = Map::CactusValleyLE;
 			std::sort(CactusValleyLEBaseLocations.begin(), CactusValleyLEBaseLocations.end(), CloseToStart(start_location));
 		}
-		else if (strcmp(map_name, "Bel'Shir Vestige LE (Void)") == 0) { 
+		else if (strcmp(map_name, "Bel'Shir Vestige LE (Void)") == 0) {
 			map = Map::BelShirVestigeLE;
 			std::sort(BelShirVestigeLEBaseLocations.begin(), BelShirVestigeLEBaseLocations.end(), CloseToStart(start_location));
 		}
 		else if (strcmp(map_name, "Proxima Station LE") == 0) {
-			map = Map::ProximaStationLE; 
+			map = Map::ProximaStationLE;
 			std::sort(ProximaStationLEBaseLocations.begin(), ProximaStationLEBaseLocations.end(), CloseToStart(start_location));
 		}
-		else { 
+		else {
 			std::cerr << "Unrecognized Map: " << map_name << std::endl;
 			std::cerr << "Recognized map names are: " << std::endl
 				<< "\tCactus Valley LE (Void)" << std::endl
@@ -85,33 +85,15 @@ public:
 		switch (unit_type) {
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: return getNextCommandCenterLocation();
 		case UNIT_TYPEID::TERRAN_SUPPLYDEPOT: return getNextSupplyDepotLocation();
-		case UNIT_TYPEID::TERRAN_BARRACKS: 
-			if (point == Point2D(0, 0)) {
-				return getNextBarracksLocation();
-			}
-			else {
-				return getNextBarracksLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_BARRACKS: return getNextBarracksLocation();
 		case UNIT_TYPEID::TERRAN_FUSIONCORE: return getNextFusionCoreLocation();
-		case UNIT_TYPEID::TERRAN_FACTORY:
-			if (point == Point2D(0, 0)) {
-				return getNextFactoryLocation();
-			}
-			else {
-				return getNextFactoryLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_FACTORY: return getNextFactoryLocation();
 		case UNIT_TYPEID::TERRAN_BUNKER: return getNextBunkerLocation(point);
-		case UNIT_TYPEID::TERRAN_STARPORT:
-			if (point == Point2D(0, 0)) {
-				return getNextStarportLocation();
-			}
-			else {
-				return getNextStarportLocation(point);
-			}
+		case UNIT_TYPEID::TERRAN_STARPORT: return getNextStarportLocation();
 		case UNIT_TYPEID::TERRAN_ENGINEERINGBAY: return getNextEngineeringBayLocation();
 		case UNIT_TYPEID::TERRAN_ARMORY: return getNextArmoryLocation();
 		case UNIT_TYPEID::TERRAN_MISSILETURRET: return getNextMissileTurretLocation(point);
-		default: std::cerr << "BUILDING_PLACEMENT: Unrecognized unit_type: " << (int) unit_type << std::endl;
+		default: std::cerr << "BUILDING_PLACEMENT: Unrecognized unit_type: " << (int)unit_type << std::endl;
 		}
 		return Point2D(0, 0);
 	}
@@ -129,22 +111,22 @@ private:
 	Race enemyRace;
 
 	int time_out = 200;
-	
-	std::array<sc2::Point2D, 16> CactusValleyLEBaseLocations 
-		{ Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5), // Top Left
-		Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5), // Top Right
-		Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5), // Bottom Left
-		Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) }; // Bottom Right
+
+	std::array<sc2::Point2D, 16> CactusValleyLEBaseLocations
+	{ Point2D(33.5, 158.5), Point2D(66.5, 161.5), Point2D(54.5, 132.5), Point2D(93.5, 156.5), // Top Left
+	Point2D(158.5, 158.5), Point2D(161.5, 125.5), Point2D(132.5, 137.5), Point2D(156.5, 98.5), // Top Right
+	Point2D(33.5, 33.5), Point2D(30.5, 66.5), Point2D(59.5, 54.5), Point2D(33.5, 93.5), // Bottom Left
+	Point2D(158.5, 33.5), Point2D(125.5, 30.5), Point2D(137.5, 59.5), Point2D(98.5, 35.5) }; // Bottom Right
 
 	std::array<sc2::Point2D, 16> ProximaStationLEBaseLocations
-		{ Point2D(137.5, 139.5), Point2D(164.5, 140.5), Point2D(119.5, 111.5), Point2D(149.5, 102.5), // Top Right
-		Point2D(93.5, 147.5), Point2D(166.5, 69.5), Point2D(127.5, 57.5), Point2D(165.5, 23.5),
-		Point2D(62.5, 28.5), Point2D(35.5, 27.5), Point2D(80.5, 56.5), Point2D(50.5, 65.5), // Bottom Left
-		Point2D(106.5, 20.5), Point2D(33.5, 98.5), Point2D(72.5, 110.5), Point2D(34.5, 144.5) };
+	{ Point2D(137.5, 139.5), Point2D(164.5, 140.5), Point2D(119.5, 111.5), Point2D(149.5, 102.5), // Top Right
+	Point2D(93.5, 147.5), Point2D(166.5, 69.5), Point2D(127.5, 57.5), Point2D(165.5, 23.5),
+	Point2D(62.5, 28.5), Point2D(35.5, 27.5), Point2D(80.5, 56.5), Point2D(50.5, 65.5), // Bottom Left
+	Point2D(106.5, 20.5), Point2D(33.5, 98.5), Point2D(72.5, 110.5), Point2D(34.5, 144.5) };
 
 	std::array<Point2D, 10> BelShirVestigeLEBaseLocations
-		{ Point2D(29.5, 134.5), Point2D(61.5, 136.5), Point2D(28.5, 96.5), Point2D(98.5, 138.5), Point2D(23.5, 55.5), // Top Locations
-		Point2D(114.5, 25.5), Point2D(82.5, 23.5), Point2D(115.5, 63.5), Point2D(45.5, 20.5), Point2D(120.5, 104.5) }; // Bottom Locations
+	{ Point2D(29.5, 134.5), Point2D(61.5, 136.5), Point2D(28.5, 96.5), Point2D(98.5, 138.5), Point2D(23.5, 55.5), // Top Locations
+	Point2D(114.5, 25.5), Point2D(82.5, 23.5), Point2D(115.5, 63.5), Point2D(45.5, 20.5), Point2D(120.5, 104.5) }; // Bottom Locations
 
 	Point2D getNextCommandCenterLocation() {
 		// we go through the sorted list for each map and build at the closest location where
@@ -165,13 +147,13 @@ private:
 			for (auto& loc : BelShirVestigeLEBaseLocations) {
 				if (commandCenterPlaceable(loc)) { return loc; }
 			}
-			break; 
+			break;
 		}
 		case Map::ProximaStationLE: {
 			for (auto& loc : ProximaStationLEBaseLocations) {
 				if (commandCenterPlaceable(loc)) { return loc; }
 			}
-			break; 
+			break;
 		}
 		default: std::cerr << "Invalid Map! Cannot get command center location" << std::endl;
 		}
@@ -195,7 +177,7 @@ private:
 					}
 				}
 			}
-			if (mineral_count >= 4) { 
+			if (mineral_count >= 4) {
 				// this is less likely for rich minerals, but as those patches have fewer minerals total
 				// we'd rather build a base with more resources
 				return true;
@@ -213,20 +195,20 @@ private:
 				return point;
 			}
 		}
-		std::cerr << "Time out getting building location, ABILITY_ID: " << (int) aid_to_place 
+		std::cerr << "Time out getting building location, ABILITY_ID: " << (int)aid_to_place
 			<< " around Point (" << base_point.x << ", " << base_point.y << ")" << std::endl;
 		return Point2D(0, 0);
 	}
 
-	/* This checks around all the command centers 
+	/* This checks around all the command centers
 	* Try to form a 3x3 grid of buildings with the command center in the center
-	* All locations must be >4 units from minerals, and >5 units (horizontallly) from the next location
-	* (4 units vertically, so units can move between them) this lets all add-ons be built as long as they aren't
+	* All locations must be >5 units from minerals, and >6 units (horizontally) from the next location
+	* (so units can move between them) this lets all add-ons be built as long as they aren't
 	*	against a wall (so check for placement 1 unit to the right before it's considered valid)
-	* They will form a (semi) ring around the command center. 2+ Rings can exists, but we will first try to 
+	* They will form a (semi) ring around the command center. 2+ Rings can exists, but we will first try to
 	* get a complete ring around each command center of the previous size
 	*/
-	Point2D getPlacement(ABILITY_ID aid_to_place, float multiplier = 1) {
+	Point2D getPlacement(ABILITY_ID aid_to_place) {
 		// for now, get a random point with radius 15 around a command center
 		Point2D point(0, 0);
 		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
@@ -237,16 +219,15 @@ private:
 				auto minerals = observation->GetUnits(Unit::Alliance::Neutral,
 					[c](const Unit& u) { return IsMinerals()(u) && IsClose(c->pos, 100)(u); });
 				for (auto x = -ring; x <= ring; ++x) { // to get x coord
-					point = c->pos;
-					point.x += (x * 5.0f);
 					for (auto y = -ring; y <= ring; ++y) { // y coord
-						point.y = c->pos.y;
-						point.y += (y * 4.0f);
+						point = c->pos;
+						point.x += (x * 6.0f);
+						point.y += (y * 5.0f);
 						if (x == 0) { // so units can move between command center & building
 							if (y < 0) { point.y -= 1; }
 							else if (y > 0) { point.y += 1; }
 						}
-						if (query->Placement(aid_to_place, point)) { 
+						if (query->Placement(aid_to_place, point)) {
 							// check that an add-on can be built, and that
 							// it doesn't get in the way of scvs mining minerals
 							Point2D right = point;
@@ -259,9 +240,8 @@ private:
 					}
 				}
 			}
-			++ring;
 		}
-		std::cerr << "Error getting Ring building location, ABILITY_ID: " << (int) aid_to_place << std::endl;
+		std::cerr << "Error getting Ring building location, ABILITY_ID: " << (int)aid_to_place << std::endl;
 		return Point2D(0, 0);
 	}
 
@@ -271,7 +251,7 @@ private:
 		Point2D point(0, 0);
 		Units command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
 		Units minerals = observation->GetUnits(Unit::Alliance::Neutral,
-			[command_centers](const Unit& u) 
+			[command_centers](const Unit& u)
 			{ return IsNearUnits(command_centers, 10.0f)(u) && IsMinerals()(u); });
 
 		for (auto i = 0; i < time_out; ++i) {
@@ -293,23 +273,15 @@ private:
 	Point2D getNextBarracksLocation() {
 		// we'll just build it near a command center for now
 		// which is the same as the supply depots
-		return getPlacement(ABILITY_ID::BUILD_BARRACKS, 15.0f);
+		return getPlacement(ABILITY_ID::BUILD_BARRACKS);
 	}
 
 	Point2D getNextFusionCoreLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE, 15.0f);
-	}
-
-	Point2D getNextBarracksLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_BARRACKS, pos, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_FUSIONCORE);
 	}
 
 	Point2D getNextFactoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_FACTORY, 10.0f);
-	}
-
-	Point2D getNextFactoryLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_FACTORY, pos, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_FACTORY);
 	}
 
 	Point2D getNextBunkerLocation(Point2D pos) {
@@ -317,24 +289,20 @@ private:
 	}
 
 	Point2D getNextStarportLocation() {
-		return getPlacement(ABILITY_ID::BUILD_STARPORT, 10.0f);
-	}
-
-	Point2D getNextStarportLocation(Point2D pos) {
-		return getPointPlacement(ABILITY_ID::BUILD_STARPORT, pos, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_STARPORT);
 	}
 
 	Point2D getNextEngineeringBayLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_ENGINEERINGBAY);
 	}
 
 	Point2D getNextArmoryLocation() {
-		return getPlacement(ABILITY_ID::BUILD_ARMORY, 10.0f);
+		return getPlacement(ABILITY_ID::BUILD_ARMORY);
 	}
 
 	Point2D getNextMissileTurretLocation(Point2D pos) {
 		return getPointPlacement(ABILITY_ID::BUILD_MISSILETURRET, pos, 4.0f);
 	}
-};	
+};
 
 #endif
