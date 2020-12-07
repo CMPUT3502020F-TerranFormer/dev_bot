@@ -55,7 +55,7 @@ void RESOURCE_BOT::step() {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
             if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
-                action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN);
+                action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true);
             }
             action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
             action->SendActions();
@@ -337,6 +337,9 @@ bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type,
 
         if (query->Placement(ability_to_build_structure, building->pos, building)
             && !buildCheckDuplicate(scvs, ability_to_build_structure)) {
+            if (IsCarryingMinerals(*scv) || IsCarryingVespene(*scv)) {
+                action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN, true);
+            }
             action->UnitCommand(scv, ability_to_build_structure, building, true);
             return true;
         }
@@ -357,7 +360,9 @@ bool RESOURCE_BOT::buildStructure(Units scvs, UNIT_TYPEID unit_type,
                 std::cerr << "Error building: invalid scv" << std::endl;
                 return false;
             }
-
+            if (IsCarryingMinerals(*scv) || IsCarryingVespene(*scv)) {
+                action->UnitCommand(scv, ABILITY_ID::HARVEST_RETURN, true);
+            }
             action->UnitCommand(scv, ability_to_build_structure, new_point, true);
             return true;
         }
