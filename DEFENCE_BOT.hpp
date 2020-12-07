@@ -14,6 +14,41 @@
 #include <thread>
 #include <atomic>
 
+struct ArmyUnit {
+    enum {SIEGETANK=5, MARINE=16, MARAUDER=4, BANSHEE=4, MEDIVAC=2, RAVEN=2, THOR=1, MAX = ArmyUnit::SIEGETANK +
+                                                                                           ArmyUnit::MARINE +
+                                                                                           ArmyUnit::MARAUDER +
+                                                                                           ArmyUnit::BANSHEE +
+                                                                                           ArmyUnit::MEDIVAC +
+                                                                                           ArmyUnit::RAVEN +
+                                                                                           ArmyUnit::THOR};
+
+    int tank = 0;
+    int marine = 0;
+    int marauder = 0;
+    int banshee = 0;
+    int medivac = 0;
+    int raven = 0;
+    int thor = 0;
+
+    /**
+     * Return the number of units in an army unit
+     * @return
+     */
+    int sum() const {
+        return tank + marauder + marine + banshee + raven + medivac + thor;
+    }
+
+    /**
+     * Return if a unit is full, thor is not included because it is optional
+     * @return if a army unit is full
+     */
+    bool full() const {
+        return (tank + marauder + marine + banshee + raven + medivac) == (MAX - THOR);
+    }
+};
+
+
 struct DEFENCE_POI {
     Point2D pos;
     int major;
@@ -24,6 +59,7 @@ struct DEFENCE_POI {
 
     DEFENCE_POI(float x, float y, int major) : pos(Point2D(x, y)), major(major) {}
 };
+
 
 class DEFENCE_BOT final : public TF_Agent {
 public:
@@ -115,38 +151,23 @@ private:
     std::vector<Unit *> starports;
     int last_starport_used = 0;
 
-    int tankCount = 0;
-    int cycloneCount = 0;
-    int marineCount = 0;
-    int marauderCount = 0;
-    int thorCount = 0;
-    int bansheeCount = 0;
-    int battleCruiserCount = 0;
-
-    int tankMaxCount = 5;
-    int cycloneMaxCount = 5;
-    int marineMaxCount = 30;
-    int marauderMaxCount = 20;
-    int thorMaxCount = 2;
-    int bansheeMaxCount = 20;
-    int battleCruiserMaxCount = 1;
-
-    double troopMaxCountMultiplier = 1.5;
-    int multiplierCounter = 0;
+    std::vector<ArmyUnit> armyToOrder;
+    int orderQueueSize = 0;
 
     bool hasBarracks = false;
+    bool hasTechBarracks = false;
     bool hasEngineeringBay = false;
     bool hasFactory = false;
+    bool hasTechFactory = false;
     bool hasArmoury = false;
     bool hasStarport = false;
-    bool hasFusion = false;
+    bool hasTechStarport;
 
     bool orderedArmoury = false;
     bool orderedEngBay = false;
     bool orderedStarport = false;
     bool orderedFactory = false;
     bool orderedBarrack = false;
-    bool orderedFusion = false;
 
     bool infantryUpgradePhase1Complete = false;
     bool infantryUpgradePhase2Complete = false;
@@ -168,7 +189,6 @@ private:
     void buildStarport();
     void buildBarracks();
     void buildFactory();
-    void buildFusion();
     void buildBunker(Point2D pos);
 
     void orderSiegeTank(int count);
@@ -176,15 +196,17 @@ private:
     void orderMarine(int count);
     void orderMarauder(int count);
     void orderBanshee(int count);
-    void orderCyclone(int count);
-    void orderBattleCruiser(int count);
+    void orderMedicVac(int count);
+    void orderViking(int count);
+    void orderRaven(int count);
 
     void check_for_engineering_bay();
     void check_for_factory();
     void check_for_armoury();
     void check_for_barracks();
     void check_for_starport();
-    void check_for_fusion();
+
+    void orderTroops();
 
     std::tuple<std::vector<const Unit *>, int, Point2D> assess_defence_point(Point2D pos);
 
