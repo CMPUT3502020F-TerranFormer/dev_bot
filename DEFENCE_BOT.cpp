@@ -17,7 +17,7 @@ void DEFENCE_BOT::step() {
 
     if (gl % 4 != 0) { return; } // only about ever 1/4 second
 
-    if (gl % 8 == 0) { check_active_defence(); }
+    check_active_defence();
 
     if (balance_step / 16 > 20) {
         defence_balance();
@@ -346,35 +346,35 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         // engineering bay upgrade tree
     case (int)UNIT_TYPEID::TERRAN_ENGINEERINGBAY: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1));
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1));
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2));
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1));
         if (sAndVUpgradePhase1Complete) {
-            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3));
-            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_NEOSTEELFRAME));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2));
             if (sAndVUpgradePhase2Complete) {
-                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::HISECAUTOTRACKING, ABILITY_ID::RESEARCH_HISECAUTOTRACKING));
-                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_NEOSTEELFRAME));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANINFANTRYARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3));
+                if (sAndVUpgradePhase3Complete) {
+                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::HISECAUTOTRACKING, ABILITY_ID::RESEARCH_HISECAUTOTRACKING));
+                }
             }
         }
         break;
     }
-                                                // TODO use behavior tree to replace the following logic
-                                                // armoury upgrade tree
+        // TODO use behavior tree to replace the following logic
+        // armoury upgrade tree
     case (int)UNIT_TYPEID::TERRAN_ARMORY: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1));
-        if (infantryUpgradePhase1Complete) {
-            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1));
-            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1));
-            if (infantryUpgradePhase2Complete) {
-                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2));
-                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2));
-                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2));
-                if (infantryUpgradePhase3Complete) {
-                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3));
-                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3));
-                    resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3));
-                }
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1));
+        if (sAndVUpgradePhase1Complete) {
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2));
+            resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2));
+            if (sAndVUpgradePhase2Complete) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3));
             }
         }
         break;
@@ -401,37 +401,76 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::BANSHEECLOAK, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD)); // starport
         // corvid reactor has the same cost because I couldn't figure out the actual upgrade id
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 5, u->tag, UPGRADE_ID::RAVENCORVIDREACTOR, ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 5, u->tag, UPGRADE_ID::RAVENCORVIDREACTOR, ABILITY_ID::RESEARCH_RAVENCORVIDREACTOR));
         break;
     }
     }
 }
 
 void DEFENCE_BOT::upgradeCompleted(sc2::UpgradeID uid) {
+    auto armory = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_ARMORY));
+    auto eng_bay = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_ENGINEERINGBAY));
     switch ((int) uid) {
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2:
+        // while we order some upgrades in here we also check in unitIdle() incase a unit has been destroyed
+        // that way we can still get them
+        case (int) UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1:
             infantryUpgradePhase1Complete = true;
+            if (!eng_bay.empty()) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, eng_bay.front()->tag, 
+                    UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, eng_bay.front()->tag, 
+                    UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2));
+            }
             break;
         case (int) UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2:
             infantryUpgradePhase2Complete = true;
+            if (!eng_bay.empty()) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, eng_bay.front()->tag, 
+                    UPGRADE_ID::TERRANINFANTRYARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, eng_bay.front()->tag, 
+                    UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3));
+            }
             break;
-        case (int) UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL3:
+        case (int) UPGRADE_ID::TERRANINFANTRYARMORSLEVEL3:
+            if (!eng_bay.empty()) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, eng_bay.front()->tag, 
+                    UPGRADE_ID::HISECAUTOTRACKING, ABILITY_ID::RESEARCH_HISECAUTOTRACKING));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, eng_bay.front()->tag, 
+                    UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_NEOSTEELFRAME));
+            }
             infantryUpgradePhase3Complete = true;
             break;
         case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1:
-            infantryUpgradePhase1Complete = true;
+            sAndVUpgradePhase1Complete = true;
+            if (!armory.empty()) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, armory.front()->tag, 
+                    UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, armory.front()->tag, 
+                    UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, armory.front()->tag, 
+                    UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2));
+            }
             break;
         case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2:
-            infantryUpgradePhase2Complete = true;
+            sAndVUpgradePhase2Complete = true;
+            if (!armory.empty()) {
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, armory.front()->tag,
+                    UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, armory.front()->tag,
+                    UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3));
+                resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, armory.front()->tag,
+                    UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3, ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3));
+            }
             break;
         case (int) UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3:
-            infantryUpgradePhase3Complete = true;
+            sAndVUpgradePhase3Complete = true;
             break;
         case (int)UPGRADE_ID::STIMPACK:
             stim_researched = true;
             break;
         case (int)UPGRADE_ID::BANSHEECLOAK:
             banshee_cloak_researched = true;
-            break;
+            break;            
     }
 }
 
@@ -1022,7 +1061,7 @@ void DEFENCE_BOT::defence_balance() {
 
 void DEFENCE_BOT::check_active_defence() {
     // this figures out what the groups of enemy units nears our command centers are
-    // and commands our units to approach them (if not in range -- need to figure this one out)
+    // and commands our units to approach them
     auto command_centers = observation->GetUnits(Unit::Alliance::Self, IsCommandCenter());
     auto enemy_units = observation->GetUnits(Unit::Alliance::Enemy, IsNearUnits(command_centers, 8));
     auto our_units = observation->GetUnits(Unit::Alliance::Self, IsArmy());
@@ -1057,6 +1096,7 @@ void DEFENCE_BOT::check_active_defence() {
     //      to very close groups)
     // ISSUE: consider grabbing all attacking units nearby in the future (or coordinate with attack)
     //      for now we queue commands
+    // ISSUE: sending single units in to die when we don't have enough units
     std::sort(enemy_groups.begin(), enemy_groups.end(), [](auto i, auto j) { return i.second > j.second; });
 
     auto unit_num = 0; // access units by index
@@ -1066,7 +1106,8 @@ void DEFENCE_BOT::check_active_defence() {
             auto unit = our_units.at(unit_num++);
             switch (unit->unit_type.ToType()) { // use abilities & attack
             case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
-                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
+                // check at one unit over range as they will move towards attacking units
+                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 14 * 14));
                 if (close_units.empty()) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
                 }
@@ -1076,13 +1117,13 @@ void DEFENCE_BOT::check_active_defence() {
                 break;
             }
             case UNIT_TYPEID::TERRAN_SIEGETANK: {
-                // check at 1 unit under max range in case they move away slightly
-                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 12 * 12));
+                // check at 1 unit over max range because they will move towards the attacking units
+                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 14 * 14));
                 if (!close_units.empty()) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
                 }
                 else {
-                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 }
                 break;
             }
@@ -1097,7 +1138,7 @@ void DEFENCE_BOT::check_active_defence() {
                     if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
                 }
                 else {
-                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 }
                 break;
             }
@@ -1108,7 +1149,7 @@ void DEFENCE_BOT::check_active_defence() {
                     action->UnitCommand(unit, ABILITY_ID::BEHAVIOR_CLOAKON);
                 }
                 else {
-                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first);
                 }
                 break;
             }
@@ -1121,9 +1162,10 @@ void DEFENCE_BOT::check_active_defence() {
                         }
                     }
                     if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
+                    else { action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first); }
                 }
                 else {
-                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first);
                 }
                 break;
             }
@@ -1153,9 +1195,11 @@ void DEFENCE_BOT::check_active_defence() {
                 break;
             }
             case UNIT_TYPEID::TERRAN_RAVEN: {
-                if (IsClose(group.first, 6 * 6)(*unit) && unit->energy > 50) {
-                    // does this need a 2d point?
-                    action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, unit->pos);
+                // check at 1 unit over max turret range because they will move towards the attacking units
+                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 7 * 7));
+                if (!close_units.empty() && unit->energy > 50) {
+                    Point2D point(unit->pos.x, unit->pos.y);
+                    action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, point);
                 }
                 else {
                     action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
@@ -1171,7 +1215,9 @@ void DEFENCE_BOT::check_active_defence() {
                 if (hasArmoury) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_HELLBAT);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_HELLIONTANK: {
