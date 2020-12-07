@@ -46,6 +46,7 @@ void ATTACK_BOT::step()
         }
         case ATTACK:
         {
+            if (t.unit == nullptr) { break; }
             // if a tank is in siege mode, unsiege them
             if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
             {
@@ -149,12 +150,17 @@ void ATTACK_BOT::step()
         }
         case MOVE:
         {
-            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position);
+            auto unit = observation->GetUnit(t.target);
+            if (unit != nullptr) {
+                action->UnitCommand(unit, t.ability_id, t.position);
+            }
             break;
         }
         case TRANSFER:
         {
-            TF_unit unit = TF_unit(observation->GetUnit(t.self)->unit_type.ToType(), t.self);
+            auto u = observation->GetUnit(t.self);
+            if (u == nullptr) { break; }
+            TF_unit unit = TF_unit(u->unit_type.ToType(), t.self);
 
             // add to correct agent
             switch (t.source)
@@ -187,7 +193,7 @@ void ATTACK_BOT::step()
 
         default:
         {
-            std::cerr << "RESOURCE Unrecognized Task: " << t.source << " " << t.action << std::endl;
+            std::cerr << "ATTACK Unrecognized Task: " << t.source << " " << t.action << std::endl;
         }
         }
     }

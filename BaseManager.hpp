@@ -416,6 +416,9 @@ public:
 		// because the work queue is too big
 		if (possible_scvs.empty()) { return NoUnit; }
 
+		std::sort(possible_scvs.begin(), possible_scvs.end(),
+			[](const Unit* a, const Unit* b) { return a->orders.size() < b->orders.size(); });
+
 		for (auto& s : possible_scvs) {
 			if (s->orders.size() < s->orders.max_size()) {
 				return TF_unit(s->unit_type, s->tag);

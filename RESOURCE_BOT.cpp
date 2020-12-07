@@ -56,13 +56,9 @@ void RESOURCE_BOT::step() {
         switch (t.action) {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
+            if (unit == nullptr) { continue; }
             if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
-                if (unit->orders.size() == 1){
-                    action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN); // the other order is about minerals/gas
-                }
-                else {
-                    action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
-                }
+                action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true);
             }
             else {
                 action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
@@ -207,7 +203,11 @@ void RESOURCE_BOT::step() {
                 unit = scv;
                 action->UnitCommand(observation->GetUnit(unit.tag), ABILITY_ID::HARVEST_RETURN, true);
             }
-            else { unit = TF_unit(observation->GetUnit(t.self)->unit_type, t.self); }
+            else { 
+                auto u = observation->GetUnit(t.self);
+                if (u == nullptr) { break; }
+                unit = TF_unit(u->unit_type, t.self); 
+            }
 
             // add to correct agent
             switch (t.source) {
