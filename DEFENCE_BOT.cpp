@@ -1198,7 +1198,7 @@ void DEFENCE_BOT::check_active_defence() {
                 continue;
             }
             if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED
-                && !IsClose(group.first, 49)(*unit)) {
+                && !IsClose(group.first, 13 * 13)(*unit)) { // check if they are in siege tank range
                 action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
             }
             action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
