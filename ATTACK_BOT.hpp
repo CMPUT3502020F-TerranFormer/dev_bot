@@ -104,6 +104,8 @@ public:
 
     bool IsNotInVector(Units vector, const Unit* u);
 
+    bool IsPositionValid(Point2D target_pt);
+
     std::vector<Spotted_Enemy> last_seen_near(Point2D location, int radius, int since);
 
 private:
@@ -111,6 +113,7 @@ private:
     Units ground_units;
     Units air_units;
     Units support_units;
+    const Unit* slowest_unit = nullptr;
     TF_Agent *defence;
     TF_Agent *resource;
     TF_Agent *scout;

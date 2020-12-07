@@ -123,22 +123,23 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                // if (scout->last_seen_near(possible_enemy_locations.back(), 12, 100).size() > 0)
-                // {
-                //     for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 12, 100))
-                //     {
-                //         enemy_locations.push_back(record.location);
-                //     }
-                //     possible_enemy_locations.pop_back();
-                // }
-                // else
-                // {
+                if (scout->last_seen_near(possible_enemy_locations.back(), 12, 100).size() > 0)
+                {
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 12, 100))
+                    {
+                        enemy_locations.push_back(record.location);
+                    }
+                    possible_enemy_locations.pop_back();
+                }
+                else
+                {
                     enemy_locations.push_back(possible_enemy_locations.back());
                     possible_enemy_locations.pop_back();
-                // }
+                }
             }
 
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
+            mark_location_visited();
         }
 
         // Support Units don't attack, so gotta give them a different ABILITY_ID
@@ -153,19 +154,19 @@ public:
             if (enemy_locations.size() == 0)
             {
                 // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                // if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
-                // {
-                //     for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
-                //     {
-                //         enemy_locations.push_back(record.location);
-                //     }
-                //     possible_enemy_locations.pop_back();
-                // }
-                // else
-                // {
-                enemy_locations.push_back(possible_enemy_locations.back());
-                possible_enemy_locations.pop_back();
-                // }
+                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
+                {
+                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
+                    {
+                        enemy_locations.push_back(record.location);
+                    }
+                    possible_enemy_locations.pop_back();
+                }
+                else
+                {
+                    enemy_locations.push_back(possible_enemy_locations.back());
+                    possible_enemy_locations.pop_back();
+                }
             }
 
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
@@ -188,7 +189,8 @@ public:
 
     void incSquadronSize()
     {
-        ++squadron_size;
+        squadron_size += counter;
+        ++counter;
     }
 
     void mark_location_visited()
@@ -237,6 +239,7 @@ private:
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
     int squadron_size = 20;
+    int counter = 1;
 };
 
 #endif
