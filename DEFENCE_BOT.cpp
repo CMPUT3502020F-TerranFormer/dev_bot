@@ -380,12 +380,6 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         break;
     }
     case (int)UNIT_TYPEID::TERRAN_TECHLAB: {
-        // do we have to put these in the **TECHLAB?
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 8, u->tag, UPGRADE_ID::STIMPACK, ABILITY_ID::RESEARCH_STIMPACK)); // barracks
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::COMBATSHIELD, ABILITY_ID::RESEARCH_COMBATSHIELD)); // barracks
-        // not sure what the UPGRADE_ID is, neosteel frames has a higher cost so we'll use that in it's place
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS)); // barracks
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::BANSHEECLOAK, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD)); // starport
         break;
     }
     case (int)UNIT_TYPEID::TERRAN_SIEGETANK:
@@ -403,6 +397,20 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
                 bunkers.erase(bunkers.begin());
             }
         }
+        break;
+    case (int)UNIT_TYPEID::TERRAN_BARRACKSTECHLAB: {
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 7, u->tag, UPGRADE_ID::STIMPACK, ABILITY_ID::RESEARCH_STIMPACK)); // barracks
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::COMBATSHIELD, ABILITY_ID::RESEARCH_COMBATSHIELD)); // barracks
+        // not sure what the UPGRADE_ID is, neosteel frames has a higher cost so we'll use that in it's place
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::NEOSTEELFRAME, ABILITY_ID::RESEARCH_CONCUSSIVESHELLS)); // barracks
+        break;
+    }
+    case (int)UNIT_TYPEID::TERRAN_STARPORTTECHLAB: {
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::BANSHEECLOAK, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD)); // starport
+        // corvid reactor has the same cost because I couldn't figure out the actual upgrade id
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::RAVENCORVIDREACTOR, ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS));
+        break;
+    }
     }
 }
 
