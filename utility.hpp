@@ -181,4 +181,16 @@ struct IsArmy {
 	}
 };
 
+struct IsBuilding {
+	IsBuilding(UnitTypes unitData)
+		: utd(unitData) {}
+	UnitTypes utd;
+	bool operator()(const Unit& u) {
+		UnitTypeData ut = utd[u.unit_type];
+		for (auto& a : ut.attributes) {
+			if (a == Attribute::Structure) { return true; }
+		}
+		return false;
+	}
+};
 #endif //TFBOT_UTILITY_HPP

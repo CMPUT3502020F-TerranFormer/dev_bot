@@ -114,7 +114,6 @@ public:
             }
             break;
         }
-
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
         case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
@@ -132,29 +131,7 @@ public:
                 }
             }
 
-            if (possible_enemy_locations.size() == 0)
-            {
-                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-            }
-
-            if (enemy_locations.size() == 0)
-            {
-                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 12, 100).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 12, 100))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
-                    enemy_locations.push_back(possible_enemy_locations.back());
-                    possible_enemy_locations.pop_back();
-                }
-            }
-
+            updateEnemyLocations();
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
             mark_location_visited();
         }
@@ -163,32 +140,42 @@ public:
         case UNIT_TYPEID::TERRAN_MEDIVAC:
         case UNIT_TYPEID::TERRAN_RAVEN:
         {
-            if (possible_enemy_locations.size() == 0)
-            {
-                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-            }
-
-            if (enemy_locations.size() == 0)
-            {
-                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
-                    enemy_locations.push_back(possible_enemy_locations.back());
-                    possible_enemy_locations.pop_back();
-                }
-            }
-
+            updateEnemyLocations();
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
             break;
         }
+        }
+    }
+
+    void updateEnemyLocations() {
+        if (possible_enemy_locations.size() == 0)
+        {
+            auto enemies = observation->GetUnits(Unit::Alliance::Enemy, IsBuilding(observation->GetUnitTypeData()));
+            if (!enemies.empty()) { 
+                for (auto& e : enemies) {
+                    possible_enemy_locations.emplace_back(e->pos.x, e->pos.y);
+                }
+            }
+            else { possible_enemy_locations = observation->GetGameInfo().enemy_start_locations; }
+        }
+
+        if (enemy_locations.size() == 0)
+        {
+            // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+            auto enemy_record = scout->last_seen_near(possible_enemy_locations.back(), 15, 150);
+            if (enemy_record.size() > 0)
+            {
+                for (auto& record : enemy_record)
+                {
+                    enemy_locations.push_back(record.location);
+                }
+                possible_enemy_locations.pop_back();
+            }
+            else
+            {
+                enemy_locations.push_back(possible_enemy_locations.back());
+                possible_enemy_locations.pop_back();
+            }
         }
     }
 
@@ -212,6 +199,7 @@ public:
 
     void mark_location_visited()
     {
+        if (enemy_locations.empty()) { return; }
         Point2D current_location = enemy_locations.back();
         IsClose enemy_nearby(current_location, 100);
         std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy, enemy_nearby);
