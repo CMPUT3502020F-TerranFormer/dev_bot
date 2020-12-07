@@ -123,7 +123,7 @@ public:
 
 		// when re-assigning harvesting scv's it doesn't matter if we are in control of them or not
 		for (auto& base : active_bases) {
-			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 225));
+			Units units = observation->GetUnits(Unit::Alliance::Self, IsClose(base.location, 25 * 25)); // include units at choke points
 			const Unit* command = observation->GetUnit(base.command.tag);
 			if (command == nullptr) { return; }
 
