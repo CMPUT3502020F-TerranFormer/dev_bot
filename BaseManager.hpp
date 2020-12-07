@@ -151,7 +151,7 @@ public:
 					else if (unit->build_progress < 1) {
 						if (observation->GetUnits(Unit::Alliance::Self, 
 							[unit](const Unit& u) {return IsClose(unit->pos, 25)(u) && IsSCV()(u);}).empty()) {
-							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, unit->tag, ABILITY_ID::SMART, 1));
+							task_queue->push(Task(REPAIR, RESOURCE_AGENT, 9, unit->tag, ABILITY_ID::SMART, 1));
 						}
 					}
 				}
