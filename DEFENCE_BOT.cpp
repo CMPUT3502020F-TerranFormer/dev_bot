@@ -379,14 +379,6 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
         }
         break;
     }
-    case (int)UNIT_TYPEID::TERRAN_TECHLAB: {
-        break;
-    }
-    case (int)UNIT_TYPEID::TERRAN_SIEGETANK:
-        if (u->orders.empty()) {
-            action->UnitCommand(u, ABILITY_ID::MORPH_SIEGEMODE, true);
-        }
-        break;
     case (int)UNIT_TYPEID::TERRAN_MARINE:
     case (int)UNIT_TYPEID::TERRAN_MARAUDER:
         // load empty bunkers
@@ -408,7 +400,7 @@ void DEFENCE_BOT::unitIdle(const sc2::Unit *u) {
     case (int)UNIT_TYPEID::TERRAN_STARPORTTECHLAB: {
         resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::BANSHEECLOAK, ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD)); // starport
         // corvid reactor has the same cost because I couldn't figure out the actual upgrade id
-        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 6, u->tag, UPGRADE_ID::RAVENCORVIDREACTOR, ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS));
+        resource->addTask(Task(UPGRADE, DEFENCE_AGENT, 5, u->tag, UPGRADE_ID::RAVENCORVIDREACTOR, ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS));
         break;
     }
     }
@@ -1074,20 +1066,24 @@ void DEFENCE_BOT::check_active_defence() {
             auto unit = our_units.at(unit_num++);
             switch (unit->unit_type.ToType()) { // use abilities & attack
             case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
-                auto close_units = observation->GetUnits(IsClose(unit->pos, 13 * 13));
+                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
                 if (close_units.empty()) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_SIEGETANK: {
                 // check at 1 unit under max range in case they move away slightly
-                auto close_units = observation->GetUnits(IsClose(unit->pos, 12 * 12));
+                auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 12 * 12));
                 if (!close_units.empty()) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_MARAUDER: {
@@ -1100,7 +1096,9 @@ void DEFENCE_BOT::check_active_defence() {
                     }
                     if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_BANSHEE: {
@@ -1109,7 +1107,9 @@ void DEFENCE_BOT::check_active_defence() {
                     && unit->energy > 50) {
                     action->UnitCommand(unit, ABILITY_ID::BEHAVIOR_CLOAKON);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_MARINE: {
@@ -1122,7 +1122,9 @@ void DEFENCE_BOT::check_active_defence() {
                     }
                     if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, group.first, true);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_CYCLONE: {
@@ -1133,7 +1135,7 @@ void DEFENCE_BOT::check_active_defence() {
             case UNIT_TYPEID::TERRAN_THOR: {
                 // just use basic attack
                 // see https://liquipedia.net/starcraft2/Thor_(Legacy_of_the_Void) for abilities to use on air
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_VIKINGASSAULT: {
@@ -1143,11 +1145,11 @@ void DEFENCE_BOT::check_active_defence() {
             }
             case UNIT_TYPEID::TERRAN_VIKINGFIGHTER: {
                 // same as above
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_MEDIVAC: {
-                action->UnitCommand(unit, ABILITY_ID::EFFECT_HEAL);
+                action->UnitCommand(unit, ABILITY_ID::SMART, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_RAVEN: {
@@ -1155,34 +1157,38 @@ void DEFENCE_BOT::check_active_defence() {
                     // does this need a 2d point?
                     action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, unit->pos);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_BATTLECRUISER: {
                 // figure out abilities later
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_HELLION: {
                 if (hasArmoury) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_HELLBAT);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_HELLIONTANK: {
                 // not sure what abilities it can use
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
                 break;
             }
             case UNIT_TYPEID::TERRAN_REAPER: {
                 if (IsClose(group.first, 4)(*unit)) {
                     action->UnitCommand(unit, ABILITY_ID::EFFECT_KD8CHARGE);
                 }
-                action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+                else {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
+                }
                 break;
             }
-            default: action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
+            default: action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first);
             }
         }
     }

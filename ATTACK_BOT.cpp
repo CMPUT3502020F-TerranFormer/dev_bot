@@ -205,17 +205,6 @@ void ATTACK_BOT::addUnit(TF_unit u)
 
 void ATTACK_BOT::buildingConstructionComplete(const sc2::Unit *u)
 {
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-    case UNIT_TYPEID::TERRAN_FACTORY:
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        buildAddOn(u);
-        break;
-
-    default:
-        break;
-    }
 }
 
 void ATTACK_BOT::unitDestroyed(const sc2::Unit *u)
@@ -327,41 +316,6 @@ void ATTACK_BOT::buildStarport()
                  5,
                  UNIT_TYPEID::TERRAN_STARPORT,
                  ABILITY_ID::BUILD_STARPORT));
-    }
-}
-
-void ATTACK_BOT::buildAddOn(const Unit *u)
-{
-    // proof of concept, build a reactor on each barracks (should not actually use priority 8)
-
-    // TODO: For now all add-ons have been set to default, will need to implement a way to choose the add - on
-
-    if (u->build_progress != 1)
-    {
-        return;
-    }
-
-    switch (u->unit_type.ToType())
-    {
-    case UNIT_TYPEID::TERRAN_BARRACKS:
-        if (observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() - 1 % 4 == 0) { // build a reactor first
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_REACTOR_BARRACKS, u->tag));
-        }
-        else {
-            resource->addTask(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
-                ABILITY_ID::BUILD_TECHLAB_BARRACKS, u->tag));
-        }
-
-    case UNIT_TYPEID::TERRAN_FACTORY:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_FACTORY, ABILITY_ID::BUILD_TECHLAB_FACTORY,
-                 u->tag));
-
-    case UNIT_TYPEID::TERRAN_STARPORT:
-        resource->addTask(
-            Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, ABILITY_ID::BUILD_TECHLAB_STARPORT,
-                 u->tag));
     }
 }
 

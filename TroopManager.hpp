@@ -36,23 +36,27 @@ public:
             // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
             //
             // to train marauders, check for the presence of a tech lab first
-        case UNIT_TYPEID::TERRAN_BARRACKSREACTOR: { // train 2 at once
-            if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 30)
-            {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
-                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
-                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
-            }
-            break;
-        }
-        case UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
         case UNIT_TYPEID::TERRAN_BARRACKS:
         {
+            if (unit->add_on_tag == 0) {
+                if (observation->GetUnits(Unit::Alliance::Self, IsBarracks()).size() - 1 % 4 == 0) { // build a reactor first
+                    task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_BARRACKS,
+                        ABILITY_ID::BUILD_REACTOR_BARRACKS, unit->tag));
+                }
+                else {
+                    task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_BARRACKS,
+                        ABILITY_ID::BUILD_TECHLAB_BARRACKS, unit->tag));
+                }
+            }
+
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) < 30)
             {
+                // if there is a reactor it will train both at once
                 task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
-                                      UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MARINE, UNIT_TYPEID::TERRAN_MARINE,
+                    UNIT_TYPEID::TERRAN_BARRACKS, unit->tag));
+
             }
 
             if (CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER) < 10)
@@ -62,10 +66,12 @@ public:
             }
             break;
         }
-        case UNIT_TYPEID::TERRAN_STARPORTREACTOR:
-        case UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
         case UNIT_TYPEID::TERRAN_STARPORT:
         {
+            if (unit->add_on_tag == 0) {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, UNIT_TYPEID::TERRAN_STARPORT, 
+                    ABILITY_ID::BUILD_TECHLAB_STARPORT, unit->tag));
+            }
             // Anti Marines and Tanks
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 4)
             {
@@ -97,9 +103,11 @@ public:
             break;
         }
         case UNIT_TYPEID::TERRAN_FACTORY:
-        case UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
-        case UNIT_TYPEID::TERRAN_FACTORYREACTOR:
         {
+            if (unit->add_on_tag == 0) {
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_STARPORT, 
+                    ABILITY_ID::BUILD_TECHLAB_STARPORT, unit->tag));
+            }
             if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
             {
                 task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_FACTORY, unit->tag));

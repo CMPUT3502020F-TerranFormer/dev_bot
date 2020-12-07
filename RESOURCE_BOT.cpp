@@ -35,6 +35,8 @@ void RESOURCE_BOT::step() {
     Units scvs = observation->GetUnits(Unit::Alliance::Self, IsSCV()); // so we only need to do this once/step
     baseManager->step(scvs);
 
+    if ((observation->GetGameLoop() + 1) % 4 != 0) { return; } // offset from BaseManager timing
+
     // Resource Management
     // check if we need to build a supply depot
     uint32_t available_food = observation->GetFoodCap() - observation->GetFoodUsed();
@@ -55,9 +57,16 @@ void RESOURCE_BOT::step() {
         case HARVEST: {
             const Unit* unit = observation->GetUnit(t.self);
             if (IsCarryingMinerals(*unit) || IsCarryingVespene(*unit)) {
-                action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN, true);
+                if (unit->orders.size() == 1){
+                    action->UnitCommand(unit, ABILITY_ID::HARVEST_RETURN); // the other order is about minerals/gas
+                }
+                else {
+                    action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+                }
             }
-            action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+            else {
+                action->UnitCommand(unit, t.ability_id, observation->GetUnit(t.target), true);
+            }
             action->SendActions();
             break;
         }

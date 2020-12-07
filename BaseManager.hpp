@@ -100,12 +100,6 @@ public:
 		base.findResources(observation->GetUnits(Unit::Alliance::Neutral));
 		base.command = NoUnit;
 		active_bases.push_back(base);
-
-		scv_count = 0;
-		scv_target_count = 60;
-
-		std::random_device r;
-		rand_gen = std::mt19937(r());
 	}
 
 	/**
@@ -182,7 +176,7 @@ public:
 			if (command->build_progress == 1) {
 				// when a command center is just built not all resources are in vision, so check the # ideal harvesters is not max
 				if (base.startTransfer() && command->ideal_harvesters <= 8) {
-					task_queue->push(Task(BUILD, RESOURCE_AGENT, 8,
+					task_queue->push(Task(BUILD, RESOURCE_AGENT, 9,
 						UNIT_TYPEID::TERRAN_COMMANDCENTER, ABILITY_ID::BUILD_COMMANDCENTER));
 				}
 				else if (base.depleted()) {
@@ -268,7 +262,10 @@ public:
 			}
 		}
 
-		// now deal with balancing working gas and minerals
+		// now deal with balancing working gas and minerals -- do this much less frequently so we don't
+		// have too many queued orders for the scvs, this also helps them have less time travelling between 
+		// resources so it's more efficient overall
+		if (observation->GetGameLoop() % 48 != 0) { return; }
 		for (auto& r : refineries) { // focus oversaturated refineries first
 			if ((float)observation->GetVespene() / (float)(observation->GetMinerals() + 1) > 1.5) {
 				for (auto& s : scvs) {
@@ -419,10 +416,12 @@ public:
 		// because the work queue is too big
 		if (possible_scvs.empty()) { return NoUnit; }
 
-		// otherwise return a random scv
-		std::uniform_int_distribution<> distrib(0, possible_scvs.size() - 1);
-		int index = distrib(rand_gen);
-		return TF_unit(scvs.at(index)->unit_type, scvs.at(index)->tag);
+		for (auto& s : possible_scvs) {
+			if (s->orders.size() < s->orders.max_size()) {
+				return TF_unit(s->unit_type, s->tag);
+			}
+		}
+		return NoUnit;
 	}
 
 	/**
@@ -480,12 +479,10 @@ private:
 	std::vector<TF_unit> isolated_bases; // pretty much empty bases except for (planetary fortress)
 	std::vector<Base> active_bases; // should have 3 bases -> potentially 4-6 when transferring to new location
 
-	int scv_count; // total active scv count
-	int scv_target_count; // aim for 66?
+	int scv_count = 0;
+	int scv_target_count = 60;
 
 	std::vector<Tag>* resource_units;
-
-	std::mt19937 rand_gen; //Standard mersenne_twister_engine seeded with rd()
 
 	/* Tries to assign scvs so we maintain a decent amount of both minerals & vespene
 	* Assumes that when switching the scvs are already harvesting at another target
