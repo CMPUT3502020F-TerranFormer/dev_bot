@@ -26,6 +26,10 @@ void ATTACK_BOT::init()
 
 void ATTACK_BOT::step()
 {
+    if (observation->GetGameLoop() % 4 == 0) {
+        auto units = observation->GetUnits(Unit::Alliance::Self);
+        evaluateUnits(units);
+    }
     // perform actions in the task queue
     while (!task_queue.empty())
     {
@@ -109,9 +113,7 @@ void ATTACK_BOT::step()
 
                 // check that none of the units in the attack units are dead
                 allAlive(ground_units);
-                for (auto& u : ground_units) {
-                    attackLocation(u, t.position);
-                }
+                action->UnitCommand(ground_units, t.ability_id, t.position);
 
                 allAlive(air_units);
                 allAlive(support_units);
@@ -121,12 +123,8 @@ void ATTACK_BOT::step()
                     return;
                 }
                 // Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
-                for (auto& u : air_units) {
-                    attackLocation(u, t.position);
-                }
-                for (auto& u : support_units) {
-                    attackLocation(u, t.position);
-                }
+                action->UnitCommand(air_units, t.ability_id, t.position);
+                action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, t.position);
                 // air_units.clear();
                 // support_units.clear();
                 // std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
@@ -276,133 +274,85 @@ void ATTACK_BOT::upgradeCompleted(sc2::UpgradeID uid)
     }
 }
 
-void ATTACK_BOT::attackLocation(const Unit* unit, Point2D loc) {
-    if (unit == nullptr) { return; }
-    switch (unit->unit_type.ToType()) { // use abilities & attack
-    case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
-        auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
-        if (close_units.empty()) {
-            action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
+void ATTACK_BOT::evaluateUnits(Units units) {
+    for (auto& unit : units) {
+        switch (unit->unit_type.ToType()) { // use abilities & attack
+        case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
+            if (close_units.empty()) {
+                action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
+            }
+            break;
         }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_SIEGETANK: {
-        auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
-        if (!close_units.empty()) {
-            action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
-        }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_MARAUDER: {
-        // check when they are just outside the enemy range
-        if (IsClose(loc, 7 * 7)(*unit) && stim_researched) {
-            bool stimmed = false;
-            for (auto& buff : unit->buffs) {
-                if (buff == BUFF_ID::STIMPACK) {
-                    stimmed = true;
+        case UNIT_TYPEID::TERRAN_SIEGETANK: {
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 13 * 13));
+            if (!close_units.empty()) {
+                action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
+            }
+            else {
+                auto near_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 20 * 20));
+                if (!near_units.empty()) {
+                    action->UnitCommand(unit, ABILITY_ID::ATTACK, near_units.front());
                 }
             }
-            if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
+            break;
         }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_BANSHEE: {
-        if (IsClose(loc, 7 * 7)(*unit) // just outside attack range
-            && banshee_cloak_researched
-            && unit->energy > 50) {
-            action->UnitCommand(unit, ABILITY_ID::BEHAVIOR_CLOAKON);
-        }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, loc);
-        }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_MARINE: {
-        if (IsClose(loc, 6 * 6)(*unit) && stim_researched) { // just outside attack range
-            bool stimmed = false;
-            for (auto& buff : unit->buffs) {
-                if (buff == BUFF_ID::STIMPACK) {
-                    stimmed = true;
+        case UNIT_TYPEID::TERRAN_MARAUDER: {
+            // check when they are just outside the enemy range
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 7 * 7));
+            if (!close_units.empty() && stim_researched) {
+                bool stimmed = false;
+                for (auto& buff : unit->buffs) {
+                    if (buff == BUFF_ID::STIMPACK) {
+                        stimmed = true;
+                    }
                 }
+                if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
             }
-            if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
-            else { action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, loc); }
+            break;
         }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, loc);
+        case UNIT_TYPEID::TERRAN_BANSHEE: {
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 7 * 7));
+            if (!close_units.empty() // just outside attack range
+                && banshee_cloak_researched
+                && unit->energy > 50) {
+                action->UnitCommand(unit, ABILITY_ID::BEHAVIOR_CLOAKON);
+            }
+            break;
         }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_CYCLONE: {
-        // see examples.cc for how to use lock on with flying units
-        action->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_THOR: {
-        // just use basic attack
-        // see https://liquipedia.net/starcraft2/Thor_(Legacy_of_the_Void) for abilities to use on air
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_VIKINGASSAULT: {
-        // figure out when to switch from air to ground -> for now prefer air and just try to attack
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_VIKINGFIGHTER: {
-        // same as above
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_MEDIVAC: {
-        action->UnitCommand(unit, ABILITY_ID::SMART, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_RAVEN: {
-        // check at turret range
-        auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 6 * 6));
-        if (!close_units.empty() && unit->energy > 50) {
-            Point2D point(unit->pos.x, unit->pos.y);
-            action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, point);
+        case UNIT_TYPEID::TERRAN_MARINE: {
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 6 * 6));
+            if (!close_units.empty() && stim_researched) { // just outside attack range
+                bool stimmed = false;
+                for (auto& buff : unit->buffs) {
+                    if (buff == BUFF_ID::STIMPACK) {
+                        stimmed = true;
+                    }
+                }
+                if (!stimmed) { action->UnitCommand(unit, ABILITY_ID::EFFECT_STIM); }
+            }
+            break;
         }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
+        case UNIT_TYPEID::TERRAN_RAVEN: {
+            // check at turret range
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 6 * 6));
+            if (!close_units.empty() && unit->energy > 50) {
+                Point2D point(unit->pos.x, unit->pos.y);
+                action->UnitCommand(unit, ABILITY_ID::EFFECT_AUTOTURRET, point);
+            }
+            break;
         }
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_BATTLECRUISER: {
-        // figure out abilities later
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_HELLION: {
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_HELLIONTANK: {
-        // not sure what abilities it can use
-        action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
-        break;
-    }
-    case UNIT_TYPEID::TERRAN_REAPER: {
-        if (IsClose(loc, 4)(*unit)) {
-            action->UnitCommand(unit, ABILITY_ID::EFFECT_KD8CHARGE);
+        case UNIT_TYPEID::TERRAN_REAPER: {
+            auto close_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 4 * 4));
+            if (close_units.size() > 4) {
+                action->UnitCommand(unit, ABILITY_ID::EFFECT_KD8CHARGE);
+            }
+            else {
+                action->UnitCommand(unit, ABILITY_ID::SMART);
+            }
+            break;
         }
-        else {
-            action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
         }
-        break;
-    }
-    default: action->UnitCommand(unit, ABILITY_ID::ATTACK, loc);
     }
 }
 

@@ -115,7 +115,7 @@ private:
     TF_Agent *scout;
     TroopManager *troopManager;
 
-    void attackLocation(const Unit* unit, Point2D loc);
+    void evaluateUnits(Units units);
 
     bool stim_researched = false;
     bool banshee_cloak_researched = false;

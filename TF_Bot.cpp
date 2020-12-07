@@ -35,7 +35,25 @@ void TF_Bot::OnGameStart() {
 }
 
 void TF_Bot::OnGameEnd() {
-
+    for (auto& result : Observation()->GetResults()) {
+        std::cout << "Player: " << result.player_id << " Result: ";
+        switch (result.result)
+        {
+        case 0: 
+            std::cout << "Win";
+            break;
+        case 1: 
+            std::cout << "Lose";
+            break;
+        case 2: 
+            std::cout << "Tie";
+            break;
+        default: 
+            std::cout << "Undecided";
+            break;
+        }
+        std::cout << std::endl;
+    }
 }
 
 void TF_Bot::OnStep() {
