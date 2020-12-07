@@ -123,14 +123,6 @@ public:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
-            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
-            {
-                if (CountUnitType(unit->unit_type) < 4)
-                {
-                    return;
-                }
-            }
-
             updateEnemyLocations();
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
             mark_location_visited();
@@ -216,26 +208,6 @@ public:
         //     enemy_locations.push_back(enemy_pos);
         // }
     }
-
-    // double distance(Point2D p1, Point2D p2)
-    // {
-    //     double x2 = pow((p1.x - p2.x), 2);
-    //     double y2 = pow((p1.y - p2.y), 2);
-    //     return sqrt(x2 + y2);
-    // }
-
-    // bool enemy_at_base(const Unit *enemy)
-    // {
-    //     Point2D current_location = enemy_locations.back();
-    //     Point2D enemy_position(enemy->pos.x, enemy->pos.y);
-
-    //     // if
-    //     if (distance(enemy_position, current_location) < 10)
-    //     {
-    //         return true;
-    //     }
-    //     return false;
-    // }
 
 private:
     threadsafe_priority_queue<Task> *task_queue;
