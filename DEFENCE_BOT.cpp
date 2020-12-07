@@ -669,7 +669,9 @@ void DEFENCE_BOT::check_for_factory() {
 
     factories.clear();
     for (auto f : ret) {
-        factories.push_back(const_cast<Unit *>(f));
+        if (f->unit_type == UNIT_TYPEID::TERRAN_FACTORY) {
+            factories.push_back(const_cast<Unit*>(f));
+        }
     }
 }
 
@@ -698,7 +700,9 @@ void DEFENCE_BOT::check_for_starport() {
 
     starports.clear();
     for (auto f : ret) {
-        starports.push_back(const_cast<Unit *>(f));
+        if (f->unit_type == UNIT_TYPEID::TERRAN_STARPORT) {
+            starports.push_back(const_cast<Unit*>(f));
+        }
     }
 }
 
@@ -749,7 +753,9 @@ void DEFENCE_BOT::check_for_barracks() {
 
     barracks.clear();
     for (auto f : ret) {
-        barracks.push_back(const_cast<Unit *>(f));
+        if (f->unit_type == UNIT_TYPEID::TERRAN_BARRACKS) {
+            barracks.push_back(const_cast<Unit*>(f));
+        }
     }
 }
 
