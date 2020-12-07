@@ -1065,7 +1065,8 @@ void DEFENCE_BOT::check_active_defence() {
             }
             switch(unit->unit_type.ToType()) { // use abilities & attack
             case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
-                if (!IsClose(group.first, 13 * 13)(*unit)) { 
+                auto close_units = observation->GetUnits(IsClose(unit->pos, 13 * 13));
+                if (close_units.empty()) { 
                     action->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE); 
                 }
                 action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);
@@ -1073,7 +1074,8 @@ void DEFENCE_BOT::check_active_defence() {
             }
             case UNIT_TYPEID::TERRAN_SIEGETANK: {
                 // check at 1 unit under max range in case they move away slightly
-                if (IsClose(group.first, 12 * 12)(*unit)) {
+                auto close_units = observation->GetUnits(IsClose(unit->pos, 12 * 12));
+                if (!close_units.empty()) {
                     action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
                 }
                 action->UnitCommand(unit, ABILITY_ID::ATTACK, group.first, true);

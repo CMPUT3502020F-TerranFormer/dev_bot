@@ -221,7 +221,7 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		auto command_build_priority = 6;
+		auto command_build_priority = 7;
 		if (num_command_centers == 0) { 
 			build = true;
 			command_build_priority = 20;
@@ -437,7 +437,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
 			if (scv_count <= scv_target_count) {
-				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 7, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
+				task_queue->push(Task(TRAIN, RESOURCE_AGENT, 8, ABILITY_ID::TRAIN_SCV, UNIT_TYPEID::TERRAN_SCV, UNIT_TYPEID::TERRAN_COMMANDCENTER, u->tag));
 			}
 			break;
 		}

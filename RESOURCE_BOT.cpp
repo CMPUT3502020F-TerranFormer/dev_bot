@@ -101,7 +101,8 @@ void RESOURCE_BOT::step() {
                     std::cerr << "Invalid Task: No Source Unit Available: " << (UnitTypeID)t.source_unit << " Source : " << t.source << std::endl;
                     break;
                 }
-                worker = workers.front();
+                std::sort(workers.begin(), workers.end(), [](const Unit* a, const Unit* b) { return a->orders.size() < b->orders.size(); });
+                worker = workers.front(); // the one with the fewest things in the queue
             }
             else { worker = observation->GetUnit(t.target); }
 
