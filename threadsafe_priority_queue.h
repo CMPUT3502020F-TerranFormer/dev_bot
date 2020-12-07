@@ -36,7 +36,7 @@ public:
         Base::push(x);
     }
 
-    const T &pop() {
+    const T pop() {
         std::lock_guard<std::mutex> lock(mutex);
         assert(!Base::empty());
         auto ret = Base::top();
