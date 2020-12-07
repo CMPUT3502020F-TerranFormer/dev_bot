@@ -228,13 +228,16 @@ public:
 		bool build = false;
 
 		// to stay alive as long as possible
-		auto command_build_priority = 7;
+		auto command_build_priority = 6;
 		if (num_command_centers == 0) {
 			build = true;
 			command_build_priority = 20;
 		}
 		else if (active_bases.size() < 2 && scv_count >= 16) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 36) { build = true; }
+		else if (active_bases.size() < 3 && scv_count >= 36) { 
+			command_build_priority = 7;
+			build = true; 
+		}
 
 		// then check if we have a planetary fortress that is running out of resources
 		// build a new command center in advance so there is less idle time
