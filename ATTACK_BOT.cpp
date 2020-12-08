@@ -156,23 +156,12 @@ void ATTACK_BOT::step()
                 {
                     return;
                 }
-                // Point2D su_pos(slowest_unit->pos.x, slowest_unit->pos.y); // position of the slowest unit
+               
                 action->UnitCommand(air_units, t.ability_id, t.position);
                 action->UnitCommand(support_units, ABILITY_ID::MOVE_MOVE, t.position);
-                // air_units.clear();
-                // support_units.clear();
-                // std::cout << "Target coordinates are " + std::to_string(t.position.x) + " " + std::to_string(t.position.y) << std::endl;
 
                 ground_units.clear();
             }
-
-            // If there are a lot of units in our army, increase squadron size
-            // if ((observation->GetArmyCount() - troopManager->getSquadronSize()) >= 15)
-            // {
-            //     troopManager->incSquadronSize();
-            //     action->SendChat("Army count: " + std::to_string(observation->GetArmyCount()));
-            //     action->SendChat("Squadron size incremented");
-            // }
 
             break;
         }

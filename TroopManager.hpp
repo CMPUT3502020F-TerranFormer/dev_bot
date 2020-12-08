@@ -33,9 +33,6 @@ public:
         switch (unit->unit_type.ToType())
         {
             // barracks train marine
-            // TODO: possibly switch to Marauders if we already have a sufficient amount of Marines
-            //
-            // to train marauders, check for the presence of a tech lab first
         case UNIT_TYPEID::TERRAN_BARRACKS:
         {
             if (unit->add_on_tag == 0) {
@@ -197,13 +194,6 @@ public:
         {
             enemy_locations.pop_back();
         }
-        // else
-        // {
-        //     int rndInt = GetRandomInteger(0, enemy_units.size() - 1);
-        //     const Unit *rndEnemy = enemy_units[rndInt];
-        //     Point2D enemy_pos(rndEnemy->pos.x, rndEnemy->pos.y);
-        //     enemy_locations.push_back(enemy_pos);
-        // }
     }
 
 private:
