@@ -125,7 +125,7 @@ public:
 			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 8));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 5));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
