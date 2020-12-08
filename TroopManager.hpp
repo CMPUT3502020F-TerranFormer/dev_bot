@@ -105,8 +105,8 @@ public:
         case UNIT_TYPEID::TERRAN_FACTORY:
         {
             if (unit->add_on_tag == 0) {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_STARPORT, 
-                    ABILITY_ID::BUILD_TECHLAB_STARPORT, unit->tag));
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_FACTORY, 
+                    ABILITY_ID::BUILD_TECHLAB_FACTORY, unit->tag));
             }
             if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
             {
@@ -180,13 +180,10 @@ public:
 
     int getSquadronSize()
     {
-        return squadron_size;
-    }
-
-    void incSquadronSize()
-    {
-        squadron_size += counter;
-        ++counter;
+        // grows at 2.5 units /min, max 50, because later on units take more supply
+        auto size = 2.5f * (observation->GetGameLoop() / 16 / 60);
+        if (size > 50) { return 50; }
+        return size;
     }
 
     void mark_location_visited()
@@ -215,7 +212,6 @@ private:
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size = 20;
     int counter = 1;
 };
 

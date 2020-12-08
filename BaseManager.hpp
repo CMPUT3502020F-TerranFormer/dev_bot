@@ -228,7 +228,7 @@ public:
 			command_build_priority = 20;
 		}
 		else if (active_bases.size() < 2 && scv_count >= 16) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 36) { 
+		else if (active_bases.size() < 3 && scv_count >= 38) { 
 			command_build_priority = 7;
 			build = true; 
 		}

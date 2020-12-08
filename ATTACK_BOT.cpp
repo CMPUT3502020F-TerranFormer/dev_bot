@@ -51,16 +51,6 @@ void ATTACK_BOT::step()
         case ATTACK:
         {
             if (t.unit == nullptr) { break; }
-            // if a tank is in siege mode, unsiege them
-            if (t.unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
-            {
-                action->UnitCommand(t.unit, ABILITY_ID::MORPH_UNSIEGE);
-            }
-
-            if (t.unit->unit_type == UNIT_TYPEID::TERRAN_BANSHEE)
-            {
-                action->UnitCommand(t.unit, ABILITY_ID::BEHAVIOR_CLOAKON);
-            }
 
             // Classify the units in flying or ground
             // to facilitate movement
@@ -244,12 +234,12 @@ void ATTACK_BOT::unitCreated(const sc2::Unit *u)
         buildBarracks();
     }
 
-    if (factory_count < 2 * command_count)
+    if (factory_count < 1.5 * command_count)
     {
         buildFactory();
     }
 
-    if (starport_count < 1 * command_count)
+    if (starport_count < (1.5 * command_count) + 1);
     {
         buildStarport();
     }
@@ -290,9 +280,15 @@ void ATTACK_BOT::evaluateUnits(Units units) {
                 action->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
             }
             else {
-                auto near_units = observation->GetUnits(Unit::Alliance::Enemy, IsClose(unit->pos, 20 * 20));
-                if (!near_units.empty()) {
-                    action->UnitCommand(unit, ABILITY_ID::ATTACK, near_units.front());
+                auto near_units = observation->GetUnits(Unit::Alliance::Self,
+                    [unit](const Unit& u)
+                    { return IsClose(unit->pos, 20 * 20)(u) 
+                        && IsArmy()(u)
+                        && !IsUnit(UNIT_TYPEID::TERRAN_SIEGETANK)(u) 
+                        && !IsUnit(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)(u);
+                    });
+                if (!near_units.empty() && near_units.size() < 4) { // follow other units if there is only a few in range
+                    action->UnitCommand(unit, ABILITY_ID::SMART, near_units.front());
                 }
             }
             break;
@@ -352,6 +348,20 @@ void ATTACK_BOT::evaluateUnits(Units units) {
             }
             break;
         }
+        case UNIT_TYPEID::TERRAN_VIKINGASSAULT:
+            if (observation->GetUnits(Unit::Alliance::Enemy,
+                [unit](const Unit& u) { return IsClose(unit->pos, 8 * 8)(u) && u.is_flying; }).empty())
+            {
+                action->UnitCommand(unit, ABILITY_ID::MORPH_VIKINGFIGHTERMODE);
+            }
+            break;
+        case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
+            if (!observation->GetUnits(Unit::Alliance::Enemy,
+                [unit](const Unit& u) { return IsClose(unit->pos, 8 * 8)(u) && u.is_flying; }).empty())
+            {
+                action->UnitCommand(unit, ABILITY_ID::MORPH_VIKINGASSAULTMODE);
+            }
+            break;
         }
     }
 }
