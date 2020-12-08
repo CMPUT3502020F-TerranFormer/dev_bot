@@ -114,6 +114,11 @@ private:
     TF_Agent *resource;
     TF_Agent *scout;
     TroopManager *troopManager;
+
+    void evaluateUnits(Units units);
+
+    bool stim_researched = false;
+    bool banshee_cloak_researched = false;
 };
 
 #endif //CPP_SC2_ATTACK_BOT_HPP

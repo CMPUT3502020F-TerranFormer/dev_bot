@@ -125,7 +125,7 @@ public:
 			// it is more important to repair the command center (max 6 scvs)
 			if (command->health < command->health_max
 				&& command->build_progress >= 1) {
-				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 8));
+				task_queue->push(Task(REPAIR, RESOURCE_AGENT, 8, command->tag, ABILITY_ID::EFFECT_REPAIR, 5));
 			}
 			else {
 				// if they are already built, this won't do anything; but it is simpler
@@ -228,7 +228,7 @@ public:
 			command_build_priority = 20;
 		}
 		else if (active_bases.size() < 2 && scv_count >= 16) { build = true; }
-		else if (active_bases.size() < 3 && scv_count >= 36) { 
+		else if (active_bases.size() < 3 && scv_count >= 38) { 
 			command_build_priority = 7;
 			build = true; 
 		}

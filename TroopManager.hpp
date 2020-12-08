@@ -75,7 +75,7 @@ public:
             // Anti Marines and Tanks
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 4)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -89,14 +89,14 @@ public:
             // Detector troops
             if (CountUnitType(UNIT_TYPEID::TERRAN_RAVEN) < 2)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
             // Healer
             if (CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC) < 2)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -105,8 +105,8 @@ public:
         case UNIT_TYPEID::TERRAN_FACTORY:
         {
             if (unit->add_on_tag == 0) {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_STARPORT, 
-                    ABILITY_ID::BUILD_TECHLAB_STARPORT, unit->tag));
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 8, UNIT_TYPEID::TERRAN_FACTORY, 
+                    ABILITY_ID::BUILD_TECHLAB_FACTORY, unit->tag));
             }
             if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) < 5)
             {
@@ -114,7 +114,6 @@ public:
             }
             break;
         }
-
         case UNIT_TYPEID::TERRAN_MARINE:
         case UNIT_TYPEID::TERRAN_SIEGETANK:
         case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
@@ -124,37 +123,7 @@ public:
         case UNIT_TYPEID::TERRAN_BATTLECRUISER:
         case UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
         {
-            if (unit->unit_type == UNIT_TYPEID::TERRAN_SIEGETANKSIEGED)
-            {
-                if (CountUnitType(unit->unit_type) < 4)
-                {
-                    return;
-                }
-            }
-
-            if (possible_enemy_locations.size() == 0)
-            {
-                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-            }
-
-            if (enemy_locations.size() == 0)
-            {
-                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 12, 100).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 12, 100))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
-                    enemy_locations.push_back(possible_enemy_locations.back());
-                    possible_enemy_locations.pop_back();
-                }
-            }
-
+            updateEnemyLocations();
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::ATTACK_ATTACK, enemy_locations.back()));
             mark_location_visited();
         }
@@ -163,32 +132,42 @@ public:
         case UNIT_TYPEID::TERRAN_MEDIVAC:
         case UNIT_TYPEID::TERRAN_RAVEN:
         {
-            if (possible_enemy_locations.size() == 0)
-            {
-                possible_enemy_locations = observation->GetGameInfo().enemy_start_locations;
-            }
-
-            if (enemy_locations.size() == 0)
-            {
-                // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
-                if (scout->last_seen_near(possible_enemy_locations.back(), 15, 150).size() > 0)
-                {
-                    for (auto &record : scout->last_seen_near(possible_enemy_locations.back(), 15, 150))
-                    {
-                        enemy_locations.push_back(record.location);
-                    }
-                    possible_enemy_locations.pop_back();
-                }
-                else
-                {
-                    enemy_locations.push_back(possible_enemy_locations.back());
-                    possible_enemy_locations.pop_back();
-                }
-            }
-
+            updateEnemyLocations();
             task_queue->push(Task(ATTACK, ATTACK_AGENT, 6, unit, ABILITY_ID::MOVE_MOVE, enemy_locations.back()));
             break;
         }
+        }
+    }
+
+    void updateEnemyLocations() {
+        if (possible_enemy_locations.size() == 0)
+        {
+            auto enemies = observation->GetUnits(Unit::Alliance::Enemy, IsBuilding(observation->GetUnitTypeData()));
+            if (!enemies.empty()) { 
+                for (auto& e : enemies) {
+                    possible_enemy_locations.emplace_back(e->pos.x, e->pos.y);
+                }
+            }
+            else { possible_enemy_locations = observation->GetGameInfo().enemy_start_locations; }
+        }
+
+        if (enemy_locations.size() == 0)
+        {
+            // Locations of enemies spotted by the scouting agent anywhere on the map within the last 2 minutes
+            auto enemy_record = scout->last_seen_near(possible_enemy_locations.back(), 15, 150);
+            if (enemy_record.size() > 0)
+            {
+                for (auto& record : enemy_record)
+                {
+                    enemy_locations.push_back(record.location);
+                }
+                possible_enemy_locations.pop_back();
+            }
+            else
+            {
+                enemy_locations.push_back(possible_enemy_locations.back());
+                possible_enemy_locations.pop_back();
+            }
         }
     }
 
@@ -201,17 +180,15 @@ public:
 
     int getSquadronSize()
     {
-        return squadron_size;
-    }
-
-    void incSquadronSize()
-    {
-        squadron_size += counter;
-        ++counter;
+        // grows at 2.5 units /min, max 50, because later on units take more supply
+        auto size = 2.5f * (observation->GetGameLoop() / 16 / 60);
+        if (size > 50) { return 50; }
+        return size;
     }
 
     void mark_location_visited()
     {
+        if (enemy_locations.empty()) { return; }
         Point2D current_location = enemy_locations.back();
         IsClose enemy_nearby(current_location, 100);
         std::vector<const Unit *> enemy_units = observation->GetUnits(Unit::Alliance::Enemy, enemy_nearby);
@@ -229,33 +206,12 @@ public:
         // }
     }
 
-    // double distance(Point2D p1, Point2D p2)
-    // {
-    //     double x2 = pow((p1.x - p2.x), 2);
-    //     double y2 = pow((p1.y - p2.y), 2);
-    //     return sqrt(x2 + y2);
-    // }
-
-    // bool enemy_at_base(const Unit *enemy)
-    // {
-    //     Point2D current_location = enemy_locations.back();
-    //     Point2D enemy_position(enemy->pos.x, enemy->pos.y);
-
-    //     // if
-    //     if (distance(enemy_position, current_location) < 10)
-    //     {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
 private:
     threadsafe_priority_queue<Task> *task_queue;
     const ObservationInterface *observation;
     TF_Agent *scout;
     std::vector<Point2D> possible_enemy_locations;
     std::vector<Point2D> enemy_locations;
-    int squadron_size = 20;
     int counter = 1;
 };
 
