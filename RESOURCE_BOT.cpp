@@ -179,12 +179,16 @@ void RESOURCE_BOT::step() {
                 task_success = false;
                 break;
             }
-            action->UnitCommand(observation->GetUnit(t.self), t.ability_id, true);
+            auto worker = observation->GetUnit(t.self);
+            if (worker == nullptr) { break; }
+            action->UnitCommand(worker, t.ability_id, true);
             action->SendActions();
             break;
         }
         case MOVE: {
-            action->UnitCommand(observation->GetUnit(t.target), t.ability_id, t.position, true);
+            auto unit = observation->GetUnit(t.target);
+            if (unit == nullptr) { break; }
+            action->UnitCommand(unit, t.ability_id, t.position, true);
             action->SendActions();
             break;
         }
