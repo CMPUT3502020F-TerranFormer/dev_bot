@@ -29,7 +29,51 @@ void ATTACK_BOT::step()
     if (observation->GetGameLoop() % 4 == 0) {
         auto units = observation->GetUnits(Unit::Alliance::Self);
         evaluateUnits(units);
+
+        // check for a group of our units (> minutes passed)
+        // and order them to attack nearby enemy units
+        auto ours = observation->GetUnits(Unit::Alliance::Self, IsArmy());
+        if (!ours.empty()) {
+            // get groups of them
+            std::vector<std::pair<Point2D, int>> groups;
+
+            auto first = ours.back();
+            ours.pop_back();
+            groups.emplace_back(first->pos, 1);
+
+            for (auto& e : ours) {
+                for (auto& group : groups) {
+                    if (IsClose(group.first, 100)(*e)) {
+                        ++group.second;
+                        break;
+                    }
+                    else {
+                        groups.emplace_back(e->pos, 1);
+                        break;
+                    }
+                }
+            }
+
+            // check that the groups meet the min size
+            auto size = observation->GetGameLoop() / 16 / 60;
+            if (size > 10) { size = 10; } // for late game
+
+            for (auto& group : groups) {
+                if (group.second >= size) {
+                    // order all the group units to attack near enemies
+                    auto enemies = observation->GetUnits(Unit::Alliance::Enemy, IsClose(group.first, 15 * 15));
+                    if (!enemies.empty()) {
+                        for (auto& u : ours) {
+                            if (IsClose(group.first, 100)(*u)) {
+                                action->UnitCommand(u, ABILITY_ID::ATTACK, enemies.front()->pos);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+
     // perform actions in the task queue
     while (!task_queue.empty())
     {
