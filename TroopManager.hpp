@@ -75,7 +75,7 @@ public:
             // Anti Marines and Tanks
             if (CountUnitType(UNIT_TYPEID::TERRAN_BANSHEE) < 4)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_BANSHEE, UNIT_TYPEID::TERRAN_BANSHEE,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
@@ -89,14 +89,14 @@ public:
             // Detector troops
             if (CountUnitType(UNIT_TYPEID::TERRAN_RAVEN) < 2)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_RAVEN, UNIT_TYPEID::TERRAN_RAVEN,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
             // Healer
             if (CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC) < 2)
             {
-                task_queue->push(Task(TRAIN, ATTACK_AGENT, 7, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
+                task_queue->push(Task(TRAIN, ATTACK_AGENT, 6, ABILITY_ID::TRAIN_MEDIVAC, UNIT_TYPEID::TERRAN_MEDIVAC,
                                       UNIT_TYPEID::TERRAN_STARPORT, unit->tag));
             }
 
